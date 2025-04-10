@@ -16,9 +16,24 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 const app = express();
 
+// Configure CORS for multiple environments
+const allowedOrigins = [
+  process.env.ORIGIN_URL,
+  "http://localhost:5173", // Local development
+];
+
 app.use(
   cors({
-    origin: process.env.ORIGIN_URL,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg =
+          "The CORS policy for this site does not allow access from the specified Origin.";
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
@@ -37,6 +52,11 @@ testConnection();
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
+
+// Add health check endpoint for Railway
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
 // Handle undefined routes
 app.all("*", (req, res) => {
@@ -57,5 +77,5 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT || 8001;
 app.listen(PORT, () => {
-  console.log(`Server running on port http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
