@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ModeToggle } from "@/components/mode-toggle";
+import { DockDemo } from "@/components/DockDemo";
 
 export default function App() {
   return (
@@ -22,6 +23,9 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
             </Routes>
+            <div className="fixed bottom-0 left-0 right-0 z-50">
+              <DockDemo />
+            </div>
           </BrowserRouter>
         </main>
       </div>
