@@ -46,7 +46,6 @@ export const getProductByUuid = async (uuid) => {
       description: row.description,
       price: row.price,
       category_name: row.category_name,
-      image: row.image_id ? { id: row.image_id, url: row.image_url } : null,
     };
   } catch (error) {
     throw new Error(`Error fetching product: ${error.message}`);
@@ -58,29 +57,24 @@ export const createProduct = async (body, user_id) => {
     const { p_cat_uuid, name, description, price } = body;
     const uuid = uuidv4();
 
-    // Merge duplicate check and category ID retrieval into a single query
-    const checkResult = await query(
-      `SELECT 
-        (SELECT COUNT(*) FROM products WHERE name = ? AND is_active = 1) as product_count,
-        (SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1) as category_id`,
-      [name, p_cat_uuid]
+    // Get category ID
+    const categoryResult = await query(
+      `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
+      [p_cat_uuid]
     );
 
-    // Check for duplicate product name
-    if (checkResult[0].product_count > 0) {
-      throw new Error("Product with this name already exists");
-    }
-
     // Check if category exists
-    if (!checkResult[0].category_id) {
+    if (!categoryResult[0] || !categoryResult[0].id) {
       throw new Error("Invalid or inactive product category");
     }
+
+    const categoryId = categoryResult[0].id;
 
     // Insert product with the retrieved category ID
     const result = await query(
       `INSERT INTO products (uuid, p_cat_id, name, description, price, is_active, created_by, updated_by) 
        VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
-      [uuid, checkResult[0].category_id, name, description, price, user_id, user_id]
+      [uuid, categoryId, name, description, price, user_id, user_id]
     );
 
     if (!result || result.affectedRows === 0) {
@@ -97,29 +91,22 @@ export const updateProductByUuid = async (uuid, body) => {
   try {
     const { p_cat_uuid, name, description, price } = body;
 
-    //  duplicate check and category ID retrieval
-    const checkResult = await query(
-      `SELECT 
-        (SELECT COUNT(*) FROM products WHERE name = ? AND uuid != ? AND is_active = 1) as duplicate_count,
-        (SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1) as category_id`,
-      [name, uuid, p_cat_uuid || ""]
-    );
-
-    // Check for duplicate product name
-    if (checkResult[0].duplicate_count > 0) {
-      throw new Error("Another product with this name already exists");
-    }
-
-    // Check if category exists if category UUID was provided
     let p_cat_id = null;
     if (p_cat_uuid) {
-      if (!checkResult[0].category_id) {
+      // Get category ID if provided
+      const categoryResult = await query(
+        `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
+        [p_cat_uuid]
+      );
+
+      if (!categoryResult[0] || !categoryResult[0].id) {
         throw new Error("Invalid or inactive product category");
       }
-      p_cat_id = checkResult[0].category_id;
+
+      p_cat_id = categoryResult[0].id;
     }
 
-    // Update product with category ID
+    // Update product
     const result = await query(
       `UPDATE products p
        SET p.p_cat_id = COALESCE(?, p.p_cat_id), 
@@ -147,11 +134,7 @@ export const deleteProductByUuid = async (uuid) => {
       `UPDATE products p
        SET p.is_active = 0
        WHERE p.uuid = ? 
-       AND p.is_active = 1
-       AND NOT EXISTS (
-         SELECT pi.id FROM product_images pi 
-         WHERE pi.p_id = p.id AND pi.is_active = 1
-       )`,
+       AND p.is_active = 1`,
       [uuid]
     );
 
