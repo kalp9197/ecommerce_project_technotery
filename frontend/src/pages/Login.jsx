@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/utils/authContext";
+import { AlertCircle } from "lucide-react";
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -36,6 +38,22 @@ const formSchema = z.object({
 });
 
 export default function Login() {
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Get the redirect path from location state or default to "/"
+  const from = location.state?.from?.pathname || "/";
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
+
   // Initialize the form with react-hook-form
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -46,10 +64,25 @@ export default function Login() {
   });
 
   // Define the submit handler
-  function onSubmit(values) {
-    console.log(values);
-    // In a real application, you would handle authentication here
-    // For example, dispatch a login action or call an API
+  async function onSubmit(values) {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const result = await login(values);
+
+      if (result.success) {
+        // Navigate to the home page or the page they were trying to access
+        navigate(from, { replace: true });
+      } else {
+        setError(result.error || "Login failed. Please try again.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+      console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -64,6 +97,13 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 mb-6 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -77,6 +117,7 @@ export default function Login() {
                         placeholder="you@example.com"
                         type="email"
                         {...field}
+                        disabled={isLoading}
                       />
                     </FormControl>
                     <FormMessage />
@@ -94,14 +135,15 @@ export default function Login() {
                         placeholder="••••••••"
                         type="password"
                         {...field}
+                        disabled={isLoading}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </Form>

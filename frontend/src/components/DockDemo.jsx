@@ -98,9 +98,7 @@ const DATA = {
 export function DockDemo() {
   return (
     <div className="flex flex-col items-center justify-center py-8">
-      <span className="pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-center text-4xl font-semibold leading-none text-transparent">
-        MacOS Style Dock
-      </span>
+      
       <TooltipProvider>
         <Dock direction="middle" className="mt-8">
           {DATA.navbar.map((item) => (

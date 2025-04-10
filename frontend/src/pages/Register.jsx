@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/utils/authContext";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 // Define the form schema with validation
 const formSchema = z
@@ -46,6 +48,12 @@ const formSchema = z
   });
 
 export default function Register() {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   // Initialize the form with react-hook-form
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -58,10 +66,32 @@ export default function Register() {
   });
 
   // Define the submit handler
-  function onSubmit(values) {
-    console.log(values);
-    // In a real application, you would handle user registration here
-    // For example, dispatch a register action or call an API
+  async function onSubmit(values) {
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Submit only the required fields, omitting confirmPassword
+      const { confirmPassword, ...userData } = values;
+      const result = await register(userData);
+
+      if (result.success) {
+        setSuccess("Registration successful! Redirecting to login...");
+
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } else {
+        setError(result.error || "Registration failed. Please try again.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+      console.error("Registration error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -76,6 +106,20 @@ export default function Register() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 mb-6 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-500/15 p-3 rounded-md flex items-center gap-2 mb-6 text-green-600">
+              <CheckCircle2 className="h-4 w-4" />
+              <p className="text-sm">{success}</p>
+            </div>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -85,7 +129,11 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input
+                        placeholder="John Doe"
+                        {...field}
+                        disabled={isLoading || success}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -102,6 +150,7 @@ export default function Register() {
                         placeholder="you@example.com"
                         type="email"
                         {...field}
+                        disabled={isLoading || success}
                       />
                     </FormControl>
                     <FormMessage />
@@ -119,6 +168,7 @@ export default function Register() {
                         placeholder="••••••••"
                         type="password"
                         {...field}
+                        disabled={isLoading || success}
                       />
                     </FormControl>
                     <FormMessage />
@@ -136,14 +186,19 @@ export default function Register() {
                         placeholder="••••••••"
                         type="password"
                         {...field}
+                        disabled={isLoading || success}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Register
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || success}
+              >
+                {isLoading ? "Creating account..." : "Register"}
               </Button>
             </form>
           </Form>
