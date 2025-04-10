@@ -15,22 +15,32 @@ export function AuthProvider({ children }) {
     const checkAuth = async () => {
       if (token) {
         // Set auth header for all future requests
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        if (api.defaults && api.defaults.headers) {
+          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        }
 
         try {
-          // You can optionally make a request to verify the token is still valid
-          // const response = await api.get("/users/me");
-          // setUser({ isAuthenticated: true, ...response.data });
+          console.log("[AUTH] Using stored token");
 
-          // For now, just set as authenticated if token exists
-          setUser({ isAuthenticated: true });
+          // For the mock API, set a demo user
+          setUser({
+            isAuthenticated: true,
+            id: "demo-user-id",
+            email: "demo@example.com",
+          });
         } catch (error) {
-          console.error("Token validation error:", error);
+          console.log("[AUTH] Token validation failed, clearing session");
           localStorage.removeItem("token");
-          delete api.defaults.headers.common["Authorization"];
+
+          if (api.defaults && api.defaults.headers) {
+            delete api.defaults.headers.common["Authorization"];
+          }
+
           setToken(null);
           setUser(null);
         }
+      } else {
+        console.log("[AUTH] No token found");
       }
       setLoading(false);
     };
@@ -41,14 +51,16 @@ export function AuthProvider({ children }) {
   // Login function
   const login = async (credentials) => {
     try {
-      const response = await api.post("/users/login", credentials);
+      console.log("[AUTH] Attempting login with:", credentials.email);
 
-      // Check if the response contains token in the expected structure
-      // Based on the backend's response format
+      const response = await api.post("/users/login", credentials);
+      console.log("[AUTH] Login successful");
+
+      // Get token from response
       const { token } = response.data;
 
       if (!token) {
-        console.error("No token received from server");
+        console.log("[AUTH] No token received");
         return {
           success: false,
           error: "Authentication failed. Please try again.",
@@ -57,18 +69,24 @@ export function AuthProvider({ children }) {
 
       // Save token to localStorage and set auth header
       localStorage.setItem("token", token);
-      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      if (api.defaults && api.defaults.headers) {
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
 
       setToken(token);
-      setUser({ isAuthenticated: true });
+      setUser({
+        isAuthenticated: true,
+        id: response.data.user?.id || "demo-user-id",
+        email: response.data.user?.email || credentials.email,
+      });
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
+      console.log("[AUTH] Login error:", error.message);
       return {
         success: false,
-        error:
-          error.response?.data?.message || "An error occurred during login",
+        error: "Login failed. Please check your credentials and try again.",
       };
     }
   };
@@ -76,21 +94,28 @@ export function AuthProvider({ children }) {
   // Register function
   const register = async (userData) => {
     try {
+      console.log("[AUTH] Attempting registration");
       const response = await api.post("/users/register", userData);
+      console.log("[AUTH] Registration successful");
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Register error:", error.response?.data || error.message);
+      console.log("[AUTH] Registration error:", error.message);
       return {
         success: false,
-        error: error.response?.data?.message || "Registration failed",
+        error: "Registration failed. Please try again.",
       };
     }
   };
 
   // Logout function
   const logout = () => {
+    console.log("[AUTH] Logging out");
     localStorage.removeItem("token");
-    delete api.defaults.headers.common["Authorization"];
+
+    if (api.defaults && api.defaults.headers) {
+      delete api.defaults.headers.common["Authorization"];
+    }
+
     setToken(null);
     setUser(null);
   };

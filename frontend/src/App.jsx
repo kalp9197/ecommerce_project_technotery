@@ -4,9 +4,9 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
-import { ModeToggle } from "@/components/mode-toggle";
-import { DockDemo } from "@/components/DockDemo";
+import Navbar from "@/components/Navbar";
 import { useAuth } from "@/utils/authContext";
+import { DockDemo } from "./components/DockDemo";
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -35,13 +35,7 @@ const ProtectedRoute = ({ children }) => {
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between p-4 bg-background border-b">
-        <h1 className="text-xl font-bold">My App</h1>
-        <div className="flex items-center gap-4">
-          <UserMenu />
-          <ModeToggle />
-        </div>
-      </header>
+      <Navbar />
       <main className="flex-1">
         <Routes>
           <Route
@@ -55,32 +49,9 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
-        <div className="fixed bottom-0 left-0 right-0 z-50">
-          <DockDemo />
-        </div>
       </main>
+      <DockDemo className="fixed bottom-0 left-0 right-0" />
+
     </div>
-  );
-}
-
-// User menu component for displaying login status and logout button
-function UserMenu() {
-  const { isAuthenticated, loading, logout } = useAuth();
-
-  if (loading) {
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  return (
-    <button
-      onClick={logout}
-      className="text-sm text-muted-foreground hover:text-foreground"
-    >
-      Logout
-    </button>
   );
 }
