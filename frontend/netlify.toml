@@ -1,9 +1,11 @@
 [build]
-  command = "npm install --include=dev && npm run build"
+  command = "npm install @vitejs/plugin-react @tailwindcss/vite && npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
+  NODE_ENV = "development"
+  NPM_CONFIG_PRODUCTION = "false"
 
 [[redirects]]
   from = "/*"
