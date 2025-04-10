@@ -53,6 +53,20 @@ app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 
+// Add root route handler
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Welcome to the API",
+    endpoints: {
+      users: "/api/users",
+      categories: "/api/categories",
+      products: "/api/products",
+      health: "/health",
+    },
+  });
+});
+
 // Add health check endpoint for Railway
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
