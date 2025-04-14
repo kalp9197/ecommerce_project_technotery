@@ -10,6 +10,7 @@ import {
   Home,
   ShoppingBag,
   Package,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/utils/authContext";
@@ -34,7 +35,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
-  const { cartCount } = useCart();
+  const { cartCount, cartTotal } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -60,42 +61,50 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <Link to="/cart" className="relative">
-                  <ShoppingCart className="h-5 w-5" />
-                  <span className="sr-only">Cart</span>
+              <Button variant="ghost" size="sm" className="relative" asChild>
+                <Link to="/cart">
+                  <ShoppingCart className="h-5 w-5 mr-1" />
+                  <span>Cart</span>
                   {cartCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 font-semibold">
-                      {cartCount}
-                    </Badge>
+                    <div className="flex flex-col items-center absolute -top-3 -right-3">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-medium">
+                        {cartCount}
+                      </span>
+                    </div>
                   )}
                 </Link>
               </Button>
+
+              {cartCount > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  ${cartTotal}
+                </span>
+              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">User menu</span>
+                  <Button variant="ghost" size="sm">
+                    <User className="h-5 w-5 mr-1" />
+                    <span>Account</span>
+                    <ChevronDown className="h-4 w-4 ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
+                    <LogOut className="h-4 w-4 mr-2" />
+                    <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/login")}
-              >
-                Login
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Login</Link>
               </Button>
-              <Button onClick={() => navigate("/register")}>Register</Button>
+              <Button size="sm" asChild>
+                <Link to="/register">Register</Link>
+              </Button>
             </>
           )}
           <ModeToggle />

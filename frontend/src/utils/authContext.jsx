@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import api from "./axios";
 
 // Create the auth context
@@ -25,97 +19,18 @@ const setAuthHeader = (token) => {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
-  const [refreshToken, setRefreshToken] = useState(
-    localStorage.getItem("refreshToken") || null
-  );
   const [loading, setLoading] = useState(true);
-  const [tokenExpiry, setTokenExpiry] = useState(null);
 
   // Derived state for isAuthenticated
   const isAuthenticated = !!user?.isAuthenticated;
 
   // Function to clear authentication state
-  const clearAuth = useCallback(() => {
+  const clearAuth = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("tokenExpiry");
     setAuthHeader(null);
     setToken(null);
-    setRefreshToken(null);
-    setTokenExpiry(null);
     setUser(null);
-  }, []);
-
-  // Function to refresh the access token
-  const refreshAccessToken = useCallback(async () => {
-    if (!refreshToken) return false;
-
-    try {
-      console.log("[AUTH] Refreshing access token");
-      const response = await api.post("/users/refresh-token", {
-        refreshToken: refreshToken,
-      });
-
-      if (response.data?.success) {
-        const {
-          token: newToken,
-          refreshToken: newRefreshToken,
-          expiresIn,
-        } = response.data;
-
-        // Calculate token expiry time (current time + expiresIn seconds)
-        const expiryTime = new Date().getTime() + expiresIn * 1000;
-
-        // Save new tokens and expiry time
-        localStorage.setItem("token", newToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
-        localStorage.setItem("tokenExpiry", expiryTime.toString());
-
-        setToken(newToken);
-        setRefreshToken(newRefreshToken);
-        setTokenExpiry(expiryTime);
-        setAuthHeader(newToken);
-
-        console.log("[AUTH] Token refreshed successfully");
-        return true;
-      }
-    } catch (error) {
-      console.error("[AUTH] Failed to refresh token:", error);
-      clearAuth();
-    }
-
-    return false;
-  }, [refreshToken, clearAuth]);
-
-  // Check token validity and refresh if needed
-  const checkTokenValidity = useCallback(async () => {
-    // If no token exists, clear auth state
-    if (!token) {
-      clearAuth();
-      return false;
-    }
-
-    // Get token expiry from localStorage
-    const savedExpiry = localStorage.getItem("tokenExpiry");
-    const expiryTime = savedExpiry ? parseInt(savedExpiry, 10) : null;
-
-    // Set token expiry in state if not set
-    if (!tokenExpiry && expiryTime) {
-      setTokenExpiry(expiryTime);
-    }
-
-    // Check if token is close to expiry (within 5 minutes)
-    const currentTime = new Date().getTime();
-    const isTokenExpiringSoon = expiryTime && expiryTime - currentTime < 300000; // 5 minutes
-
-    if (isTokenExpiringSoon) {
-      console.log("[AUTH] Token is expiring soon, refreshing");
-      return await refreshAccessToken();
-    }
-
-    // Token is still valid
-    return true;
-  }, [token, tokenExpiry, refreshAccessToken, clearAuth]);
+  };
 
   // Check if user is authenticated on initial load and token changes
   useEffect(() => {
@@ -132,16 +47,6 @@ export function AuthProvider({ children }) {
         }
 
         try {
-          // Check token validity
-          const isTokenValid = await checkTokenValidity();
-
-          if (!isTokenValid) {
-            console.log("[AUTH] Token is invalid or expired");
-            clearAuth();
-            setLoading(false);
-            return;
-          }
-
           // For demo purposes, set user as authenticated
           setUser({
             isAuthenticated: true,
@@ -164,19 +69,7 @@ export function AuthProvider({ children }) {
     };
 
     initAuth();
-  }, [token, clearAuth, checkTokenValidity]);
-
-  // Set up token refresh interval
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      // Check token validity every minute
-      const interval = setInterval(() => {
-        checkTokenValidity();
-      }, 60000); // 1 minute
-
-      return () => clearInterval(interval);
-    }
-  }, [isAuthenticated, token, checkTokenValidity]);
+  }, [token]);
 
   // Login function
   const login = async (credentials) => {
@@ -186,12 +79,8 @@ export function AuthProvider({ children }) {
       const response = await api.post("/users/login", credentials);
       console.log("[AUTH] Login successful");
 
-      // Get tokens from response
-      const {
-        token: newToken,
-        refreshToken: newRefreshToken,
-        expiresIn,
-      } = response.data;
+      // Get token from response
+      const { token: newToken } = response.data;
 
       if (!newToken) {
         console.log("[AUTH] No token received");
@@ -201,18 +90,11 @@ export function AuthProvider({ children }) {
         };
       }
 
-      // Calculate token expiry time (current time + expiresIn seconds)
-      const expiryTime = new Date().getTime() + (expiresIn || 3600) * 1000;
-
-      // Save tokens and expiry to localStorage
+      // Save token to localStorage
       localStorage.setItem("token", newToken);
-      localStorage.setItem("refreshToken", newRefreshToken);
-      localStorage.setItem("tokenExpiry", expiryTime.toString());
 
-      // Set tokens in state and header
+      // Set token in state and header
       setToken(newToken);
-      setRefreshToken(newRefreshToken);
-      setTokenExpiry(expiryTime);
       setAuthHeader(newToken);
 
       // Set user data
@@ -251,10 +133,6 @@ export function AuthProvider({ children }) {
   // Logout function
   const logout = () => {
     console.log("[AUTH] Logging out");
-
-    // You might want to call a backend endpoint to invalidate the refresh token
-    // api.post("/users/logout", { refreshToken });
-
     clearAuth();
   };
 
@@ -266,7 +144,6 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
-    refreshToken: refreshAccessToken,
     isAuthenticated,
   };
 

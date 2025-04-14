@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { getProducts, getCategories } from "@/utils/productService";
-import { addToCart } from "@/utils/cartService";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -23,11 +22,9 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
-  const [addingToCart, setAddingToCart] = useState(false);
   const [cartMessage, setCartMessage] = useState(null);
-  const [addedItem, setAddedItem] = useState(null);
   const { isAuthenticated } = useAuth();
-  const { refreshCart } = useCart();
+  const { addItem, isItemPending } = useCart();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,46 +78,26 @@ const Products = () => {
     }
 
     try {
-      setAddingToCart(true);
-      setAddedItem(product);
-
-      // Pass complete product information when adding to cart
-      const response = await addToCart(product.uuid, 1, {
+      await addItem(product.uuid, 1, {
         name: product.name,
         price: product.price,
         category_name: product.category_name,
         image: product.image || null,
       });
 
-      if (response.success) {
-        // Refresh the cart count after adding an item
-        refreshCart();
-
-        setCartMessage({
-          type: "success",
-          text: `${product.name} added to cart`,
-        });
-      } else {
-        if (response.requiresAuth) {
-          navigate("/login", { state: { from: "/" } });
-        } else {
-          setCartMessage({
-            type: "error",
-            text: response.message,
-          });
-        }
-      }
-    } catch {
+      setCartMessage({
+        type: "success",
+        text: `${product.name} added to cart`,
+      });
+    } catch (error) {
       setCartMessage({
         type: "error",
         text: "Failed to add item to cart",
       });
     } finally {
-      setAddingToCart(false);
       // Clear message after 3 seconds
       setTimeout(() => {
         setCartMessage(null);
-        setAddedItem(null);
       }, 3000);
     }
   };
@@ -162,17 +139,16 @@ const Products = () => {
           <ShoppingCart className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-amber-800 font-medium">Shopping Cart Access</p>
-            <p className="text-sm text-amber-700">
-              To add products to your cart, please sign in.{" "}
-              <Button
-                variant="link"
-                className="p-0 h-auto text-sm text-amber-800 font-medium underline"
-                onClick={() =>
-                  navigate("/login", { state: { from: "/products" } })
-                }
-              >
-                Login now
-              </Button>
+            <p className="text-amber-700 text-sm">
+              Please{" "}
+              <Link to="/login" className="underline">
+                log in
+              </Link>{" "}
+              or{" "}
+              <Link to="/register" className="underline">
+                register
+              </Link>{" "}
+              to add items to your cart.
             </p>
           </div>
         </div>
@@ -180,18 +156,24 @@ const Products = () => {
 
       {cartMessage && (
         <div
-          className={`mb-6 p-4 rounded-md flex items-start gap-2 ${
+          className={`mb-6 p-4 border rounded-md flex items-start gap-2 ${
             cartMessage.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-700"
-              : "bg-red-50 border border-red-200 text-red-700"
+              ? "border-green-200 bg-green-50"
+              : "border-red-200 bg-red-50"
           }`}
         >
           {cartMessage.type === "success" ? (
-            <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
           ) : (
-            <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <XCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
           )}
-          <p>{cartMessage.text}</p>
+          <p
+            className={
+              cartMessage.type === "success" ? "text-green-800" : "text-red-800"
+            }
+          >
+            {cartMessage.text}
+          </p>
         </div>
       )}
 
@@ -229,7 +211,7 @@ const Products = () => {
                         </div>
                       </div>
                       <div className="text-lg font-semibold">
-                        ${product.price}
+                        ${parseFloat(product.price).toFixed(2)}
                       </div>
                     </div>
                   </CardHeader>
@@ -245,15 +227,13 @@ const Products = () => {
                     <Button
                       size="sm"
                       onClick={() => handleAddToCart(product)}
-                      disabled={
-                        addingToCart && addedItem?.uuid === product.uuid
-                      }
+                      disabled={!isAuthenticated || isItemPending(product.uuid)}
                     >
-                      {isAuthenticated
-                        ? addingToCart && addedItem?.uuid === product.uuid
-                          ? "Adding..."
-                          : "Add to Cart"
-                        : "Sign in to Buy"}
+                      {!isAuthenticated
+                        ? "Sign in to Buy"
+                        : isItemPending(product.uuid)
+                        ? "Adding..."
+                        : "Add to Cart"}
                     </Button>
                   </CardFooter>
                 </Card>

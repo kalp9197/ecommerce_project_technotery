@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getProductByUuid } from "@/utils/productService";
-import { addToCart } from "@/utils/cartService";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/utils/authContext";
@@ -13,10 +12,9 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [addingToCart, setAddingToCart] = useState(false);
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
-  const { refreshCart } = useCart();
+  const { addItem, isItemPending } = useCart();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,12 +28,11 @@ const ProductDetail = () => {
         } else {
           setError(response.message || "Failed to load product details");
         }
-
-        setLoading(false);
       } catch (err) {
         setError(
           err.message || "An error occurred while fetching product details"
         );
+      } finally {
         setLoading(false);
       }
     };
@@ -54,55 +51,27 @@ const ProductDetail = () => {
     }
 
     try {
-      setAddingToCart(true);
-      // Send complete product information
-      const response = await addToCart(product.uuid, 1, {
+      await addItem(product.uuid, 1, {
         name: product.name,
         price: product.price,
         category_name: product.category_name,
         image: product.image || null,
       });
 
-      if (response.success) {
-        // Refresh cart after adding item
-        refreshCart();
-
-        setCartMessage({
-          type: "success",
-          text: `${product.name} added to cart`,
-        });
-      } else {
-        if (response.requiresAuth) {
-          navigate("/login", { state: { from: `/products/${uuid}` } });
-        } else {
-          setCartMessage({
-            type: "error",
-            text: response.message,
-          });
-        }
-      }
+      setCartMessage({
+        type: "success",
+        text: `${product.name} added to cart successfully`,
+      });
     } catch (error) {
-      console.error("Error adding to cart:", error);
       setCartMessage({
         type: "error",
         text: "Failed to add item to cart",
       });
     } finally {
-      setAddingToCart(false);
       // Clear message after 3 seconds
       setTimeout(() => {
         setCartMessage(null);
       }, 3000);
-    }
-  };
-
-  // Handle wishlist click
-  const handleAddToWishlist = () => {
-    if (!isAuthenticated) {
-      navigate("/login", { state: { from: `/products/${uuid}` } });
-    } else {
-      console.log("Item added to wishlist");
-      // Implement actual wishlist functionality
     }
   };
 
@@ -124,11 +93,13 @@ const ProductDetail = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
           <p>Error: {error || "Product not found"}</p>
-          <div className="mt-4">
-            <Button asChild variant="outline">
-              <Link to="/">Back to Products</Link>
-            </Button>
-          </div>
+          <Button
+            onClick={() => navigate("/")}
+            className="mt-2"
+            variant="outline"
+          >
+            Back to Products
+          </Button>
         </div>
       </div>
     );
@@ -163,17 +134,16 @@ const ProductDetail = () => {
           <ShoppingCart className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-amber-800 font-medium">Shopping Cart Access</p>
-            <p className="text-sm text-amber-700">
-              To add this product to your cart, please sign in.{" "}
-              <Button
-                variant="link"
-                className="p-0 h-auto text-sm text-amber-800 font-medium underline"
-                onClick={() =>
-                  navigate("/login", { state: { from: `/products/${uuid}` } })
-                }
-              >
-                Login now
-              </Button>
+            <p className="text-amber-700 text-sm">
+              Please{" "}
+              <Link to="/login" className="underline">
+                log in
+              </Link>{" "}
+              or{" "}
+              <Link to="/register" className="underline">
+                register
+              </Link>{" "}
+              to add items to your cart.
             </p>
           </div>
         </div>
@@ -181,79 +151,67 @@ const ProductDetail = () => {
 
       {cartMessage && (
         <div
-          className={`mb-6 p-4 rounded-md flex items-start gap-2 ${
+          className={`mb-6 p-4 border rounded-md flex items-start gap-2 ${
             cartMessage.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-700"
-              : "bg-red-50 border border-red-200 text-red-700"
+              ? "border-green-200 bg-green-50"
+              : "border-red-200 bg-red-50"
           }`}
         >
           {cartMessage.type === "success" ? (
-            <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
           ) : (
-            <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <XCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
           )}
-          <p>{cartMessage.text}</p>
+          <p
+            className={
+              cartMessage.type === "success" ? "text-green-800" : "text-red-800"
+            }
+          >
+            {cartMessage.text}
+          </p>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="rounded-md bg-gray-100 flex items-center justify-center p-8">
-          <div className="text-center text-gray-500">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mx-auto mb-2"
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-              <circle cx="9" cy="9" r="2" />
-              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-            </svg>
-            <p>No image available</p>
-          </div>
+        <div className="bg-muted rounded-lg flex items-center justify-center p-8">
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="max-w-full h-auto rounded-lg"
+            />
+          ) : (
+            <ShoppingCart className="h-32 w-32 text-muted-foreground" />
+          )}
         </div>
 
         <div>
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">{product.name}</h1>
-            <Badge variant="outline" className="text-sm">
+          <div className="mb-4">
+            <Badge variant="outline" className="mb-2">
               {product.category_name}
             </Badge>
+            <h1 className="text-4xl font-bold">{product.name}</h1>
+            <div className="text-2xl font-semibold mt-2">
+              ${parseFloat(product.price).toFixed(2)}
+            </div>
           </div>
 
-          <div className="text-2xl font-bold mt-4">${product.price}</div>
-
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-2">Description</h2>
-            <p className="text-gray-700">{product.description}</p>
+          <div className="prose prose-sm max-w-none mb-6">
+            <p>{product.description}</p>
           </div>
 
-          <div className="mt-8 flex space-x-4">
-            <Button
-              className="w-full md:w-auto"
-              onClick={handleAddToCart}
-              disabled={addingToCart}
-            >
-              {isAuthenticated
-                ? addingToCart
-                  ? "Adding..."
-                  : "Add to Cart"
-                : "Sign in to Buy"}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full md:w-auto"
-              onClick={handleAddToWishlist}
-            >
-              {isAuthenticated ? "Add to Wishlist" : "Save for Later"}
-            </Button>
-          </div>
+          <Button
+            className="w-full sm:w-auto"
+            size="lg"
+            onClick={handleAddToCart}
+            disabled={!isAuthenticated || isItemPending(product.uuid)}
+          >
+            {!isAuthenticated
+              ? "Sign in to Buy"
+              : isItemPending(product.uuid)
+              ? "Adding to Cart..."
+              : "Add to Cart"}
+          </Button>
         </div>
       </div>
     </div>

@@ -1,11 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  getCart,
-  removeFromCart,
-  updateCartItem,
-  clearCart,
-} from "@/utils/cartService";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
@@ -18,112 +12,45 @@ import {
 } from "lucide-react";
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [updating, setUpdating] = useState(false);
   const { isAuthenticated } = useAuth();
-  const { refreshCart } = useCart();
+  const {
+    cartItems,
+    cartCount,
+    cartTotal,
+    loading,
+    error: contextError,
+    isItemPending,
+    updateItem,
+    removeItem,
+    clearCart,
+    clearError,
+  } = useCart();
   const navigate = useNavigate();
 
-  // Calculate total price
-  const totalPrice = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
-
   useEffect(() => {
-    // Redirect if not authenticated
     if (!isAuthenticated) {
       navigate("/login", { state: { from: "/cart" } });
-      return;
     }
-
-    const fetchCart = async () => {
-      try {
-        setLoading(true);
-        const response = await getCart();
-        if (response.success) {
-          setCartItems(response.data);
-        } else {
-          if (response.requiresAuth) {
-            navigate("/login", { state: { from: "/cart" } });
-          } else {
-            setError(response.message || "Failed to load cart");
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching cart:", err);
-        setError("An error occurred while loading your cart");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCart();
   }, [isAuthenticated, navigate]);
 
-  const handleRemoveItem = async (itemId) => {
-    try {
-      setUpdating(true);
-      const response = await removeFromCart(itemId);
-      if (response.success) {
-        setCartItems(cartItems.filter((item) => item.id !== itemId));
-        // Refresh cart counter after removing item
-        refreshCart();
-      } else {
-        setError(response.message || "Failed to remove item");
-      }
-    } catch (err) {
-      console.error("Error removing item:", err);
-      setError("An error occurred while removing the item");
-    } finally {
-      setUpdating(false);
-    }
+  // Clear any errors when component unmounts
+  useEffect(() => {
+    return () => {
+      clearError();
+    };
+  }, [clearError]);
+
+  const handleUpdateQuantity = async (itemId, currentQuantity, newQuantity) => {
+    if (newQuantity < 1) return;
+    await updateItem(itemId, newQuantity, currentQuantity);
   };
 
-  const handleUpdateQuantity = async (itemId, newQuantity) => {
-    if (newQuantity < 1) return;
-
-    try {
-      setUpdating(true);
-      const response = await updateCartItem(itemId, newQuantity);
-      if (response.success) {
-        setCartItems(
-          cartItems.map((item) =>
-            item.id === itemId ? { ...item, quantity: newQuantity } : item
-          )
-        );
-        // Refresh cart counter after updating quantity
-        refreshCart();
-      } else {
-        setError(response.message || "Failed to update quantity");
-      }
-    } catch (err) {
-      console.error("Error updating quantity:", err);
-      setError("An error occurred while updating the quantity");
-    } finally {
-      setUpdating(false);
-    }
+  const handleRemoveItem = async (itemId) => {
+    await removeItem(itemId);
   };
 
   const handleClearCart = async () => {
-    try {
-      setUpdating(true);
-      const response = await clearCart();
-      if (response.success) {
-        setCartItems([]);
-        // Refresh cart counter after clearing cart
-        refreshCart();
-      } else {
-        setError(response.message || "Failed to clear cart");
-      }
-    } catch (err) {
-      console.error("Error clearing cart:", err);
-      setError("An error occurred while clearing your cart");
-    } finally {
-      setUpdating(false);
-    }
+    await clearCart();
   };
 
   if (loading) {
@@ -137,13 +64,16 @@ const Cart = () => {
     );
   }
 
-  if (error) {
+  if (contextError) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-          <p>Error: {error}</p>
+          <p>Error: {contextError}</p>
           <Button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              clearError();
+              window.location.reload();
+            }}
             className="mt-2"
             variant="outline"
           >
@@ -187,23 +117,33 @@ const Cart = () => {
         </Link>
       </Button>
 
-      <h1 className="text-3xl font-bold mb-6">Your Shopping Cart</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Your Shopping Cart</h1>
+        <div className="text-sm text-muted-foreground">
+          {cartCount} {cartCount === 1 ? "item" : "items"}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="bg-card rounded-md shadow-sm overflow-hidden border">
             <div className="divide-y">
               {cartItems.map((item, index) => (
-                <div key={item.id} className="p-4 flex items-center">
+                <div
+                  key={item.id}
+                  className={`p-4 flex items-center ${
+                    item.isOptimistic ? "opacity-50" : ""
+                  }`}
+                >
                   <div className="w-8 text-center mr-2 text-muted-foreground font-medium">
                     {index + 1}
                   </div>
-                  <div className="bg-muted rounded-md w-16 h-16 flex items-center justify-center shrink-0">
+                  <div className="bg-muted rounded-md w-16 h-16 flex items-center justify-center shrink-0 overflow-hidden">
                     {item.image ? (
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <ShoppingBag className="h-8 w-8 text-muted-foreground" />
@@ -213,7 +153,7 @@ const Cart = () => {
                   <div className="ml-4 flex-grow">
                     <h3 className="font-medium text-foreground">{item.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      ${item.price}
+                      ${parseFloat(item.price).toFixed(2)}
                     </p>
                   </div>
 
@@ -223,9 +163,13 @@ const Cart = () => {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() =>
-                        handleUpdateQuantity(item.id, item.quantity - 1)
+                        handleUpdateQuantity(
+                          item.id,
+                          item.quantity,
+                          item.quantity - 1
+                        )
                       }
-                      disabled={updating || item.quantity <= 1}
+                      disabled={isItemPending(item.id) || item.quantity <= 1}
                     >
                       <MinusCircle className="h-4 w-4" />
                     </Button>
@@ -237,24 +181,31 @@ const Cart = () => {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() =>
-                        handleUpdateQuantity(item.id, item.quantity + 1)
+                        handleUpdateQuantity(
+                          item.id,
+                          item.quantity,
+                          item.quantity + 1
+                        )
                       }
-                      disabled={updating}
+                      disabled={isItemPending(item.id)}
                     >
                       <PlusCircle className="h-4 w-4" />
                     </Button>
                   </div>
 
-                  <div className="ml-4 text-right min-w-[80px]">
+                  <div className="ml-4 text-right min-w-[100px]">
                     <div className="font-medium text-foreground">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      $
+                      {((parseFloat(item.price) || 0) * item.quantity).toFixed(
+                        2
+                      )}
                     </div>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="h-8 w-8 mt-1 text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => handleRemoveItem(item.id)}
-                      disabled={updating}
+                      disabled={isItemPending(item.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -267,9 +218,9 @@ const Cart = () => {
           <div className="mt-4 flex justify-end">
             <Button
               variant="outline"
-              className="text-destructive"
+              className="text-destructive hover:bg-destructive/10"
               onClick={handleClearCart}
-              disabled={updating || cartItems.length === 0}
+              disabled={cartItems.some((item) => isItemPending(item.id))}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Clear Cart
@@ -278,11 +229,14 @@ const Cart = () => {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-card rounded-md shadow-sm overflow-hidden p-4 border">
+          <div className="bg-card rounded-md shadow-sm overflow-hidden p-6 border sticky top-4">
+            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
             <div className="flex flex-col gap-4">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                <span className="text-muted-foreground">
+                  Subtotal ({cartCount} {cartCount === 1 ? "item" : "items"})
+                </span>
+                <span className="font-medium">${cartTotal}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery</span>
@@ -290,16 +244,17 @@ const Cart = () => {
               </div>
               <div className="border-t pt-4 flex justify-between">
                 <span className="font-bold">Total</span>
-                <span className="font-bold">${totalPrice.toFixed(2)}</span>
+                <span className="font-bold">${cartTotal}</span>
               </div>
 
               <Button
-                variant="outline"
                 className="w-full"
-                onClick={handleClearCart}
-                disabled={updating}
+                disabled={
+                  cartItems.length === 0 ||
+                  cartItems.some((item) => isItemPending(item.id))
+                }
               >
-                Clear Cart
+                Proceed to Checkout
               </Button>
             </div>
           </div>

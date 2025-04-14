@@ -8,13 +8,12 @@ const isUserAuthenticated = () => {
 
 // Get current user's cart
 export const getCart = async () => {
-  // Don't even attempt the request if not authenticated
   if (!isUserAuthenticated()) {
     return {
       success: false,
       message: "Authentication required",
       requiresAuth: true,
-      data: [],
+      data: { items: [], total_items: 0, total_price: "0.00" },
     };
   }
 
@@ -24,30 +23,28 @@ export const getCart = async () => {
     });
     return response.data;
   } catch (error) {
-    // Only log detailed errors if it's not a 401
-    if (error.response?.status !== 401) {
-      console.error("Error fetching cart:", error);
-    }
-
     if (error.response?.status === 401) {
       return {
         success: false,
         message: "Authentication required",
         requiresAuth: true,
-        data: [],
+        data: { items: [], total_items: 0, total_price: "0.00" },
       };
     }
     return {
       success: false,
       message: error.response?.data?.message || "Failed to fetch cart",
-      data: [],
+      data: { items: [], total_items: 0, total_price: "0.00" },
     };
   }
 };
 
 // Add item to cart
-export const addToCart = async (productId, quantity = 1, productDetails = {}) => {
-  // Don't attempt the request if not authenticated
+export const addToCart = async (
+  productId,
+  quantity = 1,
+  productDetails = {}
+) => {
   if (!isUserAuthenticated()) {
     return {
       success: false,
@@ -59,23 +56,14 @@ export const addToCart = async (productId, quantity = 1, productDetails = {}) =>
   try {
     const response = await api.post(
       "/cart/items",
-      { 
-        product_id: productId, 
+      {
+        product_id: productId,
         quantity,
-        name: productDetails.name,
-        price: productDetails.price,
-        category_name: productDetails.category_name,
-        image: productDetails.image
       },
       { headers: getAuthHeader() }
     );
     return response.data;
   } catch (error) {
-    // Only log detailed errors if it's not a 401
-    if (error.response?.status !== 401) {
-      console.error("Error adding item to cart:", error);
-    }
-
     if (error.response?.status === 401) {
       return {
         success: false,
@@ -92,7 +80,6 @@ export const addToCart = async (productId, quantity = 1, productDetails = {}) =>
 
 // Update cart item quantity
 export const updateCartItem = async (itemId, quantity) => {
-  // Don't attempt the request if not authenticated
   if (!isUserAuthenticated()) {
     return {
       success: false,
@@ -109,11 +96,6 @@ export const updateCartItem = async (itemId, quantity) => {
     );
     return response.data;
   } catch (error) {
-    // Only log detailed errors if it's not a 401
-    if (error.response?.status !== 401) {
-      console.error("Error updating cart item:", error);
-    }
-
     if (error.response?.status === 401) {
       return {
         success: false,
@@ -128,9 +110,8 @@ export const updateCartItem = async (itemId, quantity) => {
   }
 };
 
-// Remove item from cart
+// Deactivate cart item (instead of removing)
 export const removeFromCart = async (itemId) => {
-  // Don't attempt the request if not authenticated
   if (!isUserAuthenticated()) {
     return {
       success: false,
@@ -140,16 +121,13 @@ export const removeFromCart = async (itemId) => {
   }
 
   try {
-    const response = await api.delete(`/cart/items/${itemId}`, {
-      headers: getAuthHeader(),
-    });
+    const response = await api.put(
+      `/cart/items/deactivate/${itemId}`,
+      {},
+      { headers: getAuthHeader() }
+    );
     return response.data;
   } catch (error) {
-    // Only log detailed errors if it's not a 401
-    if (error.response?.status !== 401) {
-      console.error("Error removing item from cart:", error);
-    }
-
     if (error.response?.status === 401) {
       return {
         success: false,
@@ -165,9 +143,8 @@ export const removeFromCart = async (itemId) => {
   }
 };
 
-// Clear entire cart
+// Deactivate all cart items (instead of clearing)
 export const clearCart = async () => {
-  // Don't attempt the request if not authenticated
   if (!isUserAuthenticated()) {
     return {
       success: false,
@@ -177,16 +154,13 @@ export const clearCart = async () => {
   }
 
   try {
-    const response = await api.delete("/cart", {
-      headers: getAuthHeader(),
-    });
+    const response = await api.put(
+      "/cart/deactivate",
+      {},
+      { headers: getAuthHeader() }
+    );
     return response.data;
   } catch (error) {
-    // Only log detailed errors if it's not a 401
-    if (error.response?.status !== 401) {
-      console.error("Error clearing cart:", error);
-    }
-
     if (error.response?.status === 401) {
       return {
         success: false,

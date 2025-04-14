@@ -69,6 +69,32 @@ CREATE TABLE IF NOT EXISTS product_images (
   FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- Create cart table
+CREATE TABLE IF NOT EXISTS cart (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  uuid VARCHAR(36) UNIQUE NOT NULL,
+  user_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  is_active TINYINT(1) DEFAULT 1,
+  total_items INT DEFAULT 0,
+  total_price DECIMAL(10,2) DEFAULT 0.00,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Create cart_items table
+CREATE TABLE IF NOT EXISTS cart_items (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  cart_id INT NOT NULL,
+  product_id INT NOT NULL,
+  quantity INT DEFAULT 1,
+  price DECIMAL(10,2) NOT NULL,
+  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  is_active TINYINT(1) DEFAULT 1,
+  FOREIGN KEY (cart_id) REFERENCES cart(id),
+  FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
 -- Sample data with UUIDs
 -- Insert admin user (password: admin123)
 INSERT INTO users (id, uuid, name, email, password, is_active) VALUES 
