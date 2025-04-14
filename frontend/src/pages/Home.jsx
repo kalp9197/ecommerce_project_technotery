@@ -14,16 +14,11 @@ export default function Home() {
         <div className="bg-card p-8 rounded-lg shadow-sm border">
           <h2 className="text-2xl font-semibold mb-4">Dashboard</h2>
           <p className="text-muted-foreground mb-6">
-            This is a simple e-commerce application demo. The backend is
-            currently mocked for demonstration purposes. You can interact with
-            the application as if it had a real backend.
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi quis
+            unde delectus vel. Repudiandae, nobis. Ad eaque deleniti enim totam
+            eos voluptatem ipsam perspiciatis excepturi, labore quas corrupti a
+            nam?
           </p>
-
-          <div className="text-center mt-8">
-            <p className="text-muted-foreground">
-              This is a simplified dashboard view.
-            </p>
-          </div>
         </div>
       </div>
     </div>

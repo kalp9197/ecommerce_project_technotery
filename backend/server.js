@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import userRoutes from "./routes/userRoutes.js";
 import categoryRoutes from "./routes/productCategoryRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
 
 // Get dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -37,6 +38,7 @@ testConnection();
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart,
   User,
@@ -9,9 +9,11 @@ import {
   X,
   Home,
   ShoppingBag,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/utils/authContext";
+import { useCart } from "@/utils/cartContext";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
   DropdownMenu,
@@ -32,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
+  const { cartCount } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -51,12 +54,21 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-3">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/">Products</Link>
+          </Button>
+
           {isAuthenticated ? (
             <>
               <Button variant="ghost" size="icon" asChild>
-                <Link to="/cart">
+                <Link to="/cart" className="relative">
                   <ShoppingCart className="h-5 w-5" />
                   <span className="sr-only">Cart</span>
+                  {cartCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 font-semibold">
+                      {cartCount}
+                    </Badge>
+                  )}
                 </Link>
               </Button>
               <DropdownMenu>
@@ -67,15 +79,6 @@ export default function Navbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
@@ -105,9 +108,11 @@ export default function Navbar() {
               <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
                 <span className="sr-only">Cart</span>
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">
-                  0
-                </Badge>
+                {cartCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 font-semibold">
+                    {cartCount}
+                  </Badge>
+                )}
               </Link>
             </Button>
           )}
@@ -132,13 +137,13 @@ export default function Navbar() {
                     className="justify-start"
                   >
                     <Link to="/">
-                      <Home className="mr-2 h-4 w-4" />
-                      Home
+                      <Package className="mr-2 h-4 w-4" />
+                      Products
                     </Link>
                   </Button>
                 </SheetClose>
 
-                {isAuthenticated ? (
+                {isAuthenticated && (
                   <>
                     <SheetClose asChild>
                       <Button
@@ -149,48 +154,25 @@ export default function Navbar() {
                       >
                         <Link to="/cart">
                           <ShoppingCart className="mr-2 h-4 w-4" />
-                          Cart
+                          Cart {cartCount > 0 && `(${cartCount})`}
                         </Link>
                       </Button>
                     </SheetClose>
-                    <SheetClose asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="justify-start"
-                      >
-                        <Link to="/profile">
-                          <User className="mr-2 h-4 w-4" />
-                          Profile
-                        </Link>
-                      </Button>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="justify-start"
-                      >
-                        <Link to="/settings">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Settings
-                        </Link>
-                      </Button>
-                    </SheetClose>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="justify-start"
-                      onClick={() => {
-                        handleLogout();
-                      }}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </Button>
                   </>
+                )}
+
+                {isAuthenticated ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start"
+                    onClick={() => {
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
                 ) : (
                   <>
                     <SheetClose asChild>

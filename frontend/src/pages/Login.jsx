@@ -45,7 +45,7 @@ export default function Login() {
   const [error, setError] = useState("");
 
   // Get the redirect path from location state or default to "/"
-  const from = location.state?.from?.pathname || "/";
+  const from = location.state?.from || "/";
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function Login() {
       const result = await login(values);
 
       if (result.success) {
-        // Navigate to the home page or the page they were trying to access
+        // Navigate to the page they were trying to access
         navigate(from, { replace: true });
       } else {
         setError(result.error || "Login failed. Please try again.");
@@ -93,7 +93,9 @@ export default function Login() {
             Login
           </CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to login to your account
+            {from !== "/"
+              ? "Sign in to continue with your purchase"
+              : "Enter your credentials to login to your account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
