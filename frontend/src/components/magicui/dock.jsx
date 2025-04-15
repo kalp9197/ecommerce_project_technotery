@@ -9,7 +9,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
@@ -50,7 +50,7 @@ export function Dock({
   );
 
   // Clone children to pass the MousePositionContext to them
-  const items = Children.map(children, (child, index) => {
+  const items = Children.map(children, (child) => {
     if (!isValidElement(child)) return null;
 
     // Pass all dock context values to the icon
@@ -110,7 +110,7 @@ export function DockIcon({
   distance = distance ?? context.iconDistance;
 
   // Icon position values
-  const [iconCenterX, setIconCenterX] = useState(0);
+  const [, setIconCenterX] = useState(0);
 
   // Update icon center position
   const updateIconCenter = () => {

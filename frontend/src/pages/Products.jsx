@@ -20,7 +20,8 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
+
   const [activeTab, setActiveTab] = useState("all");
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
@@ -89,7 +90,7 @@ const Products = () => {
         type: "success",
         text: `${product.name} added to cart`,
       });
-    } catch (error) {
+    } catch {
       setCartMessage({
         type: "error",
         text: "Failed to add item to cart",

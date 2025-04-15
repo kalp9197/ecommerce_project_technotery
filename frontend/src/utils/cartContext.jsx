@@ -20,7 +20,7 @@ export function CartProvider({ children }) {
   const { isAuthenticated } = useAuth();
 
   // Function to fetch cart data
-  const fetchCart = async () => {
+  const fetchCart = React.useCallback(async () => {
     if (!isAuthenticated) {
       setCartItems([]);
       setCartCount(0);
@@ -53,12 +53,12 @@ export function CartProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   // Update cart when authentication status changes
   useEffect(() => {
     fetchCart();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchCart]);
 
   // Add item to cart
   const addItem = async (productId, quantity = 1, productDetails = {}) => {
@@ -103,7 +103,7 @@ export function CartProvider({ children }) {
         );
         setError(response.message || "Failed to add item to cart");
       }
-    } catch (error) {
+    } catch {
       // Revert optimistic update
       setCartItems((prev) => prev.filter((item) => item.id !== tempId));
       setCartCount((prev) => prev - quantity);
@@ -158,7 +158,7 @@ export function CartProvider({ children }) {
         setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));
         setError(response.message || "Failed to update item quantity");
       }
-    } catch (error) {
+    } catch {
       // Revert optimistic update
       setCartItems((prev) =>
         prev.map((item) =>
@@ -203,7 +203,7 @@ export function CartProvider({ children }) {
         setCartTotal((prev) => (parseFloat(prev) + itemTotal).toFixed(2));
         setError(response.message || "Failed to remove item");
       }
-    } catch (error) {
+    } catch {
       // Revert optimistic update
       setCartItems((prev) => [...prev, item]);
       setCartCount((prev) => prev + item.quantity);
@@ -240,7 +240,7 @@ export function CartProvider({ children }) {
         setCartTotal(previousTotal);
         setError(response.message || "Failed to clear cart");
       }
-    } catch (error) {
+    } catch {
       // Revert optimistic update
       setCartItems(previousItems);
       setCartCount(previousCount);

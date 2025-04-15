@@ -11,7 +11,7 @@ const ProductDetail = () => {
   const { uuid } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
   const { addItem, isItemPending } = useCart();
@@ -62,7 +62,7 @@ const ProductDetail = () => {
         type: "success",
         text: `${product.name} added to cart successfully`,
       });
-    } catch (error) {
+    } catch {
       setCartMessage({
         type: "error",
         text: "Failed to add item to cart",

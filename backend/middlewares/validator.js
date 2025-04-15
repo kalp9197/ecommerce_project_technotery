@@ -168,3 +168,39 @@ export const imageUpdateSchema = [
     })
     .withMessage("Invalid image format. Must be a URL or base64 encoded image"),
 ];
+
+// Cart validation schemas
+export const addToCartSchema = [
+  body("product_uuid")
+    .notEmpty()
+    .withMessage("Product UUID is required")
+    .isUUID(4)
+    .withMessage("Product UUID must be a valid UUID v4"),
+  
+  body("quantity")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Quantity must be a positive integer")
+    .toInt(),
+];
+
+export const updateCartItemSchema = [
+  param("id")
+    .notEmpty()
+    .withMessage("Item ID is required"),
+    
+  body("quantity")
+    .notEmpty()
+    .withMessage("Quantity is required")
+    .isInt({ min: 1 })
+    .withMessage("Quantity must be a positive integer")
+    .toInt(),
+];
+
+export const deactivateCartItemSchema = [
+  param("id")
+    .notEmpty()
+    .withMessage("Item ID is required")
+];
+
+export const deactivateAllCartItemsSchema = [];

@@ -42,8 +42,7 @@ export const getCart = async () => {
 // Add item to cart
 export const addToCart = async (
   productId,
-  quantity = 1,
-  productDetails = {}
+  quantity = 1
 ) => {
   if (!isUserAuthenticated()) {
     return {
@@ -57,7 +56,7 @@ export const addToCart = async (
     const response = await api.post(
       "/cart/items",
       {
-        product_id: productId,
+        product_uuid: productId,
         quantity,
       },
       { headers: getAuthHeader() }
@@ -121,7 +120,7 @@ export const removeFromCart = async (itemId) => {
   }
 
   try {
-    const response = await api.put(
+    const response = await api.delete(
       `/cart/items/deactivate/${itemId}`,
       {},
       { headers: getAuthHeader() }
@@ -154,8 +153,8 @@ export const clearCart = async () => {
   }
 
   try {
-    const response = await api.put(
-      "/cart/deactivate",
+    const response = await api.delete(
+      "/cart/items/deactivateAll",
       {},
       { headers: getAuthHeader() }
     );

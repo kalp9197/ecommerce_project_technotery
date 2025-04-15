@@ -124,7 +124,6 @@ function useFormField() {
 }
 
 export {
-  useFormField,
   Form,
   FormItem,
   FormLabel,
