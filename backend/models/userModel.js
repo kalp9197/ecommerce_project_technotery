@@ -6,8 +6,8 @@ import { v4 as uuidv4 } from "uuid";
 export const getUserByUuid = async (uuid) => {
   try {
     const result = await query(
-      "SELECT id, uuid, name, email, is_active FROM users WHERE uuid = ? AND is_active = 1",
-      [uuid],
+      "SELECT id, uuid, name, email, is_active, is_admin FROM users WHERE uuid = ? AND is_active = 1",
+      [uuid]
     );
     return result?.length ? result[0] : null;
   } catch (error) {
@@ -18,8 +18,8 @@ export const getUserByUuid = async (uuid) => {
 export const getUserByUuidWithoutActiveFilter = async (uuid) => {
   try {
     const result = await query(
-      "SELECT id, uuid, name, email, is_active FROM users WHERE uuid = ?",
-      [uuid],
+      "SELECT id, uuid, name, email, is_active, is_admin FROM users WHERE uuid = ?",
+      [uuid]
     );
     return result?.length ? result[0] : null;
   } catch (error) {
@@ -32,7 +32,7 @@ export const getUserByEmail = async (body) => {
     const { email } = body;
     const result = await query(
       "SELECT * FROM users WHERE email = ? AND is_active = 1",
-      [email],
+      [email]
     );
     return result?.length ? result[0] : null;
   } catch (error) {
@@ -46,12 +46,12 @@ export const createUser = async (body) => {
     const uuid = uuidv4();
     const hashedPassword = await bcrypt.hash(
       password,
-      await bcrypt.genSalt(10),
+      await bcrypt.genSalt(10)
     );
 
     const result = await query(
       "INSERT INTO users (uuid, name, email, password, is_active) VALUES (?, ?, ?, ?, 1)",
-      [uuid, name, email, hashedPassword],
+      [uuid, name, email, hashedPassword]
     );
 
     if (!result?.affectedRows) {
@@ -74,7 +74,7 @@ export const updateUserByUuid = async (uuid, userData) => {
     const { name, email } = userData;
     const result = await query(
       "UPDATE users SET name = ?, email = ? WHERE uuid = ? AND is_active = 1",
-      [name, email, uuid],
+      [name, email, uuid]
     );
 
     if (!result?.affectedRows) {
@@ -91,7 +91,7 @@ export const generateToken = async (userUuid) => {
   try {
     const users = await query(
       "SELECT id FROM users WHERE uuid = ? AND is_active = 1",
-      [userUuid],
+      [userUuid]
     );
 
     if (!users?.length) throw new Error("User not found or inactive");
@@ -108,12 +108,12 @@ export const generateToken = async (userUuid) => {
     const token = jwt.sign(
       { id: userId, uuid: userUuid },
       process.env.JWT_SECRET,
-      { expiresIn: `${tokenExpiresInMinutes}m` },
+      { expiresIn: `${tokenExpiresInMinutes}m` }
     );
 
     // Calculate exact expiration time
     const expiresAt = new Date(
-      now.getTime() + tokenExpiresInMinutes * 60 * 1000,
+      now.getTime() + tokenExpiresInMinutes * 60 * 1000
     );
 
     // Always set initial refresh cycles to 5
@@ -123,14 +123,14 @@ export const generateToken = async (userUuid) => {
     // First, expire any existing tokens for this user
     await query(
       "UPDATE user_tokens SET is_expired = 1 WHERE user_id = ? AND is_expired = 0",
-      [userId],
+      [userId]
     );
 
     // Then create a new token
     const tokenUuid = uuidv4();
     const result = await query(
       "INSERT INTO user_tokens (uuid, user_id, expires_at, is_expired, last_login_date, refresh_cycles) VALUES (?, ?, ?, 0, ?, ?)",
-      [tokenUuid, userId, expiresAt, now, initialRefreshCycles],
+      [tokenUuid, userId, expiresAt, now, initialRefreshCycles]
     );
 
     if (!result?.affectedRows) throw new Error("Token creation failed");
@@ -174,7 +174,7 @@ export const updateUserStatus = async (uuid, status) => {
 
     const result = await query(
       "UPDATE users SET is_active = ? WHERE uuid = ?",
-      [status, uuid],
+      [status, uuid]
     );
 
     if (!result?.affectedRows) throw new Error("Failed to update user status");
@@ -183,7 +183,7 @@ export const updateUserStatus = async (uuid, status) => {
     if (status === 0) {
       await query(
         "UPDATE user_tokens SET is_expired = 1 WHERE user_id = ? AND is_expired = 0",
-        [user[0].id],
+        [user[0].id]
       );
     }
 
@@ -198,7 +198,7 @@ export const invalidateToken = async (tokenId) => {
     // Mark token as expired
     const result = await query(
       "UPDATE user_tokens SET is_expired = 1 WHERE id = ?",
-      [tokenId],
+      [tokenId]
     );
 
     if (!result?.affectedRows) {
@@ -217,7 +217,7 @@ export const refreshToken = async (tokenId) => {
     // First verify if the token is even eligible for refresh
     const validateToken = await query(
       "SELECT refresh_cycles FROM user_tokens WHERE id = ?",
-      [tokenId],
+      [tokenId]
     );
 
     // If token has 1 or fewer refresh cycles left, reject refresh
@@ -236,7 +236,7 @@ export const refreshToken = async (tokenId) => {
       "SELECT ut.*, u.uuid as user_uuid FROM user_tokens ut " +
         "JOIN users u ON ut.user_id = u.id " +
         "WHERE ut.id = ? AND u.is_active = 1",
-      [tokenId],
+      [tokenId]
     );
 
     if (!tokenData?.length) throw new Error("Invalid token or user inactive");
@@ -251,13 +251,13 @@ export const refreshToken = async (tokenId) => {
     const newToken = jwt.sign(
       { id: token.user_id, uuid: token.user_uuid },
       process.env.JWT_SECRET,
-      { expiresIn: `${tokenExpiresInMinutes}m` },
+      { expiresIn: `${tokenExpiresInMinutes}m` }
     );
 
     // Calculate exact expiration time
     const now = new Date();
     const newExpiresAt = new Date(
-      now.getTime() + tokenExpiresInMinutes * 60 * 1000,
+      now.getTime() + tokenExpiresInMinutes * 60 * 1000
     );
 
     // Decrement refresh cycles
@@ -272,7 +272,7 @@ export const refreshToken = async (tokenId) => {
     const newTokenUuid = uuidv4();
     const result = await query(
       "INSERT INTO user_tokens (uuid, user_id, expires_at, is_expired, last_login_date, refresh_cycles) VALUES (?, ?, ?, 0, ?, ?)",
-      [newTokenUuid, token.user_id, newExpiresAt, now, newRefreshCycles],
+      [newTokenUuid, token.user_id, newExpiresAt, now, newRefreshCycles]
     );
 
     if (!result?.affectedRows) throw new Error("Token refresh failed");
@@ -280,7 +280,7 @@ export const refreshToken = async (tokenId) => {
     // Get the new token ID
     const newTokenData = await query(
       "SELECT id FROM user_tokens WHERE uuid = ?",
-      [newTokenUuid],
+      [newTokenUuid]
     );
 
     if (!newTokenData?.length)

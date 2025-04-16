@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(100) NOT NULL,
   email VARCHAR(100) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  is_active INT DEFAULT 1
+  is_active INT DEFAULT 1,
+  is_admin INT DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS user_tokens (
@@ -100,8 +101,12 @@ CREATE TABLE IF NOT EXISTS cart_items (
 
 -- Sample data with UUIDs
 -- Insert admin user (password: admin123)
-INSERT INTO users (id, uuid, name, email, password, is_active) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440000', 'Admin User', 'admin@example.com', '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', 1);
+INSERT INTO users (id, uuid, name, email, password, is_active, is_admin) VALUES 
+(1, '550e8400-e29b-41d4-a716-446655440000', 'Admin User', 'admin@example.com', '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', 1, 1);
+
+-- Insert regular user (password: user123)
+INSERT INTO users (id, uuid, name, email, password, is_active, is_admin) VALUES 
+(2, '550e8400-e29b-41d4-a716-446655440100', 'Regular User', 'user@example.com', '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', 1, 0);
 
 -- Insert product categories
 INSERT INTO product_categories (id, uuid, name, is_active, created_by, updated_by) VALUES 

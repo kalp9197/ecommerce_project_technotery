@@ -1,6 +1,7 @@
 import express from "express";
 import * as categoryController from "../controllers/productCategoryController.js";
 import { authenticate } from "../middlewares/auth.js";
+import { isAdmin } from "../middlewares/adminAuth.js";
 import {
   validate,
   categorySchema,
@@ -14,24 +15,34 @@ router.get("/", categoryController.getAllCategories);
 router.get(
   "/:uuid",
   validate(categoryUuidParam),
-  categoryController.getCategoryByUuid,
+  categoryController.getCategoryByUuid
 );
 
 // Protected routes (authentication required)
 // Apply authentication middleware to all routes below this point
 router.use(authenticate);
 
-// Category modification routes
-router.post("/", validate(categorySchema), categoryController.createCategory);
+// Admin-only routes for category modifications
+router.post(
+  "/",
+  authenticate,
+  isAdmin,
+  validate(categorySchema),
+  categoryController.createCategory
+);
 router.put(
   "/:uuid",
+  authenticate,
+  isAdmin,
   validate([...categoryUuidParam, ...categorySchema]),
-  categoryController.updateCategoryByUuid,
+  categoryController.updateCategoryByUuid
 );
 router.delete(
   "/:uuid",
+  authenticate,
+  isAdmin,
   validate(categoryUuidParam),
-  categoryController.deleteCategoryByUuid,
+  categoryController.deleteCategoryByUuid
 );
 
 export default router;

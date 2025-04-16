@@ -45,7 +45,7 @@ export const login = async (req, res) => {
     // Verify user's password
     const isPasswordValid = await userModel.verifyPassword(
       req.body.password,
-      user.password,
+      user.password
     );
 
     if (!isPasswordValid) {
@@ -71,6 +71,12 @@ export const login = async (req, res) => {
       token: tokenData.token,
       refreshCycles: tokenData.refreshCycles,
       expiresInMinutes: expiresInMinutes,
+      user: {
+        uuid: user.uuid,
+        name: user.name,
+        email: user.email,
+        is_admin: user.is_admin === 1,
+      },
     });
   } catch (error) {
     return res.status(500).json({

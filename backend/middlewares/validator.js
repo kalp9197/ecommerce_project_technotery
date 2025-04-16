@@ -113,20 +113,12 @@ export const productUuidParam = [
 
 // Product image validation schemas
 export const productImageSchema = [
-  body("image_url")
+  body("image_path")
     .trim()
     .notEmpty()
-    .withMessage("Image url is required")
-    .custom((value) => {
-      // Accept either URL or base64 data
-      return (
-        value.startsWith("http") ||
-        value.startsWith("https") ||
-        value.startsWith("/") ||
-        value.startsWith("data:image/")
-      );
-    })
-    .withMessage("Invalid image format. Must be a URL or base64 encoded image"),
+    .withMessage("Image path is required")
+    .isString()
+    .withMessage("Image path must be a string"),
 
   body("is_featured")
     .optional()
@@ -155,18 +147,10 @@ export const imageUpdateSchema = [
     .isBoolean()
     .withMessage("is_active must be a boolean value"),
 
-  body("image_url")
+  body("image_path")
     .optional()
-    .custom((value) => {
-      // Accept either URL or base64 data
-      return (
-        value.startsWith("http") ||
-        value.startsWith("https") ||
-        value.startsWith("/") ||
-        value.startsWith("data:image/")
-      );
-    })
-    .withMessage("Invalid image format. Must be a URL or base64 encoded image"),
+    .isString()
+    .withMessage("Image path must be a string"),
 ];
 
 // Cart validation schemas

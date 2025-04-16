@@ -116,19 +116,23 @@ export const deleteCategoryByUuid = async (req, res) => {
     const { uuid } = req.params;
 
     // Verify category exists
-    const category = await categoryModel.getCategoryByUuid(uuid);
-    if (!category) {
+    const categories = await categoryModel.getCategoryByUuid(uuid);
+    if (!categories || categories.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Category not found",
       });
     }
 
+    const originalCategory = categories[0];
     const result = await categoryModel.deleteCategoryByUuid(uuid);
 
     res.status(200).json({
       success: true,
       message: "Category deleted successfully",
+      data: {
+        deleted_category: originalCategory,
+      },
     });
   } catch (error) {
     // Special handling for categories with products
