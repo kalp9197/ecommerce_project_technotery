@@ -30,7 +30,7 @@ const ProductDetail = () => {
         }
       } catch (err) {
         setError(
-          err.message || "An error occurred while fetching product details"
+          err.message || "An error occurred while fetching product details",
         );
       } finally {
         setLoading(false);
@@ -192,7 +192,7 @@ const ProductDetail = () => {
             </Badge>
             <h1 className="text-4xl font-bold">{product.name}</h1>
             <div className="text-2xl font-semibold mt-2">
-              ${parseFloat(product.price).toFixed(2)}
+              ₹{parseFloat(product.price).toFixed(2)}
             </div>
           </div>
 
@@ -209,8 +209,8 @@ const ProductDetail = () => {
             {!isAuthenticated
               ? "Sign in to Buy"
               : isItemPending(product.uuid)
-              ? "Adding to Cart..."
-              : "Add to Cart"}
+                ? "Adding to Cart..."
+                : "Add to Cart"}
           </Button>
         </div>
       </div>

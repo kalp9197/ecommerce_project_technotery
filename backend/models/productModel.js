@@ -33,7 +33,7 @@ export const getProductByUuid = async (uuid) => {
       WHERE p.uuid = ? AND p.is_active = 1 AND pc.is_active = 1
       LIMIT 1
       `,
-      [uuid]
+      [uuid],
     );
 
     if (!rows.length) throw new Error("Product not found");
@@ -60,7 +60,7 @@ export const createProduct = async (body, user_id) => {
     // Get category ID
     const categoryResult = await query(
       `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
-      [p_cat_uuid]
+      [p_cat_uuid],
     );
 
     // Check if category exists
@@ -74,7 +74,7 @@ export const createProduct = async (body, user_id) => {
     const result = await query(
       `INSERT INTO products (uuid, p_cat_id, name, description, price, is_active, created_by, updated_by) 
        VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
-      [uuid, categoryId, name, description, price, user_id, user_id]
+      [uuid, categoryId, name, description, price, user_id, user_id],
     );
 
     if (!result || result.affectedRows === 0) {
@@ -96,7 +96,7 @@ export const updateProductByUuid = async (uuid, body) => {
       // Get category ID if provided
       const categoryResult = await query(
         `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
-        [p_cat_uuid]
+        [p_cat_uuid],
       );
 
       if (!categoryResult[0] || !categoryResult[0].id) {
@@ -114,7 +114,7 @@ export const updateProductByUuid = async (uuid, body) => {
            p.description = COALESCE(?, p.description), 
            p.price = COALESCE(?, p.price)
        WHERE p.uuid = ? AND p.is_active = 1`,
-      [p_cat_id, name, description, price, uuid]
+      [p_cat_id, name, description, price, uuid],
     );
 
     if (!result || result.affectedRows === 0) {
@@ -135,7 +135,7 @@ export const deleteProductByUuid = async (uuid) => {
        SET p.is_active = 0
        WHERE p.uuid = ? 
        AND p.is_active = 1`,
-      [uuid]
+      [uuid],
     );
 
     if (!result || result.affectedRows === 0) {

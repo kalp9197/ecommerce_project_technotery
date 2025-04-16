@@ -45,7 +45,7 @@ export const login = async (req, res) => {
     // Verify user's password
     const isPasswordValid = await userModel.verifyPassword(
       req.body.password,
-      user.password
+      user.password,
     );
 
     if (!isPasswordValid) {

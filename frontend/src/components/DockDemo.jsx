@@ -23,7 +23,11 @@ const Icons = {
   calendar: (props) => <CalendarIcon {...props} />,
   email: (props) => <MailIcon {...props} />,
   linkedin: (props) => (
-    <svg viewBox="0 0 24 24" xmlns="https://www.linkedin.com/in/patel-kalp-93526425b/" {...props}>
+    <svg
+      viewBox="0 0 24 24"
+      xmlns="https://www.linkedin.com/in/patel-kalp-93526425b/"
+      {...props}
+    >
       <title>LinkedIn</title>
       <path
         fill="currentColor"
@@ -98,7 +102,6 @@ const DATA = {
 export function DockDemo() {
   return (
     <div className="flex flex-col items-center justify-center py-8">
-      
       <TooltipProvider>
         <Dock direction="middle" className="mt-8">
           {DATA.navbar.map((item) => (
@@ -110,7 +113,7 @@ export function DockDemo() {
                     aria-label={item.label}
                     className={cn(
                       buttonVariants({ variant: "ghost", size: "icon" }),
-                      "h-12 w-12 rounded-full"
+                      "h-12 w-12 rounded-full",
                     )}
                   >
                     <item.icon className="h-4 w-4" />
@@ -132,7 +135,7 @@ export function DockDemo() {
                     aria-label={social.name}
                     className={cn(
                       buttonVariants({ variant: "ghost", size: "icon" }),
-                      "h-12 w-12 rounded-full"
+                      "h-12 w-12 rounded-full",
                     )}
                     target="_blank"
                     rel="noopener noreferrer"

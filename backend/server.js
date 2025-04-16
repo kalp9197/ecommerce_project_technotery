@@ -9,6 +9,7 @@ import userRoutes from "./routes/userRoutes.js";
 import categoryRoutes from "./routes/productCategoryRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 // Get dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -21,10 +22,18 @@ app.use(
   cors({
     origin: process.env.ORIGIN_URL,
     credentials: true,
-  })
+  }),
 );
 
-app.use(express.json());
+// Parse JSON for all routes EXCEPT /api/payments/webhook
+app.use((req, res, next) => {
+  if (req.originalUrl === "/api/payments/webhook") {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
+
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from public directory
@@ -39,6 +48,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {

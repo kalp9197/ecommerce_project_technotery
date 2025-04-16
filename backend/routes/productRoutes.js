@@ -19,7 +19,7 @@ router.get("/", productController.getProducts);
 router.get(
   "/:uuid",
   validate(productUuidParam),
-  productController.getProductByUUID
+  productController.getProductByUUID,
 );
 
 // Protected routes (authentication required)
@@ -34,24 +34,24 @@ router.put(
     ...productUuidParam,
     ...productSchema.map((validation) => validation.optional()),
   ]),
-  productController.updateProductByUUID
+  productController.updateProductByUUID,
 );
 router.delete(
   "/:uuid",
   validate(productUuidParam),
-  productController.removeProductByUUID
+  productController.removeProductByUUID,
 );
 
 // Product image routes
 router.get(
   "/images/:productUuid",
   validate(productUuidParamForImage),
-  imageController.getProductImagesByUuid
+  imageController.getProductImagesByUuid,
 );
 router.post(
   "/images/:productUuid",
   validate([...productUuidParamForImage, ...productImageSchema]),
-  imageController.addProductImage
+  imageController.addProductImage,
 );
 
 // Image routes
@@ -59,12 +59,12 @@ const imageRouter = express.Router();
 imageRouter.put(
   "/:uuid",
   validate([...imageUuidParam, ...imageUpdateSchema]),
-  imageController.updateProductImageByUuid
+  imageController.updateProductImageByUuid,
 );
 imageRouter.delete(
   "/:uuid",
   validate(imageUuidParam),
-  imageController.deleteProductImageByUuid
+  imageController.deleteProductImageByUuid,
 );
 
 // Mount the image router

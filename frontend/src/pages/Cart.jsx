@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   ShoppingBag,
 } from "lucide-react";
+import StripeCheckoutButton from "@/components/StripeCheckoutButton";
 
 const Cart = () => {
   const { isAuthenticated } = useAuth();
@@ -153,7 +154,7 @@ const Cart = () => {
                   <div className="ml-4 flex-grow">
                     <h3 className="font-medium text-foreground">{item.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      ${parseFloat(item.price).toFixed(2)}
+                      ₹{parseFloat(item.price).toFixed(2)}
                     </p>
                   </div>
 
@@ -166,7 +167,7 @@ const Cart = () => {
                         handleUpdateQuantity(
                           item.id,
                           item.quantity,
-                          item.quantity - 1
+                          item.quantity - 1,
                         )
                       }
                       disabled={isItemPending(item.id) || item.quantity <= 1}
@@ -184,7 +185,7 @@ const Cart = () => {
                         handleUpdateQuantity(
                           item.id,
                           item.quantity,
-                          item.quantity + 1
+                          item.quantity + 1,
                         )
                       }
                       disabled={isItemPending(item.id)}
@@ -195,9 +196,9 @@ const Cart = () => {
 
                   <div className="ml-4 text-right min-w-[100px]">
                     <div className="font-medium text-foreground">
-                      $
+                      ₹
                       {((parseFloat(item.price) || 0) * item.quantity).toFixed(
-                        2
+                        2,
                       )}
                     </div>
                     <Button
@@ -236,26 +237,28 @@ const Cart = () => {
                 <span className="text-muted-foreground">
                   Subtotal ({cartCount} {cartCount === 1 ? "item" : "items"})
                 </span>
-                <span className="font-medium">${cartTotal}</span>
+                <span className="font-medium">
+                  ₹
+                  {typeof cartTotal === "number"
+                    ? cartTotal.toFixed(2)
+                    : parseFloat(cartTotal).toFixed(2)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery</span>
-                <span className="font-medium">$0.00</span>
+                <span className="font-medium">₹0.00</span>
               </div>
               <div className="border-t pt-4 flex justify-between">
                 <span className="font-bold">Total</span>
-                <span className="font-bold">${cartTotal}</span>
+                <span className="font-bold">
+                  ₹
+                  {typeof cartTotal === "number"
+                    ? cartTotal.toFixed(2)
+                    : parseFloat(cartTotal).toFixed(2)}
+                </span>
               </div>
 
-              <Button
-                className="w-full"
-                disabled={
-                  cartItems.length === 0 ||
-                  cartItems.some((item) => isItemPending(item.id))
-                }
-              >
-                Proceed to Checkout
-              </Button>
+              <StripeCheckoutButton className="w-full mt-4" />
             </div>
           </div>
         </div>

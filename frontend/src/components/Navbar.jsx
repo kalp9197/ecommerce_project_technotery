@@ -77,7 +77,10 @@ export default function Navbar() {
 
               {cartCount > 0 && (
                 <span className="text-sm text-muted-foreground">
-                  ${cartTotal}
+                  ₹
+                  {typeof cartTotal === "number"
+                    ? cartTotal.toFixed(2)
+                    : parseFloat(cartTotal || 0).toFixed(2)}
                 </span>
               )}
 

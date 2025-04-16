@@ -5,7 +5,7 @@ import {
   validate,
   addToCartSchema,
   updateCartItemSchema,
-  deactivateCartItemSchema
+  deactivateCartItemSchema,
 } from "../middlewares/validator.js";
 
 const router = express.Router();
@@ -16,8 +16,16 @@ router.use(authenticate);
 // Cart routes
 router.get("/", cartController.getUserCart);
 router.post("/items", validate(addToCartSchema), cartController.addItemToCart);
-router.put("/items/:id", validate(updateCartItemSchema), cartController.updateCartItem);
-router.delete("/items/deactivate/:id", validate(deactivateCartItemSchema), cartController.deactivateCartItem); 
+router.put(
+  "/items/:id",
+  validate(updateCartItemSchema),
+  cartController.updateCartItem,
+);
+router.delete(
+  "/items/deactivate/:id",
+  validate(deactivateCartItemSchema),
+  cartController.deactivateCartItem,
+);
 router.delete("/items/deactivateAll", cartController.deactivateAllCartItems);
 
 export default router;

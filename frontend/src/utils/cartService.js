@@ -40,10 +40,7 @@ export const getCart = async () => {
 };
 
 // Add item to cart
-export const addToCart = async (
-  productId,
-  quantity = 1
-) => {
+export const addToCart = async (productId, quantity = 1) => {
   if (!isUserAuthenticated()) {
     return {
       success: false,
@@ -59,7 +56,7 @@ export const addToCart = async (
         product_uuid: productId,
         quantity,
       },
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (error) {
@@ -91,7 +88,7 @@ export const updateCartItem = async (itemId, quantity) => {
     const response = await api.put(
       `/cart/items/${itemId}`,
       { quantity },
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (error) {
@@ -123,7 +120,7 @@ export const removeFromCart = async (itemId) => {
     const response = await api.delete(
       `/cart/items/deactivate/${itemId}`,
       {},
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (error) {
@@ -156,7 +153,7 @@ export const clearCart = async () => {
     const response = await api.delete(
       "/cart/items/deactivateAll",
       {},
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (error) {

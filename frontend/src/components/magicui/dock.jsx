@@ -46,7 +46,7 @@ export function Dock({
   // Distribute the items in the dock based on direction prop
   const value = useMemo(
     () => ({ mouseX, iconSize, iconMagnification, iconDistance, direction }),
-    [mouseX, iconSize, iconMagnification, iconDistance, direction]
+    [mouseX, iconSize, iconMagnification, iconDistance, direction],
   );
 
   // Clone children to pass the MousePositionContext to them
@@ -77,7 +77,7 @@ export function Dock({
         onTouchEnd={handleMouseLeave}
         className={cn(
           "flex h-16 items-end justify-center gap-4 rounded-xl bg-background/80 px-4 pb-2 backdrop-blur",
-          className
+          className,
         )}
         {...props}
       >

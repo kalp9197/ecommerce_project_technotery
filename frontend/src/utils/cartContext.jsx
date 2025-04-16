@@ -84,7 +84,7 @@ export function CartProvider({ children }) {
       (
         parseFloat(prev) +
         (parseFloat(productDetails.price) || 0) * quantity
-      ).toFixed(2)
+      ).toFixed(2),
     );
 
     try {
@@ -99,7 +99,7 @@ export function CartProvider({ children }) {
           (
             parseFloat(prev) -
             (parseFloat(productDetails.price) || 0) * quantity
-          ).toFixed(2)
+          ).toFixed(2),
         );
         setError(response.message || "Failed to add item to cart");
       }
@@ -111,7 +111,7 @@ export function CartProvider({ children }) {
         (
           parseFloat(prev) -
           (parseFloat(productDetails.price) || 0) * quantity
-        ).toFixed(2)
+        ).toFixed(2),
       );
       setError("Failed to add item to cart. Please try again.");
     } finally {
@@ -139,8 +139,8 @@ export function CartProvider({ children }) {
     // Optimistic update
     setCartItems((prev) =>
       prev.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
+        item.id === itemId ? { ...item, quantity: newQuantity } : item,
+      ),
     );
     setCartCount((prev) => prev + quantityDiff);
     setCartTotal((prev) => (parseFloat(prev) + priceDiff).toFixed(2));
@@ -151,8 +151,8 @@ export function CartProvider({ children }) {
         // Revert optimistic update
         setCartItems((prev) =>
           prev.map((item) =>
-            item.id === itemId ? { ...item, quantity: oldQuantity } : item
-          )
+            item.id === itemId ? { ...item, quantity: oldQuantity } : item,
+          ),
         );
         setCartCount((prev) => prev - quantityDiff);
         setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));
@@ -162,8 +162,8 @@ export function CartProvider({ children }) {
       // Revert optimistic update
       setCartItems((prev) =>
         prev.map((item) =>
-          item.id === itemId ? { ...item, quantity: oldQuantity } : item
-        )
+          item.id === itemId ? { ...item, quantity: oldQuantity } : item,
+        ),
       );
       setCartCount((prev) => prev - quantityDiff);
       setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));

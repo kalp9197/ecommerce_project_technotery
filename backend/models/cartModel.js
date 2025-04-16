@@ -6,24 +6,24 @@ const getCart = async (userId) => {
   try {
     const [cart] = await query(
       "SELECT id, uuid, total_items, total_price FROM cart WHERE user_id = ? AND is_active = 1 LIMIT 1",
-      [userId]
+      [userId],
     );
-    
+
     if (!cart) {
       // Create new cart if none exists
       const uuid = uuidv4();
       const result = await query(
         "INSERT INTO cart (uuid, user_id, total_items, total_price, is_active) VALUES (?, ?, 0, 0, 1)",
-        [uuid, userId]
+        [uuid, userId],
       );
-      
+
       const [newCart] = await query(
         "SELECT id, uuid, total_items, total_price FROM cart WHERE id = ?",
-        [result.insertId]
+        [result.insertId],
       );
       return newCart;
     }
-    
+
     return cart;
   } catch (error) {
     throw new Error(`Error retrieving cart: ${error.message}`);
@@ -35,12 +35,12 @@ const updateCartTotals = async (cartUuid) => {
   try {
     const [totals] = await query(
       "SELECT COUNT(*) AS total_items, COALESCE(SUM(quantity * price), 0) AS total_price FROM cart_items ci JOIN cart c ON ci.cart_id = c.id WHERE c.uuid = ? AND ci.is_active = 1",
-      [cartUuid]
+      [cartUuid],
     );
 
     await query(
       "UPDATE cart SET total_items = ?, total_price = ?, updated_at = NOW() WHERE uuid = ?",
-      [totals.total_items, totals.total_price, cartUuid]
+      [totals.total_items, totals.total_price, cartUuid],
     );
   } catch (error) {
     throw new Error(`Error updating cart totals: ${error.message}`);
@@ -56,7 +56,7 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
       `SELECT p.id, p.price
        FROM products p
        WHERE p.uuid = ? AND p.is_active = 1`,
-      [productUuid]
+      [productUuid],
     );
 
     if (!product) throw new Error("Product not found or inactive");
@@ -66,23 +66,25 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
        FROM cart_items ci
        JOIN cart c ON ci.cart_id = c.id
        WHERE c.uuid = ? AND ci.product_id = ?`,
-      [cart.uuid, product.id]
+      [cart.uuid, product.id],
     );
 
     if (existing) {
-      const newQty = existing.is_active ? existing.quantity + quantity : quantity;
+      const newQty = existing.is_active
+        ? existing.quantity + quantity
+        : quantity;
       await query(
         `UPDATE cart_items 
          SET quantity = ?, price = ?, is_active = 1, added_at = NOW() 
          WHERE id = ?`,
-        [newQty, product.price, existing.id]
+        [newQty, product.price, existing.id],
       );
     } else {
       await query(
         `INSERT INTO cart_items 
          (uuid, cart_id, product_id, quantity, price, is_active, added_at) 
          VALUES (?, (SELECT id FROM cart WHERE uuid = ?), ?, ?, ?, 1, NOW())`,
-        [uuidv4(), cart.uuid, product.id, quantity, product.price]
+        [uuidv4(), cart.uuid, product.id, quantity, product.price],
       );
     }
 
@@ -112,14 +114,14 @@ export const getCartItems = async (userId) => {
          ON p.id = pi.p_id AND pi.is_featured = 1 AND pi.is_active = 1
        WHERE ci.cart_id = ? AND ci.is_active = 1
        ORDER BY ci.added_at DESC`,
-      [cart.id]
+      [cart.id],
     );
 
     return {
-      items: items.map(item => ({
+      items: items.map((item) => ({
         ...item,
         price: +item.price || 0,
-        current_price: +item.current_price || 0
+        current_price: +item.current_price || 0,
       })),
       total_items: cart.total_items,
       total_price: parseFloat(cart.total_price).toFixed(2),
@@ -138,12 +140,15 @@ export const updateCartItem = async (userId, itemId, quantity) => {
       `SELECT ci.id, p.price FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
        WHERE ci.id = ? AND ci.cart_id = ? AND ci.is_active = 1 AND p.is_active = 1`,
-      [itemId, cart.id]
+      [itemId, cart.id],
     );
 
     if (!item) throw new Error("Item not found or inactive");
 
-    await query("UPDATE cart_items SET quantity = ? WHERE id = ?", [quantity, itemId]);
+    await query("UPDATE cart_items SET quantity = ? WHERE id = ?", [
+      quantity,
+      itemId,
+    ]);
 
     await updateCartTotals(cart.uuid);
 
@@ -160,7 +165,7 @@ export const deactivateCartItem = async (userId, itemId) => {
 
     const [item] = await query(
       "SELECT id FROM cart_items WHERE id = ? AND cart_id = ? AND is_active = 1",
-      [itemId, cart.id]
+      [itemId, cart.id],
     );
 
     if (!item) throw new Error("Item not found or already inactive");
@@ -182,7 +187,7 @@ export const deactivateAllCartItems = async (userId) => {
 
     await query(
       "UPDATE cart_items SET is_active = 0 WHERE cart_id = (SELECT id FROM cart WHERE uuid = ?) AND is_active = 1",
-      [cart.uuid]
+      [cart.uuid],
     );
 
     await updateCartTotals(cart.uuid);

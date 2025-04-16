@@ -134,7 +134,7 @@ export default function ProductForm({
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Price ($)</FormLabel>
+                    <FormLabel>Price (₹)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -246,8 +246,8 @@ export default function ProductForm({
                 {isSubmitting
                   ? "Saving..."
                   : isEditMode
-                  ? "Save Changes"
-                  : "Add Product"}
+                    ? "Save Changes"
+                    : "Add Product"}
               </Button>
             </DialogFooter>
           </form>

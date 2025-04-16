@@ -112,11 +112,11 @@ INSERT INTO product_categories (id, uuid, name, is_active, created_by, updated_b
 
 -- Insert products
 INSERT INTO products (id, uuid, p_cat_id, name, description, price, is_active, created_by, updated_by) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440005', 1, 'Smartphone X', 'High-end smartphone with great camera', 999.99, 1, 1, 1),
-(2, '550e8400-e29b-41d4-a716-446655440006', 1, 'Laptop Pro', 'Professional grade laptop for developers', 1499.99, 1, 1, 1),
-(3, '550e8400-e29b-41d4-a716-446655440007', 2, 'T-Shirt', 'Comfortable cotton t-shirt', 19.99, 1, 1, 1),
-(4, '550e8400-e29b-41d4-a716-446655440008', 3, 'Programming 101', 'Learn the basics of programming', 29.99, 1, 1, 1),
-(5, '550e8400-e29b-41d4-a716-446655440009', 4, 'Coffee Maker', 'Automatic coffee maker for your kitchen', 89.99, 1, 1, 1);
+(1, '550e8400-e29b-41d4-a716-446655440005', 1, 'Smartphone X', 'High-end smartphone with great camera', 74999, 1, 1, 1),
+(2, '550e8400-e29b-41d4-a716-446655440006', 1, 'Laptop Pro', 'Professional grade laptop for developers', 112499, 1, 1, 1),
+(3, '550e8400-e29b-41d4-a716-446655440007', 2, 'T-Shirt', 'Comfortable cotton t-shirt', 1499, 1, 1, 1),
+(4, '550e8400-e29b-41d4-a716-446655440008', 3, 'Programming 101', 'Learn the basics of programming', 2249, 1, 1, 1),
+(5, '550e8400-e29b-41d4-a716-446655440009', 4, 'Coffee Maker', 'Automatic coffee maker for your kitchen', 6749, 1, 1, 1);
 
 -- Insert product images
 INSERT INTO product_images (id, uuid, p_id, image_path, is_featured, is_active, created_by, updated_by) VALUES 

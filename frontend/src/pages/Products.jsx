@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getProducts, getCategories } from "@/utils/productService";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -25,9 +24,44 @@ const Products = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
-  const { addItem, isItemPending } = useCart();
+  const { addItem, isItemPending, clearCart, refreshCart } = useCart();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [hasHandledPayment, setHasHandledPayment] = useState(false);
 
+  // Handle payment success
+  useEffect(() => {
+    if (hasHandledPayment) return;
+
+    const paymentSuccess = searchParams.get("payment_success");
+
+    if (paymentSuccess === "true") {
+      // Payment success detected
+      setHasHandledPayment(true);
+
+      // Clear cart both locally and on server
+      clearCart();
+
+      // Force refresh cart to ensure UI is updated
+      setTimeout(() => {
+        refreshCart();
+      }, 500);
+
+      // Show prominent success message
+      setCartMessage({
+        type: "success",
+        text: "Payment completed successfully! Thank you for your purchase. Your items are on the way!",
+      });
+
+      // Remove URL parameters
+      navigate("/", { replace: true });
+
+      // Keep success message visible longer
+      setTimeout(() => setCartMessage(null), 8000);
+    }
+  }, [searchParams, clearCart, hasHandledPayment, navigate, refreshCart]);
+
+  // Fetch products and categories
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -73,7 +107,6 @@ const Products = () => {
   // Handle add to cart click
   const handleAddToCart = async (product) => {
     if (!isAuthenticated) {
-      // Redirect to login if not authenticated
       navigate("/login", { state: { from: "/" } });
       return;
     }
@@ -96,10 +129,7 @@ const Products = () => {
         text: "Failed to add item to cart",
       });
     } finally {
-      // Clear message after 3 seconds
-      setTimeout(() => {
-        setCartMessage(null);
-      }, 3000);
+      setTimeout(() => setCartMessage(null), 3000);
     }
   };
 
@@ -212,7 +242,7 @@ const Products = () => {
                         </div>
                       </div>
                       <div className="text-lg font-semibold">
-                        ${parseFloat(product.price).toFixed(2)}
+                        ₹{parseFloat(product.price).toFixed(2)}
                       </div>
                     </div>
                   </CardHeader>
@@ -233,8 +263,8 @@ const Products = () => {
                       {!isAuthenticated
                         ? "Sign in to Buy"
                         : isItemPending(product.uuid)
-                        ? "Adding..."
-                        : "Add to Cart"}
+                          ? "Adding..."
+                          : "Add to Cart"}
                     </Button>
                   </CardFooter>
                 </Card>

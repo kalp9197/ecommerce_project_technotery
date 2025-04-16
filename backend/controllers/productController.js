@@ -42,7 +42,7 @@ export const addProduct = async (req, res) => {
   try {
     const productUuid = await productModel.createProduct(
       req.body,
-      req.user?.id
+      req.user?.id,
     );
 
     if (!productUuid) {
@@ -76,7 +76,7 @@ export const updateProductByUUID = async (req, res) => {
   try {
     const updatedProduct = await productModel.updateProductByUuid(
       req.params.uuid,
-      req.body
+      req.body,
     );
 
     if (!updatedProduct || updatedProduct.affectedRows === 0) {
@@ -109,7 +109,7 @@ export const updateProductByUUID = async (req, res) => {
 export const removeProductByUUID = async (req, res) => {
   try {
     const deletedProduct = await productModel.deleteProductByUuid(
-      req.params.uuid
+      req.params.uuid,
     );
 
     if (!deletedProduct || deletedProduct.affectedRows === 0) {

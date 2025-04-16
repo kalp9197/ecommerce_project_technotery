@@ -176,7 +176,7 @@ export const addToCartSchema = [
     .withMessage("Product UUID is required")
     .isUUID(4)
     .withMessage("Product UUID must be a valid UUID v4"),
-  
+
   body("quantity")
     .optional()
     .isInt({ min: 1 })
@@ -185,10 +185,8 @@ export const addToCartSchema = [
 ];
 
 export const updateCartItemSchema = [
-  param("id")
-    .notEmpty()
-    .withMessage("Item ID is required"),
-    
+  param("id").notEmpty().withMessage("Item ID is required"),
+
   body("quantity")
     .notEmpty()
     .withMessage("Quantity is required")
@@ -198,9 +196,7 @@ export const updateCartItemSchema = [
 ];
 
 export const deactivateCartItemSchema = [
-  param("id")
-    .notEmpty()
-    .withMessage("Item ID is required")
+  param("id").notEmpty().withMessage("Item ID is required"),
 ];
 
 export const deactivateAllCartItemsSchema = [];

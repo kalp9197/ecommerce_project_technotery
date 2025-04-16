@@ -14,7 +14,7 @@ router.get("/", categoryController.getAllCategories);
 router.get(
   "/:uuid",
   validate(categoryUuidParam),
-  categoryController.getCategoryByUuid
+  categoryController.getCategoryByUuid,
 );
 
 // Protected routes (authentication required)
@@ -26,12 +26,12 @@ router.post("/", validate(categorySchema), categoryController.createCategory);
 router.put(
   "/:uuid",
   validate([...categoryUuidParam, ...categorySchema]),
-  categoryController.updateCategoryByUuid
+  categoryController.updateCategoryByUuid,
 );
 router.delete(
   "/:uuid",
   validate(categoryUuidParam),
-  categoryController.deleteCategoryByUuid
+  categoryController.deleteCategoryByUuid,
 );
 
 export default router;
