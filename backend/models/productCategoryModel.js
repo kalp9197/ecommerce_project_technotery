@@ -3,10 +3,13 @@ import { v4 as uuidv4 } from "uuid";
 
 export const getAllCategories = async () => {
   try {
-    return await query(
+    const result = await query(
       "SELECT * FROM product_categories WHERE is_active = 1",
-      [],
+      []
     );
+
+    // Return an empty array instead of null if no categories are found
+    return result || [];
   } catch (error) {
     throw new Error(`Error fetching categories: ${error.message}`);
   }
@@ -16,34 +19,38 @@ export const getCategoryByUuid = async (uuid) => {
   try {
     const result = await query(
       "SELECT * FROM product_categories WHERE uuid = ? AND is_active = 1",
-      [uuid],
+      [uuid]
     );
-    return result?.[0] || null;
+    return result;
   } catch (error) {
     throw new Error(`Error fetching category: ${error.message}`);
   }
 };
 
-export const createCategory = async (categoryData) => {
+export const createCategory = async (categoryData, userId) => {
   try {
     const { name } = categoryData;
     const uuid = uuidv4();
 
-    // Check for duplicate and create in one query
+    // Check for duplicate
+    const existingCategory = await query(
+      `SELECT id FROM product_categories WHERE LOWER(name) = LOWER(?) AND is_active = 1`,
+      [name]
+    );
+
+    if (existingCategory && existingCategory.length > 0) {
+      throw new Error("Category with this name already exists");
+    }
+
+    // Create category with user ID (passing null if userId is undefined)
     const result = await query(
-      `INSERT INTO product_categories (uuid, name, is_active)
-       SELECT ?, ?, 1
-       WHERE NOT EXISTS (
-         SELECT 1 FROM product_categories 
-         WHERE LOWER(name) = LOWER(?) AND is_active = 1
-       )`,
-      [uuid, name.toLowerCase(), name],
+      `INSERT INTO product_categories (uuid, name, is_active, created_by, updated_by)
+       VALUES (?, ?, 1, ?, ?)`,
+      [uuid, name, userId || null, userId || null]
     );
 
     if (!result?.affectedRows) {
-      throw new Error(
-        "Category with this name already exists or failed to create",
-      );
+      throw new Error("Failed to create category");
     }
 
     return uuid;
@@ -52,29 +59,43 @@ export const createCategory = async (categoryData) => {
   }
 };
 
-export const updateCategoryByUuid = async (uuid, categoryData) => {
+export const updateCategoryByUuid = async (uuid, categoryData, userId) => {
   try {
     const { name } = categoryData;
 
-    // Update and check for duplicates in one query
+    // First, check if the category exists
+    const existingCategory = await query(
+      `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
+      [uuid]
+    );
+
+    if (!existingCategory || existingCategory.length === 0) {
+      throw new Error("Category not found or inactive");
+    }
+
+    // Check for duplicate name (excluding the current category)
+    const duplicateCheck = await query(
+      `SELECT id FROM product_categories 
+       WHERE LOWER(name) = LOWER(?) 
+       AND uuid != ? 
+       AND is_active = 1`,
+      [name, uuid]
+    );
+
+    if (duplicateCheck && duplicateCheck.length > 0) {
+      throw new Error("Category with this name already exists");
+    }
+
+    // Update the category (passing null if userId is undefined)
     const result = await query(
-      `UPDATE product_categories c
-       SET c.name = ?
-       WHERE c.uuid = ? 
-       AND c.is_active = 1
-       AND NOT EXISTS (
-         SELECT 1 FROM product_categories 
-         WHERE LOWER(name) = LOWER(?) 
-         AND uuid != ? 
-         AND is_active = 1
-       )`,
-      [name?.toLowerCase(), uuid, name, uuid],
+      `UPDATE product_categories 
+       SET name = ?, updated_by = ?
+       WHERE uuid = ? AND is_active = 1`,
+      [name, userId || null, uuid]
     );
 
     if (!result?.affectedRows) {
-      throw new Error(
-        "Category not found, name already exists, or update failed",
-      );
+      throw new Error("Failed to update category");
     }
 
     return result;
@@ -92,7 +113,7 @@ export const deleteCategoryByUuid = async (uuid) => {
         (SELECT COUNT(*) FROM products p WHERE p.p_cat_id = c.id AND p.is_active = 1) as product_count
        FROM product_categories c 
        WHERE c.uuid = ? AND c.is_active = 1`,
-      [uuid],
+      [uuid]
     );
 
     if (!categoryCheck || categoryCheck.length === 0) {
@@ -102,14 +123,14 @@ export const deleteCategoryByUuid = async (uuid) => {
     // Check if there are active products in this category
     if (categoryCheck[0].product_count > 0) {
       throw new Error(
-        `Cannot delete category with active products. Please deactivate all ${categoryCheck[0].product_count} product(s) in this category first.`,
+        `Cannot delete category with active products. Please deactivate all ${categoryCheck[0].product_count} product(s) in this category first.`
       );
     }
 
     // Now deactivate the category since it has no active products
     const result = await query(
       "UPDATE product_categories SET is_active = 0 WHERE id = ?",
-      [categoryCheck[0].id],
+      [categoryCheck[0].id]
     );
 
     if (!result || result.affectedRows === 0) {

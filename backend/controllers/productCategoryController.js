@@ -25,7 +25,7 @@ export const getCategoryByUuid = async (req, res) => {
     const { uuid } = req.params;
     const categories = await categoryModel.getCategoryByUuid(uuid);
 
-    if (categories.length === 0 || !categories) {
+    if (!categories || categories.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Category not found",
@@ -86,8 +86,8 @@ export const updateCategoryByUuid = async (req, res) => {
     const userId = req.user.id;
 
     // Verify category exists
-    const categories = await categoryModel.getCategoryByUuid(uuid);
-    if (categories.length === 0) {
+    const categoriesCheck = await categoryModel.getCategoryByUuid(uuid);
+    if (!categoriesCheck || categoriesCheck.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Category not found",
