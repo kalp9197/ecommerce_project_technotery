@@ -42,6 +42,12 @@ export const registerSchema = [
     .withMessage("Password is required")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
+
+  body("is_admin")
+    .optional()
+    .isIn([0, 1, true, false])
+    .withMessage("is_admin must be 0, 1, true, or false")
+    .toInt(),
 ];
 
 export const loginSchema = [

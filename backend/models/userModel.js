@@ -42,16 +42,19 @@ export const getUserByEmail = async (body) => {
 
 export const createUser = async (body) => {
   try {
-    const { name, email, password } = body;
+    const { name, email, password, is_admin } = body;
     const uuid = uuidv4();
     const hashedPassword = await bcrypt.hash(
       password,
       await bcrypt.genSalt(10)
     );
 
+    // Convert is_admin to 0 or 1 (default to 0 if not provided)
+    const adminStatus = is_admin === 1 || is_admin === true ? 1 : 0;
+
     const result = await query(
-      "INSERT INTO users (uuid, name, email, password, is_active) VALUES (?, ?, ?, ?, 1)",
-      [uuid, name, email, hashedPassword]
+      "INSERT INTO users (uuid, name, email, password, is_active, is_admin) VALUES (?, ?, ?, ?, 1, ?)",
+      [uuid, name, email, hashedPassword, adminStatus]
     );
 
     if (!result?.affectedRows) {

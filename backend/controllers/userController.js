@@ -12,17 +12,26 @@ export const register = async (req, res) => {
       });
     }
 
-    const userId = await userModel.createUser(req.body);
-    if (!userId) {
+    const userUuid = await userModel.createUser(req.body);
+    if (!userUuid) {
       return res.status(422).json({
         success: false,
         message: "User registration failed",
       });
     }
 
+    // Get the newly created user
+    const newUser = await userModel.getUserByUuid(userUuid);
+
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
+      data: {
+        uuid: newUser.uuid,
+        name: newUser.name,
+        email: newUser.email,
+        is_admin: newUser.is_admin === 1,
+      },
     });
   } catch (error) {
     return res.status(500).json({
