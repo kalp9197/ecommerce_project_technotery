@@ -10,6 +10,7 @@ import categoryRoutes from "./routes/productCategoryRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import rateLimit from "express-rate-limit";
 
 // Get dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -22,7 +23,7 @@ app.use(
   cors({
     origin: process.env.ORIGIN_URL,
     credentials: true,
-  }),
+  })
 );
 
 // Parse JSON for all routes EXCEPT /api/payments/webhook
@@ -65,6 +66,14 @@ app.use((err, req, res, next) => {
     message: err.message || "Something went wrong",
   });
 });
+
+// Rate limiting middleware
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, //15 min
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+
+app.use(limiter)
 
 // Start server
 const PORT = process.env.PORT || 8001;
