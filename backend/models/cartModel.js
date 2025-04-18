@@ -197,3 +197,63 @@ export const deactivateAllCartItems = async (userId) => {
     throw new Error(`Error deactivating all cart items: ${error.message}`);
   }
 };
+
+// Get all carts for admin 
+export const getAllCarts = async () => {
+  try {
+    const carts = await query(
+      `SELECT c.id, c.uuid, c.user_id, c.total_items, c.total_price, u.name AS user_name
+       FROM cart c
+       JOIN users u ON c.user_id = u.id
+       WHERE c.is_active = 1`,
+    );
+
+    return carts.map((cart) => ({
+      ...cart,
+      total_price: parseFloat(cart.total_price).toFixed(2),
+    }));
+  } catch (error) {
+    throw new Error(`Error getting all carts: ${error.message}`);
+  }
+}
+
+// Get cart by user UUID for admin
+export const getUserCartByAdmin = async (userUuid) => {
+  try {
+    const [cart] = await query(
+      `SELECT c.id, c.uuid, c.total_items, c.total_price, u.name AS user_name
+       FROM cart c
+       JOIN users u ON c.user_id = u.id
+       WHERE u.uuid = ? AND c.is_active = 1`,
+      [userUuid],
+    );
+
+    if (!cart) throw new Error("Cart not found for this user");
+
+    const items = await query(
+      `SELECT 
+         ci.id, ci.quantity, ci.price, ci.is_active,
+         p.uuid AS product_id, p.name, p.price AS current_price,
+         pc.name AS category_name,
+         pi.image_path AS image
+       FROM cart_items ci
+       JOIN products p ON ci.product_id = p.id
+       LEFT JOIN product_categories pc ON p.p_cat_id = pc.id
+       LEFT JOIN product_images pi 
+         ON p.id = pi.p_id AND pi.is_featured = 1 AND pi.is_active = 1
+       WHERE ci.cart_id = ? AND ci.is_active = 1`,
+      [cart.id],
+    );
+
+    return {
+      ...cart,
+      items: items.map((item) => ({
+        ...item,
+        price: +item.price || 0,
+        current_price: +item.current_price || 0,
+      })),
+    };
+  } catch (error) {
+    throw new Error(`Error getting user cart: ${error.message}`);
+  }
+};
