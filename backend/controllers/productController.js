@@ -2,13 +2,28 @@ import * as productModel from "../models/productModel.js";
 
 export const getProducts = async (req, res) => {
   try {
-    const products = await productModel.getAllProducts();
+    let { page = 1, limit = 10 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid page or limit value",
+      });
+    }
+
+    const offset = (page - 1) * limit;
+
+    const products = await productModel.getAllProducts(limit, offset);
+
     if (!products || products.length === 0) {
       return res.status(404).json({
         success: false,
         message: "No products found",
       });
     }
+
     res.status(200).json({ success: true, data: products });
   } catch (error) {
     res.status(500).json({

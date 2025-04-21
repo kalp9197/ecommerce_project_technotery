@@ -1,15 +1,21 @@
 import { query } from "../utils/db.js";
 import { v4 as uuidv4 } from "uuid";
 
-export const getAllProducts = async () => {
+export const getAllProducts = async (limit, offset) => {
   try {
+    limit = Number(limit);
+    offset = Number(offset);
+
     const sql = `
       SELECT p.*, pc.name as category_name
       FROM products p 
       JOIN product_categories pc ON p.p_cat_id = pc.id
-      WHERE p.is_active = 1 AND pc.is_active = 1
+      WHERE p.is_active = 1 AND pc.is_active = 1 
+      ORDER BY p.id ASC
+      LIMIT ${limit} OFFSET ${offset}
     `;
-    return await query(sql, []);
+
+    return await query(sql,[]);
   } catch (error) {
     throw new Error(`Error fetching products: ${error.message}`);
   }
