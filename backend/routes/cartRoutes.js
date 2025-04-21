@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticate } from "../middlewares/auth.js";
 import * as cartController from "../controllers/cartController.js";
-import { isAdmin } from "../middlewares/adminAuth.js";
+import { isAdmin, isNotAdmin } from "../middlewares/adminAuth.js";
 
 import {
   validate,
@@ -16,19 +16,30 @@ const router = express.Router();
 router.use(authenticate);
 
 // Regular user cart routes - users can only manage their own carts
-router.get("/", cartController.getUserCart);
-router.post("/items", validate(addToCartSchema), cartController.addItemToCart);
+router.get("/", isNotAdmin, cartController.getUserCart);
+router.post(
+  "/items",
+  isNotAdmin,
+  validate(addToCartSchema),
+  cartController.addItemToCart
+);
 router.put(
   "/items/:id",
+  isNotAdmin,
   validate(updateCartItemSchema),
   cartController.updateCartItem
 );
 router.delete(
   "/items/deactivate/:id",
+  isNotAdmin,
   validate(deactivateCartItemSchema),
   cartController.deactivateCartItem
 );
-router.delete("/items/deactivateAll", cartController.deactivateAllCartItems);
+router.delete(
+  "/items/deactivateAll",
+  isNotAdmin,
+  cartController.deactivateAllCartItems
+);
 
 // Admin routes
 router.get("/all", authenticate, isAdmin, cartController.getAllCarts);

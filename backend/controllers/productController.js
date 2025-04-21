@@ -27,12 +27,6 @@ export const getProducts = async (req, res) => {
       success: true,
       message: "Products fetched successfully",
       data: result.products,
-      pagination: {
-        total: result.total,
-        page,
-        limit,
-        totalPages: Math.ceil(result.total / limit),
-      },
     });
   } catch (error) {
     res.status(500).json({

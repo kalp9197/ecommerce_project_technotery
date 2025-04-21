@@ -20,22 +20,12 @@ export const getAllProducts = async (limit, offset) => {
       JOIN product_categories pc ON p.p_cat_id = pc.id
       WHERE p.is_active = 1 AND pc.is_active = 1 
       ORDER BY p.created_at DESC
-      LIMIT ? OFFSET ?
-    `,
-      [limit, offset]
-    );
-
-    // Get total count for pagination
-    const [total] = await query(
-      "SELECT COUNT(*) as count FROM products p JOIN product_categories pc ON p.p_cat_id = pc.id WHERE p.is_active = 1 AND pc.is_active = 1"
+      LIMIT ${limit} OFFSET ${offset}
+    `
     );
 
     return {
-      products: products.map((product) => ({
-        ...product,
-        price: parseFloat(product.price).toFixed(2),
-      })),
-      total: total.count,
+      products,
     };
   } catch (error) {
     throw new Error(`Error fetching products: ${error.message}`);
