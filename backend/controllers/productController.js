@@ -14,17 +14,26 @@ export const getProducts = async (req, res) => {
     }
 
     const offset = (page - 1) * limit;
+    const result = await productModel.getAllProducts(limit, offset);
 
-    const products = await productModel.getAllProducts(limit, offset);
-
-    if (!products || products.length === 0) {
+    if (!result.products || result.products.length === 0) {
       return res.status(404).json({
         success: false,
         message: "No products found",
       });
     }
 
-    res.status(200).json({ success: true, data: products });
+    res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      data: result.products,
+      pagination: {
+        total: result.total,
+        page,
+        limit,
+        totalPages: Math.ceil(result.total / limit),
+      },
+    });
   } catch (error) {
     res.status(500).json({
       success: false,

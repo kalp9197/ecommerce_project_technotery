@@ -1,5 +1,4 @@
 import * as cartModel from "../models/cartModel.js";
-import { query } from "../utils/db.js";
 
 // Get user's active cart with all items
 export const getUserCart = async (req, res) => {
@@ -121,66 +120,31 @@ export const deactivateAllCartItems = async (req, res) => {
   }
 };
 
-// // Helper function to update cart totals
-// const updateCartTotals = async (cartId) => {
-//   try {
-//     // Get total items and price
-//     const totals = await query(
-//       `SELECT
-//         COUNT(*) as total_items,
-//         SUM(price) as total_price
-//       FROM cart_items
-//       WHERE cart_id = ? AND is_active = 1`,
-//       [cartId]
-//     );
-
-//     // Update cart with new totals
-//     await query(
-//       "UPDATE cart SET total_items = ?, total_price = ? WHERE id = ?",
-//       [totals[0].total_items || 0, totals[0].total_price || 0, cartId]
-//     );
-
-//     return true;
-//   } catch (error) {
-//     throw new Error(`Failed to update cart totals: ${error.message}`);
-//   }
-// };
-
-// Get all carts (admin only)
+// Get all carts with pagination (admin endpoint)
 export const getAllCarts = async (req, res) => {
   try {
-    const carts = await cartModel.getAllCarts();
+    let { page = 1, limit = 10 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    res.status(200).json({
+    if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid page or limit value",
+      });
+    }
+
+    const result = await cartModel.getAllCarts(page, limit);
+
+    return res.status(200).json({
       success: true,
-      message: "All carts retrieved successfully",
-      data: carts,
+      message: "Carts fetched successfully",
+      data: result.carts,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message || "Error retrieving all carts",
-    });
-  }
-};
-
-// Get user's cart by admin using uuid (admin only)
-
-export const getUserCartByAdmin = async (req, res) => {
-  try {
-    const userUuid = req.params.uuid;
-
-    const cartData = await cartModel.getUserCartByAdmin(userUuid);
-
-    res.status(200).json({
-      success: true,
-      message: "User cart retrieved successfully",
-      data: cartData,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message || "Error retrieving user cart",
+      message: error.message || "Internal server error",
     });
   }
 };

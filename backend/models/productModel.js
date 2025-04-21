@@ -6,16 +6,37 @@ export const getAllProducts = async (limit, offset) => {
     limit = Number(limit);
     offset = Number(offset);
 
-    const sql = `
-      SELECT p.*, pc.name as category_name
+    // Get paginated products with category info
+    const products = await query(
+      `
+      SELECT 
+        p.*, 
+        pc.name as category_name,
+        (SELECT pi.image_path 
+         FROM product_images pi 
+         WHERE pi.p_id = p.id AND pi.is_featured = 1 AND pi.is_active = 1 
+         LIMIT 1) as featured_image
       FROM products p 
       JOIN product_categories pc ON p.p_cat_id = pc.id
       WHERE p.is_active = 1 AND pc.is_active = 1 
-      ORDER BY p.id ASC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+    `,
+      [limit, offset]
+    );
 
-    return await query(sql,[]);
+    // Get total count for pagination
+    const [total] = await query(
+      "SELECT COUNT(*) as count FROM products p JOIN product_categories pc ON p.p_cat_id = pc.id WHERE p.is_active = 1 AND pc.is_active = 1"
+    );
+
+    return {
+      products: products.map((product) => ({
+        ...product,
+        price: parseFloat(product.price).toFixed(2),
+      })),
+      total: total.count,
+    };
   } catch (error) {
     throw new Error(`Error fetching products: ${error.message}`);
   }

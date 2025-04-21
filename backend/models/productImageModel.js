@@ -4,7 +4,6 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { getProductByUuid } from "./productModel.js";
 
 // Get current directory (needed for ES modules)
 const __filename = fileURLToPath(import.meta.url);
@@ -17,7 +16,7 @@ export const getImagesByProductUuid = async (productUuid) => {
        FROM product_images pi 
        JOIN products p ON p.id = pi.p_id 
        WHERE p.uuid = ? AND p.is_active = 1`,
-      [productUuid],
+      [productUuid]
     );
     return images || [];
   } catch (error) {
@@ -43,7 +42,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
 
     const product = await query(
       "SELECT id FROM products WHERE uuid = ? AND is_active = 1",
-      [productUuid],
+      [productUuid]
     );
 
     if (!product?.[0]) {
@@ -87,7 +86,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
     // Insert the image
     const result = await query(
       "INSERT INTO product_images (uuid, p_id, image_url, is_featured, is_active, created_by, updated_by) VALUES (?, ?, ?, ?, 1, ?, ?)",
-      [uuid, p_id, finalImageUrl, is_featured ? 1 : 0, user_id, user_id],
+      [uuid, p_id, finalImageUrl, is_featured ? 1 : 0, user_id, user_id]
     );
 
     if (!result?.affectedRows) {
@@ -98,7 +97,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
     if (is_featured) {
       await query(
         "UPDATE product_images SET is_featured = 0 WHERE p_id = ? AND uuid != ? AND is_active = 1",
-        [p_id, uuid],
+        [p_id, uuid]
       );
     }
 
@@ -181,7 +180,7 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
     if (featuredValue === 1 && (activeValue === null || activeValue === 1)) {
       await query(
         "UPDATE product_images SET is_featured = 0 WHERE p_id = ? AND uuid != ? AND is_active = 1",
-        [image[0].p_id, uuid],
+        [image[0].p_id, uuid]
       );
     }
 
@@ -195,7 +194,7 @@ export const deleteProductImageByUuid = async (uuid) => {
   try {
     const result = await query(
       "UPDATE product_images SET is_active = 0 WHERE uuid = ? AND is_active = 1",
-      [uuid],
+      [uuid]
     );
 
     if (!result?.affectedRows) {

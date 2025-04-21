@@ -30,8 +30,7 @@ router.delete(
 );
 router.delete("/items/deactivateAll", cartController.deactivateAllCartItems);
 
-// Admin routes - admin can manage all users' carts
-router.get("/all", isAdmin, cartController.getAllCarts);
-router.get("/:uuid", isAdmin, cartController.getUserCartByAdmin);
+// Admin routes
+router.get("/all", authenticate, isAdmin, cartController.getAllCarts);
 
 export default router;

@@ -224,3 +224,31 @@ export const refreshToken = async (req, res) => {
     });
   }
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+    let { page = 1, limit = 10 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid page or limit value",
+      });
+    }
+
+    const result = await userModel.getAllUsers(page, limit);
+
+    return res.status(200).json({
+      success: true,
+      message: "Users fetched successfully",
+      data: result.users,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+};
