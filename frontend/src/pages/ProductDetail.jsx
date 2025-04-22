@@ -58,20 +58,25 @@ const ProductDetail = () => {
         image: product.image || null,
       });
 
-      setCartMessage({
-        type: "success",
-        text: `${product.name} added to cart successfully`,
-      });
-    } catch {
+      // Success message removed as requested
+    } catch (error) {
+      // Check if the error is related to out-of-stock products
+      const errorMessage = error.message || "";
+      const isOutOfStock = errorMessage.toLowerCase().includes("out of stock") || 
+                          errorMessage.toLowerCase().includes("no products left") ||
+                          error.status === 400;
+      
       setCartMessage({
         type: "error",
-        text: "Failed to add item to cart",
+        text: isOutOfStock 
+          ? "This product is out of stock. No products left." 
+          : (errorMessage || "Failed to add item to cart."),
       });
     } finally {
-      // Clear message after 3 seconds
+      // Only clear error messages after 8 seconds
       setTimeout(() => {
         setCartMessage(null);
-      }, 3000);
+      }, 8000);
     }
   };
 
