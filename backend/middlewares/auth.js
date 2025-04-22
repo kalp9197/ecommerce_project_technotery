@@ -27,7 +27,7 @@ const verifyToken = async (req) => {
     // Check if user exists and is active
     const userData = await query(
       "SELECT * FROM users WHERE uuid = ? AND is_active = 1",
-      [userUuid],
+      [userUuid]
     );
 
     if (!userData || !userData.length) {
@@ -42,7 +42,7 @@ const verifyToken = async (req) => {
       "SELECT ut.* FROM user_tokens ut " +
         "JOIN users u ON ut.user_id = u.id " +
         "WHERE u.uuid = ? AND ut.is_expired = 0 ORDER BY ut.id DESC LIMIT 1",
-      [userUuid],
+      [userUuid]
     );
 
     if (!tokens || !tokens.length) {
@@ -51,7 +51,7 @@ const verifyToken = async (req) => {
         "SELECT ut.* FROM user_tokens ut " +
           "JOIN users u ON ut.user_id = u.id " +
           "WHERE u.uuid = ? AND ut.refresh_cycles > 0 ORDER BY ut.id DESC LIMIT 1",
-        [userUuid],
+        [userUuid]
       );
 
       if (refreshableTokens?.length) {
@@ -117,7 +117,7 @@ const verifyToken = async (req) => {
           "SELECT ut.* FROM user_tokens ut " +
             "JOIN users u ON ut.user_id = u.id " +
             "WHERE u.uuid = ? AND ut.refresh_cycles > 0 ORDER BY ut.id DESC LIMIT 1",
-          [decoded.uuid],
+          [decoded.uuid]
         );
 
         if (refreshableTokens?.length) {
@@ -154,7 +154,7 @@ export const authenticate = async (req, res, next) => {
             "SELECT ut.* FROM user_tokens ut " +
               "JOIN users u ON ut.user_id = u.id " +
               "WHERE u.uuid = ? AND ut.refresh_cycles > 0 ORDER BY ut.id DESC LIMIT 1",
-            [decoded.uuid],
+            [decoded.uuid]
           );
 
           if (refreshableTokens?.length) {
@@ -167,7 +167,7 @@ export const authenticate = async (req, res, next) => {
             // Get and add user id
             const userData = await query(
               "SELECT id FROM users WHERE uuid = ? AND is_active = 1",
-              [decoded.uuid],
+              [decoded.uuid]
             );
             if (userData && userData.length > 0) {
               req.user.id = userData[0].id;

@@ -73,7 +73,7 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
 });
 
-app.use(limiter)
+app.use(limiter);
 
 // Start server
 const PORT = process.env.PORT || 8001;

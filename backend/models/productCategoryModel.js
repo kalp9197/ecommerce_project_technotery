@@ -1,11 +1,11 @@
 import { query } from "../utils/db.js";
 import { v4 as uuidv4 } from "uuid";
 
-export const getAllCategories = async () => {
+export const getAllCategories = async (page, limit) => {
   try {
+    const offset = (page - 1) * limit;
     const result = await query(
-      "SELECT * FROM product_categories WHERE is_active = 1",
-      []
+      `SELECT * FROM product_categories WHERE is_active = 1 ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`
     );
 
     // Return an empty array instead of null if no categories are found

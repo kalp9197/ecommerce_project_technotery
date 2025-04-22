@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticate } from "../middlewares/auth.js";
 import * as cartController from "../controllers/cartController.js";
-import { isAdmin, isNotAdmin } from "../middlewares/adminAuth.js";
+import { isNotAdmin } from "../middlewares/adminAuth.js";
 
 import {
   validate,
@@ -40,8 +40,5 @@ router.delete(
   isNotAdmin,
   cartController.deactivateAllCartItems
 );
-
-// Admin routes
-router.get("/all", authenticate, isAdmin, cartController.getAllCarts);
 
 export default router;

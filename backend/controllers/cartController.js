@@ -38,7 +38,13 @@ export const addItemToCart = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log(error.message);
+    // Check for insufficient stock error
+    if (error.message.includes("Insufficient stock")) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
     res.status(500).json({
       success: false,
       message: error.message || "Error adding item to cart",
@@ -65,8 +71,19 @@ export const updateCartItem = async (req, res) => {
       },
     });
   } catch (error) {
-    const code = error.message.includes("not found") ? 404 : 500;
-    res.status(code).json({
+    // Check for specific error types
+    if (error.message.includes("not found")) {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    } else if (error.message.includes("Insufficient stock")) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -116,35 +133,6 @@ export const deactivateAllCartItems = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Error clearing cart",
-    });
-  }
-};
-
-// Get all carts with pagination (admin endpoint)
-export const getAllCarts = async (req, res) => {
-  try {
-    let { page = 1, limit = 10 } = req.query;
-    page = parseInt(page);
-    limit = parseInt(limit);
-
-    if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid page or limit value",
-      });
-    }
-
-    const result = await cartModel.getAllCarts(page, limit);
-
-    return res.status(200).json({
-      success: true,
-      message: "Carts fetched successfully",
-      data: result.carts,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Internal server error",
     });
   }
 };

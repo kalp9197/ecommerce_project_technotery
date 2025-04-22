@@ -72,8 +72,6 @@ export const createCheckoutSession = async (req, res) => {
 
     res.status(200).json({ success: true, url: session.url });
   } catch (err) {
-    console.error("Stripe error:", err.message);
-
     res.status(500).json({
       success: false,
       message: err.message,
@@ -105,7 +103,6 @@ export const handleWebhook = async (req, res) => {
 
     res.status(200).json({ received: true });
   } catch (err) {
-    console.error("Webhook error:", err.message);
     res.status(400).json({ success: false, message: err.message });
   }
 };

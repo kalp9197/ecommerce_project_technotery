@@ -47,7 +47,7 @@ export const addProductImage = async (req, res) => {
     const imageData = { ...req.body, user_id: req.user.id };
     const uuid = await imageModel.addProductImageByProductUuid(
       productUuid,
-      imageData,
+      imageData
     );
 
     return res.status(201).json({
@@ -87,7 +87,7 @@ export const updateProductImageByUuid = async (req, res) => {
 
     const updatedImage = await imageModel.updateProductImageByUuid(
       uuid,
-      updateData,
+      updateData
     );
 
     if (!updatedImage || updatedImage.affectedRows === 0) {

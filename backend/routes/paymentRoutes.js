@@ -12,7 +12,7 @@ router.post("/create-checkout-session", authenticate, createCheckoutSession);
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  handleWebhook,
+  handleWebhook
 );
 
 export default router;

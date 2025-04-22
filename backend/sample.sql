@@ -1,259 +1,156 @@
--- Create database
-CREATE DATABASE IF NOT EXISTS my_db;
+-- Drop and recreate the database
+DROP DATABASE IF EXISTS my_db;
+CREATE DATABASE my_db;
 USE my_db;
 
 -- Create tables
 CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  uuid VARCHAR(36) NOT NULL UNIQUE,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(100) NOT NULL UNIQUE,
-  password VARCHAR(255) NOT NULL,
-  is_active INT DEFAULT 1,
-  is_admin INT DEFAULT 0
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  uuid         VARCHAR(36) NOT NULL UNIQUE,
+  name         VARCHAR(100) NOT NULL,
+  email        VARCHAR(100) NOT NULL UNIQUE,
+  password     VARCHAR(255) NOT NULL,
+  is_active    TINYINT(1)    NOT NULL DEFAULT 1,
+  is_admin     TINYINT(1)    NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS user_tokens (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  uuid VARCHAR(36) NOT NULL UNIQUE,
-  user_id INT NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  is_expired INT DEFAULT 0,
-  last_login_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  refresh_cycles INT DEFAULT 5,
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  uuid            VARCHAR(36) NOT NULL UNIQUE,
+  user_id         INT         NOT NULL,
+  expires_at      TIMESTAMP   NOT NULL,
+  is_expired      TINYINT(1)  NOT NULL DEFAULT 0,
+  last_login_date TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  refresh_cycles  INT         NOT NULL DEFAULT 5,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS product_categories (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  uuid VARCHAR(36) NOT NULL UNIQUE,
-  name VARCHAR(100) NOT NULL,
-  is_active INT DEFAULT 1,
-  created_by INT,
-  updated_by INT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  uuid        VARCHAR(36) NOT NULL UNIQUE,
+  name        VARCHAR(100) NOT NULL,
+  is_active   TINYINT(1)    NOT NULL DEFAULT 1,
+  created_by  INT,
+  updated_by  INT,
+  created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS products (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  uuid VARCHAR(36) NOT NULL UNIQUE,
-  p_cat_id INT NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  description TEXT,
-  price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-  is_active INT DEFAULT 1,
-  created_by INT,
-  updated_by INT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (p_cat_id) REFERENCES product_categories(id) ON DELETE RESTRICT,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  uuid        VARCHAR(36) NOT NULL UNIQUE,
+  p_cat_id    INT         NOT NULL,
+  name        VARCHAR(100) NOT NULL,
+  description VARCHAR(255),
+  price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  quantity    INT           NOT NULL DEFAULT 0,
+  is_active   TINYINT(1)    NOT NULL DEFAULT 1,
+  created_by  INT,
+  updated_by  INT,
+  created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (p_cat_id)   REFERENCES product_categories(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id)              ON DELETE SET NULL,
+  FOREIGN KEY (updated_by) REFERENCES users(id)              ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS product_images (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  uuid VARCHAR(36) NOT NULL UNIQUE,
-  p_id INT NOT NULL,
-  image_path VARCHAR(255) NOT NULL,
-  is_featured INT DEFAULT 0,
-  is_active INT DEFAULT 1,
-  created_by INT,
-  updated_by INT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (p_id) REFERENCES products(id) ON DELETE CASCADE,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  uuid        VARCHAR(36) NOT NULL UNIQUE,
+  p_id        INT         NOT NULL,
+  image_path  VARCHAR(255) NOT NULL,
+  is_featured TINYINT(1)    NOT NULL DEFAULT 0,
+  is_active   TINYINT(1)    NOT NULL DEFAULT 1,
+  created_by  INT,
+  updated_by  INT,
+  created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (p_id)        REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by)  REFERENCES users(id)    ON DELETE SET NULL,
+  FOREIGN KEY (updated_by)  REFERENCES users(id)    ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS cart (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  uuid VARCHAR(36) UNIQUE NOT NULL,
-  user_id INT NOT NULL,
-  is_active TINYINT(1) DEFAULT 1,
-  total_items INT DEFAULT 0,
-  total_price DECIMAL(10,2) DEFAULT 0.00,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  uuid        VARCHAR(36) NOT NULL UNIQUE,
+  user_id     INT         NOT NULL,
+  is_active   TINYINT(1)    NOT NULL DEFAULT 1,
+  total_items INT         NOT NULL DEFAULT 0,
+  total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS cart_items (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  uuid VARCHAR(36) UNIQUE NOT NULL,
-  cart_id INT NOT NULL,
-  product_id INT NOT NULL,
-  quantity INT DEFAULT 1,
-  price DECIMAL(10,2) NOT NULL,
-  is_active TINYINT(1) DEFAULT 1,
-  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (cart_id) REFERENCES cart(id),
-  FOREIGN KEY (product_id) REFERENCES products(id)
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  uuid       VARCHAR(36) NOT NULL UNIQUE,
+  cart_id    INT         NOT NULL,
+  product_id INT         NOT NULL,
+  quantity   INT           NOT NULL DEFAULT 1,
+  price      DECIMAL(10,2) NOT NULL,
+  is_active  TINYINT(1)    NOT NULL DEFAULT 1,
+  added_at   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (cart_id)    REFERENCES cart(id)     ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
--- Insert users (passwords are hashed for 'admin123' and 'user123')
-INSERT INTO users (id, uuid, name, email, password, is_active, is_admin) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440000', 'Admin User', 'admin@example.com', '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', 1, 1),
-(2, '550e8400-e29b-41d4-a716-446655440100', 'Regular User', 'user@example.com', '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', 1, 0);
+-- Seed data with raw, valid UUIDv4 values
 
--- Insert user_tokens
-INSERT INTO user_tokens (id, uuid, user_id, expires_at, is_expired, last_login_date, refresh_cycles) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440200', 1, '2025-05-21 12:00:00', 0, '2025-04-21 10:00:00', 5),
-(2, '550e8400-e29b-41d4-a716-446655440201', 2, '2025-05-21 12:00:00', 0, '2025-04-21 10:00:00', 5);
+INSERT INTO users (uuid, name, email, password, is_active, is_admin) VALUES
+  ('33cd07d3-96e1-45b5-9f59-11c8a07b25b7', 'Admin User',   'admin@example.com',  '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', 1, 1),
+  ('5de5afcf-8414-4dcc-8542-fcaf3fb672cd', 'Regular User', 'user@example.com',   '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', 1, 0);
 
--- Insert product categories
-INSERT INTO product_categories (id, uuid, name, is_active, created_by, updated_by) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440001', 'Electronics', 1, 1, 1),
-(2, '550e8400-e29b-41d4-a716-446655440002', 'Clothing', 1, 1, 1),
-(3, '550e8400-e29b-41d4-a716-446655440003', 'Books', 1, 1, 1),
-(4, '550e8400-e29b-41d4-a716-446655440004', 'Home & Kitchen', 1, 1, 1);
+INSERT INTO user_tokens (uuid, user_id, expires_at, is_expired, last_login_date, refresh_cycles) VALUES
+  ('ae3857e5-859f-4e5a-96ce-062997e6453a', 1, '2025-05-21 12:00:00', 0, CURRENT_TIMESTAMP, 5),
+  ('a072add4-b079-4082-95bb-a4e1bfd41f37', 2, '2025-05-21 12:00:00', 0, CURRENT_TIMESTAMP, 5);
 
--- Insert products
-INSERT INTO products (id, uuid, p_cat_id, name, description, price, is_active, created_by, updated_by) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440005', 1, 'Smartphone X', 'High-end smartphone with great camera', 74999.00, 1, 1, 1),
-(2, '550e8400-e29b-41d4-a716-446655440006', 1, 'Laptop Pro', 'Professional grade laptop for developers', 112499.00, 1, 1, 1),
-(3, '550e8400-e29b-41d4-a716-446655440007', 2, 'T-Shirt', 'Comfortable cotton t-shirt', 1499.00, 1, 1, 1),
-(4, '550e8400-e29b-41d4-a716-446655440008', 3, 'Programming 101', 'Learn the basics of programming', 2249.00, 1, 1, 1),
-(5, '550e8400-e29b-41d4-a716-446655440009', 4, 'Coffee Maker', 'Automatic coffee maker for your kitchen', 6749.00, 1, 1, 1),
-(6, '550e8400-e29b-41d4-a716-446655440017', 1, 'Wireless Earbuds', 'True wireless earbuds with noise cancellation', 14999.00, 1, 1, 1),
-(7, '550e8400-e29b-41d4-a716-446655440018', 1, 'Smart Watch', 'Fitness tracker with heart rate monitor', 22499.00, 1, 1, 1),
-(8, '550e8400-e29b-41d4-a716-446655440019', 1, '4K Smart TV', '55-inch 4K Ultra HD Smart LED TV', 52499.00, 1, 1, 1),
-(9, '550e8400-e29b-41d4-a716-446655440020', 1, 'Gaming Console', 'Next-gen gaming console with 1TB storage', 44999.00, 1, 1, 1),
-(10, '550e8400-e29b-41d4-a716-446655440021', 1, 'Bluetooth Speaker', 'Portable speaker with deep bass', 7499.00, 1, 1, 1),
-(11, '550e8400-e29b-41d4-a716-446655440022', 1, 'Tablet 10', '10-inch tablet with 64GB storage', 29999.00, 1, 1, 1),
-(12, '550e8400-e29b-41d4-a716-446655440023', 1, 'Wireless Mouse', 'Ergonomic wireless mouse with USB receiver', 1999.00, 1, 1, 1),
-(13, '550e8400-e29b-41d4-a716-446655440024', 1, 'Mechanical Keyboard', 'RGB mechanical keyboard for gaming', 8999.00, 1, 1, 1),
-(14, '550e8400-e29b-41d4-a716-446655440025', 1, 'External SSD 1TB', 'Portable 1TB solid-state drive', 12499.00, 1, 1, 1),
-(15, '550e8400-e29b-41d4-a716-446655440026', 1, 'Smart Home Hub', 'Control all smart devices from one hub', 9999.00, 1, 1, 1),
-(16, '550e8400-e29b-41d4-a716-446655440027', 1, 'Action Camera', '4K action camera with waterproof case', 17499.00, 1, 1, 1),
-(17, '550e8400-e29b-41d4-a716-446655440028', 1, 'Wireless Charger', 'Fast wireless charging pad', 2999.00, 1, 1, 1),
-(18, '550e8400-e29b-41d4-a716-446655440029', 1, 'VR Headset', 'Virtual reality headset for immersive gaming', 34999.00, 1, 1, 1),
-(19, '550e8400-e29b-41d4-a716-446655440030', 1, 'Smart Doorbell', 'Video doorbell with motion detection', 14999.00, 1, 1, 1),
-(20, '550e8400-e29b-41d4-a716-446655440031', 1, 'Mini Projector', 'Portable projector for home theater', 22499.00, 1, 1, 1),
-(21, '550e8400-e29b-41d4-a716-446655440032', 1, 'Fitness Band', 'Lightweight fitness tracker with sleep monitoring', 4999.00, 1, 1, 1),
-(22, '550e8400-e29b-41d4-a716-446655440033', 1, 'Smart Light Bulb', 'Wi-Fi-enabled color-changing LED bulb', 2499.00, 1, 1, 1),
-(23, '550e8400-e29b-41d4-a716-446655440034', 1, 'Portable Power Bank', '20000mAh power bank with fast charging', 3999.00, 1, 1, 1),
-(24, '550e8400-e29b-41d4-a716-446655440035', 1, 'Noise-Cancelling Headphones', 'Over-ear headphones with ANC', 24999.00, 1, 1, 1),
-(25, '550e8400-e29b-41d4-a716-446655440036', 1, 'Smart Thermostat', 'Energy-saving smart thermostat', 12999.00, 1, 1, 1),
-(26, '550e8400-e29b-41d4-a716-446655440037', 1, 'Gaming Monitor', '27-inch 144Hz gaming monitor', 34999.00, 1, 1, 1),
-(27, '550e8400-e29b-41d4-a716-446655440038', 1, 'Webcam HD', '1080p webcam for video conferencing', 6499.00, 1, 1, 1),
-(28, '550e8400-e29b-41d4-a716-446655440039', 1, 'Smart Speaker', 'Voice-activated speaker with assistant', 9999.00, 1, 1, 1),
-(29, '550e8400-e29b-41d4-a716-446655440040', 1, 'Wireless Router', 'Dual-band Wi-Fi 6 router', 7999.00, 1, 1, 1),
-(30, '550e8400-e29b-41d4-a716-446655440041', 1, 'Dash Cam', '4K dash camera with night vision', 11999.00, 1, 1, 1),
-(31, '550e8400-e29b-41d4-a716-446655440042', 2, 'Denim Jacket', 'Classic blue denim jacket', 3999.00, 1, 1, 1),
-(32, '550e8400-e29b-41d4-a716-446655440043', 2, 'Cargo Pants', 'Comfortable cargo pants with multiple pockets', 2999.00, 1, 1, 1),
-(33, '550e8400-e29b-41d4-a716-446655440044', 2, 'Hoodie', 'Soft cotton hoodie with kangaroo pocket', 2499.00, 1, 1, 1),
-(34, '550e8400-e29b-41d4-a716-446655440045', 2, 'Formal Shirt', 'Slim-fit white dress shirt', 1999.00, 1, 1, 1),
-(35, '550e8400-e29b-41d4-a716-446655440046', 2, 'Chinos', 'Versatile slim-fit chinos', 2499.00, 1, 1, 1),
-(36, '550e8400-e29b-41d4-a716-446655440047', 2, 'Sneakers', 'Casual white sneakers', 3499.00, 1, 1, 1),
-(37, '550e8400-e29b-41d4-a716-446655440048', 2, 'Sweatshirt', 'Crewneck sweatshirt for everyday wear', 1999.00, 1, 1, 1),
-(38, '550e8400-e29b-41d4-a716-446655440049', 2, 'Leather Belt', 'Genuine leather belt with metal buckle', 1499.00, 1, 1, 1),
-(39, '550e8400-e29b-41d4-a716-446655440050', 2, 'Winter Jacket', 'Insulated jacket for cold weather', 5999.00, 1, 1, 1),
-(40, '550e8400-e29b-41d4-a716-446655440051', 2, 'Polo Shirt', 'Classic polo shirt with logo', 1799.00, 1, 1, 1),
-(41, '550e8400-e29b-41d4-a716-446655440052', 2, 'Running Shoes', 'Breathable running shoes with cushioning', 4999.00, 1, 1, 1),
-(42, '550e8400-e29b-41d4-a716-446655440053', 2, 'Track Pants', 'Comfortable track pants for workouts', 1999.00, 1, 1, 1),
-(43, '550e8400-e29b-41d4-a716-446655440054', 2, 'Beanie', 'Warm knit beanie for winter', 999.00, 1, 1, 1),
-(44, '550e8400-e29b-41d4-a716-446655440055', 2, 'Sunglasses', 'Polarized sunglasses with UV protection', 2499.00, 1, 1, 1),
-(45, '550e8400-e29b-41d4-a716-446655440056', 2, 'Casual Shorts', 'Cotton shorts for summer', 1499.00, 1, 1, 1),
-(46, '550e8400-e29b-41d4-a716-446655440057', 2, 'Backpack', 'Durable backpack for daily use', 2999.00, 1, 1, 1),
-(47, '550e8400-e29b-41d4-a716-446655440058', 2, 'Wool Scarf', 'Soft wool scarf for winter', 1299.00, 1, 1, 1),
-(48, '550e8400-e29b-41d4-a716-446655440059', 2, 'Baseball Cap', 'Adjustable cotton baseball cap', 999.00, 1, 1, 1),
-(49, '550e8400-e29b-41d4-a716-446655440060', 2, 'Raincoat', 'Waterproof raincoat with hood', 3499.00, 1, 1, 1),
-(50, '550e8400-e29b-41d4-a716-446655440061', 2, 'Gym Tank Top', 'Breathable tank top for workouts', 1299.00, 1, 1, 1),
-(51, '550e8400-e29b-41d4-a716-446655440062', 2, 'Socks Pack', 'Pack of 5 cotton socks', 799.00, 1, 1, 1),
-(52, '550e8400-e29b-41d4-a716-446655440063', 2, 'Leather Wallet', 'Slim leather wallet with RFID protection', 1999.00, 1, 1, 1),
-(53, '550e8400-e29b-41d4-a716-446655440064', 2, 'Windbreaker', 'Lightweight windbreaker jacket', 2999.00, 1, 1, 1),
-(54, '550e8400-e29b-41d4-a716-446655440065', 2, 'Formal Trousers', 'Tailored trousers for office wear', 2499.00, 1, 1, 1),
-(55, '550e8400-e29b-41d4-a716-446655440066', 2, 'Sports Bra', 'High-support sports bra for active women', 1999.00, 1, 1, 1),
-(56, '550e8400-e29b-41d4-a716-446655440067', 3, 'Python Mastery', 'Comprehensive guide to Python programming', 2999.00, 1, 1, 1),
-(57, '550e8400-e29b-41d4-a716-446655440068', 3, 'Data Science Basics', 'Introduction to data science and analytics', 3499.00, 1, 1, 1),
-(58, '550e8400-e29b-41d4-a716-446655440069', 3, 'AI Revolution', 'Exploring the future of artificial intelligence', 2499.00, 1, 1, 1),
-(59, '550e8400-e29b-41d4-a716-446655440070', 3, 'Web Development', 'Learn full-stack web development', 3999.00, 1, 1, 1),
-(60, '550e8400-e29b-41d4-a716-446655440071', 3, 'Cybersecurity 101', 'Protecting systems from cyber threats', 2999.00, 1, 1, 1),
-(61, '550e8400-e29b-41d4-a716-446655440072', 3, 'Cloud Computing', 'Guide to AWS, Azure, and Google Cloud', 3499.00, 1, 1, 1),
-(62, '550e8400-e29b-41d4-a716-446655440073', 3, 'Machine Learning', 'Practical machine learning with Python', 3999.00, 1, 1, 1),
-(63, '550e8400-e29b-41d4-a716-446655440074', 3, 'Blockchain Basics', 'Understanding blockchain technology', 2499.00, 1, 1, 1),
-(64, '550e8400-e29b-41d4-a716-446655440075', 3, 'DevOps Handbook', 'Implementing DevOps in your organization', 2999.00, 1, 1, 1),
-(65, '550e8400-e29b-41d4-a716-446655440076', 3, 'JavaScript Guide', 'Mastering JavaScript for web development', 3499.00, 1, 1, 1),
-(66, '550e8400-e29b-41d4-a716-446655440077', 3, 'SQL Essentials', 'Learn database management with SQL', 1999.00, 1, 1, 1),
-(67, '550e8400-e29b-41d4-a716-446655440078', 3, 'Ethical Hacking', 'Introduction to ethical hacking techniques', 3999.00, 1, 1, 1),
-(68, '550e8400-e29b-41d4-a716-446655440079', 3, 'Linux for Beginners', 'Getting started with Linux systems', 2499.00, 1, 1, 1),
-(69, '550e8400-e29b-41d4-a716-446655440080', 3, 'UX Design', 'Designing user-friendly interfaces', 2999.00, 1, 1, 1),
-(70, '550e8400-e29b-41d4-a716-446655440081', 3, 'Game Development', 'Building games with Unity', 3499.00, 1, 1, 1),
-(71, '550e8400-e29b-41d4-a716-446655440082', 3, 'Big Data Analytics', 'Harnessing the power of big data', 3999.00, 1, 1, 1),
-(72, '550e8400-e29b-41d4-a716-446655440083', 3, 'Networking Basics', 'Fundamentals of computer networking', 2499.00, 1, 1, 1),
-(73, '550e8400-e29b-41d4-a716-446655440084', 3, 'IoT Fundamentals', 'Introduction to Internet of Things', 2999.00, 1, 1, 1),
-(74, '550e8400-e29b-41d4-a716-446655440085', 3, 'Robotics 101', 'Building and programming robots', 3499.00, 1, 1, 1),
-(75, '550e8400-e29b-41d4-a716-446655440086', 3, 'API Development', 'Creating RESTful APIs', 2999.00, 1, 1, 1),
-(76, '550e8400-e29b-41d4-a716-446655440087', 3, 'Mobile App Dev', 'Building apps for iOS and Android', 3999.00, 1, 1, 1),
-(77, '550e8400-e29b-41d4-a716-446655440088', 3, 'Quantum Computing', 'Introduction to quantum computing', 4499.00, 1, 1, 1),
-(78, '550e8400-e29b-41d4-a716-446655440089', 3, 'AR/VR Development', 'Creating augmented and virtual reality apps', 3999.00, 1, 1, 1),
-(79, '550e8400-e29b-41d4-a716-446655440090', 3, 'Software Testing', 'Manual and automated testing techniques', 2499.00, 1, 1, 1),
-(80, '550e8400-e29b-41d4-a716-446655440091', 3, 'Agile Methodology', 'Implementing agile in software projects', 1999.00, 1, 1, 1),
-(81, '550e8400-e29b-41d4-a716-446655440092', 4, 'Air Fryer', '5-quart air fryer for healthy cooking', 7999.00, 1, 1, 1),
-(82, '550e8400-e29b-41d4-a716-446655440093', 4, 'Blender', 'High-power blender for smoothies', 4999.00, 1, 1, 1),
-(83, '550e8400-e29b-41d4-a716-446655440094', 4, 'Microwave Oven', '25L microwave with grill function', 9999.00, 1, 1, 1),
-(84, '550e8400-e29b-41d4-a716-446655440095', 4, 'Electric Kettle', '1.7L stainless steel kettle', 2499.00, 1, 1, 1),
-(85, '550e8400-e29b-41d4-a716-446655440096', 4, 'Toaster', '4-slice toaster with browning control', 3499.00, 1, 1, 1),
-(86, '550e8400-e29b-41d4-a716-446655440097', 4, 'Food Processor', 'Multi-function food processor', 6499.00, 1, 1, 1),
-(87, '550e8400-e29b-41d4-a716-446655440098', 4, 'Vacuum Cleaner', 'Cordless vacuum cleaner with HEPA filter', 14999.00, 1, 1, 1),
-(88, '550e8400-e29b-41d4-a716-446655440099', 4, 'Pressure Cooker', '6-quart electric pressure cooker', 6999.00, 1, 1, 1),
-(89, '550e8400-e29b-41d4-a716-446655440100', 4, 'Rice Cooker', '5-cup rice cooker with steamer', 3999.00, 1, 1, 1),
-(90, '550e8400-e29b-41d4-a716-446655440101', 4, 'Juicer', 'Cold press juicer for fruits and vegetables', 7999.00, 1, 1, 1),
-(91, '550e8400-e29b-41d4-a716-446655440102', 4, 'Ceiling Fan', '52-inch ceiling fan with remote', 4999.00, 1, 1, 1),
-(92, '550e8400-e29b-41d4-a716-446655440103', 4, 'Air Purifier', 'HEPA air purifier for large rooms', 9999.00, 1, 1, 1),
-(93, '550e8400-e29b-41d4-a716-446655440104', 4, 'Slow Cooker', '7-quart slow cooker for family meals', 5499.00, 1, 1, 1),
-(94, '550e8400-e29b-41d4-a716-446655440105', 4, 'Hand Mixer', '5-speed hand mixer for baking', 2999.00, 1, 1, 1),
-(95, '550e8400-e29b-41d4-a716-446655440106', 4, 'Dinnerware Set', '16-piece ceramic dinnerware set', 4999.00, 1, 1, 1),
-(96, '550e8400-e29b-41d4-a716-446655440107', 4, 'Cutlery Set', '24-piece stainless steel cutlery set', 2499.00, 1, 1, 1),
-(97, '550e8400-e29b-41d4-a716-446655440108', 4, 'Non-Stick Cookware', '10-piece non-stick cookware set', 7999.00, 1, 1, 1),
-(98, '550e8400-e29b-41d4-a716-446655440109', 4, 'Water Purifier', 'RO+UV water purifier for home', 11999.00, 1, 1, 1),
-(99, '550e8400-e29b-41d4-a716-446655440110', 4, 'Table Lamp', 'Adjustable LED table lamp', 1999.00, 1, 1, 1),
-(100, '550e8400-e29b-41d4-a716-446655440111', 4, 'Storage Organizer', '5-tier storage organizer for kitchen', 3499.00, 1, 1, 1),
-(101, '550e8400-e29b-41d4-a716-446655440112', 4, 'Electric Griddle', 'Large electric griddle for breakfast', 3999.00, 1, 1, 1),
-(102, '550e8400-e29b-41d4-a716-446655440113', 4, 'Humidifier', 'Ultrasonic cool mist humidifier', 4999.00, 1, 1, 1),
-(103, '550e8400-e29b-41d4-a716-446655440114', 4, 'Knife Set', '6-piece stainless steel knife set', 2499.00, 1, 1, 1),
-(104, '550e8400-e29b-41d4-a716-446655440115', 4, 'Electric Iron', 'Steam iron with non-stick soleplate', 1999.00, 1, 1, 1),
-(105, '550e8400-e29b-41d4-a716-446655440116', 4, 'Glassware Set', '12-piece glassware set for beverages', 1999.00, 1, 1, 1);
+INSERT INTO product_categories (uuid, name, is_active, created_by, updated_by) VALUES
+  ('dcc82d4f-de01-4ede-ac4b-1188272818d8', 'Electronics', 1, 1, 1),
+  ('e93ec581-4b2b-47d3-b385-5a9e183c92a4', 'Clothing',    1, 1, 1),
+  ('0828394b-623f-47fd-8bf9-8f3f58f5ca03', 'Books',       1, 1, 1),
+  ('c8384fc3-5772-4bed-b735-6d6130298db5', 'Home & Kitchen', 1, 1, 1);
 
--- Insert product images (original + additional random samples)
-INSERT INTO product_images (id, uuid, p_id, image_path, is_featured, is_active, created_by, updated_by) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440010', 1, '/images/smartphone-front.jpg', 1, 1, 1, 1),
-(2, '550e8400-e29b-41d4-a716-446655440011', 1, '/images/smartphone-back.jpg', 0, 1, 1, 1),
-(3, '550e8400-e29b-41d4-a716-446655440012', 2, '/images/laptop-open.jpg', 1, 1, 1, 1),
-(4, '550e8400-e29b-41d4-a716-446655440013', 3, '/images/tshirt-front.jpg', 1, 1, 1, 1),
-(5, '550e8400-e29b-41d4-a716-446655440014', 3, '/images/tshirt-back.jpg', 0, 1, 1, 1),
-(6, '550e8400-e29b-41d4-a716-446655440015', 4, '/images/book-cover.jpg', 1, 1, 1, 1),
-(7, '550e8400-e29b-41d4-a716-446655440016', 5, '/images/coffee-maker.jpg', 1, 1, 1, 1),
-(8, '550e8400-e29b-41d4-a716-446655440117', 6, '/images/earbuds.jpg', 1, 1, 1, 1),
-(9, '550e8400-e29b-41d4-a716-446655440118', 7, '/images/smartwatch.jpg', 1, 1, 1, 1),
-(10, '550e8400-e29b-41d4-a716-446655440119', 8, '/images/tv-front.jpg', 1, 1, 1, 1),
-(11, '550e8400-e29b-41d4-a716-446655440120', 9, '/images/console.jpg', 1, 1, 1, 1),
-(12, '550e8400-e29b-41d4-a716-446655440121', 10, '/images/speaker.jpg', 1, 1, 1, 1),
-(13, '550e8400-e29b-41d4-a716-446655440122', 11, '/images/tablet-front.jpg', 1, 1, 1, 1),
-(14, '550e8400-e29b-41d4-a716-446655440123', 12, '/images/mouse.jpg', 1, 1, 1, 1),
-(15, '550e8400-e29b-41d4-a716-446655440124', 31, '/images/denim-jacket.jpg', 1, 1, 1, 1),
-(16, '550e8400-e29b-41d4-a716-446655440125', 32, '/images/cargo-pants.jpg', 1, 1, 1, 1),
-(17, '550e8400-e29b-41d4-a716-446655440126', 56, '/images/python-book.jpg', 1, 1, 1, 1),
-(18, '550e8400-e29b-41d4-a716-446655440127', 81, '/images/air-fryer.jpg', 1, 1, 1, 1),
-(19, '550e8400-e29b-41d4-a716-446655440128', 82, '/images/blender.jpg', 1, 1, 1, 1),
-(20, '550e8400-e29b-41d4-a716-446655440129', 83, '/images/microwave.jpg', 1, 1, 1, 1);
+INSERT INTO products (uuid, p_cat_id, name, description, price, quantity, is_active, created_by, updated_by) VALUES
+  ('86397211-99c3-408f-ac0a-9db43775e78f', 1, 'Smartphone X',   'High-end smartphone with great camera',               74999.00, 25, 1, 1, 1),
+  ('96d13c07-106e-49c6-9ff6-9bd3aa0c0d12', 1, 'Laptop Pro',     'Professional grade laptop for developers',           112499.00, 15, 1, 1, 1),
+  ('df4ab613-2f21-46df-a41e-309d5548cace', 1, 'Wireless Earbuds','True wireless earbuds with noise cancellation',   14999.00, 45, 1, 1, 1),
+  ('01c5673e-8c48-482c-8a33-6b3030626486', 2, 'T-Shirt',        'Comfortable cotton t‑shirt',                        1499.00, 100, 1, 1, 1),
+  ('12822405-2625-40c1-a0c5-27b467017ec8', 2, 'Denim Jacket',   'Classic blue denim jacket',                        3999.00,  30, 1, 1, 1),
+  ('970396db-8398-4a69-8703-b52b36aaee18', 2, 'Beanie',         'Warm knit beanie for winter',                       999.00,  50, 1, 1, 1),
+  ('523d2171-0a98-4ddd-bda1-db31ecdda11b', 3, 'Programming 101','Learn the basics of programming',                  2249.00,  50, 1, 1, 1),
+  ('80e5fb6f-8167-4fec-9cc9-97cf337d9456', 3, 'Python Mastery', 'Comprehensive guide to Python programming',         2999.00,  40, 1, 1, 1),
+  ('ab3f992a-ab2f-4c7a-a002-e2751b428542', 4, 'Coffee Maker',   'Automatic coffee maker for your kitchen',           6749.00,  30, 1, 1, 1),
+  ('0bfc5892-e4f2-4c19-997d-1778fe2d3e17', 4, 'Air Fryer',      '5‑quart air fryer for healthy cooking',             7999.00,  20, 1, 1, 1);
 
--- Insert carts
-INSERT INTO cart (id, uuid, user_id, is_active, total_items, total_price) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440300', 1, 1, 3, 78997.00),
-(2, '550e8400-e29b-41d4-a716-446655440301', 2, 1, 2, 3498.00);
+INSERT INTO product_images (uuid, p_id, image_path, is_featured, is_active, created_by, updated_by) VALUES
+  ('506a4f16-9ea6-4338-89f3-722699f34961', 1, '/images/smartphone-front.jpg',  1, 1, 1, 1),
+  ('29d832a6-eaac-4ca2-b24c-b8f399a96d35', 1, '/images/smartphone-back.jpg',   0, 1, 1, 1),
+  ('c0243072-e535-484a-aa90-f9715156935c', 2, '/images/laptop-open.jpg',       1, 1, 1, 1),
+  ('ac25ddba-cb3b-4900-a7ef-120e8c64c8cf', 2, '/images/laptop-side.jpg',       0, 1, 1, 1),
+  ('207afc97-520d-4b14-8967-583330120b69', 3, '/images/earbuds.jpg',           1, 1, 1, 1),
+  ('e40e2028-ab34-486b-80a1-f8b60be91e6d', 3, '/images/earbuds-case.jpg',      0, 1, 1, 1),
+  ('b5525946-1e7e-4d50-83bc-499928021085', 4, '/images/tshirt-front.jpg',      1, 1, 1, 1),
+  ('f8c6afc5-1e93-467f-96be-4bc9c26c2def', 4, '/images/tshirt-back.jpg',       0, 1, 1, 1),
+  ('35e3bc37-7863-4a26-bbd8-059e0ded9c77', 5, '/images/denim-jacket.jpg',      1, 1, 1, 1),
+  ('1b86c8a7-9e6a-4b50-b8a4-46cd0abc627e', 6, '/images/beanie.jpg',            1, 1, 1, 1),
+  ('454d6008-8488-45ee-b5c3-8a77f7c51de2', 7, '/images/book-cover.jpg',        1, 1, 1, 1),
+  ('ebb95a61-11ce-48fe-af4a-c74f588d7e9e', 8, '/images/python-book.jpg',       1, 1, 1, 1),
+  ('fdd79081-8113-47e0-a153-006931b0815f', 9, '/images/coffee-maker.jpg',      1, 1, 1, 1),
+  ('ab93bb44-9780-4474-9da8-aec250450298', 9, '/images/coffee-maker-side.jpg', 0, 1, 1, 1),
+  ('e5a9fb03-d693-4885-bf34-c557c089878c',10,'/images/air-fryer.jpg',         1, 1, 1, 1);
 
--- Insert cart_items
-INSERT INTO cart_items (id, uuid, cart_id, product_id, quantity, price, is_active) VALUES 
-(1, '550e8400-e29b-41d4-a716-446655440400', 1, 1, 1, 74999.00, 1), -- Smartphone X
-(2, '550e8400-e29b-41d4-a716-446655440401', 1, 3, 2, 1499.00, 1),  -- T-Shirt
-(3, '550e8400-e29b-41d4-a716-446655440402', 1, 4, 1, 2249.00, 1),  -- Programming 101
-(4, '550e8400-e29b-41d4-a716-446655440403', 2, 3, 1, 1499.00, 1),  -- T-Shirt
-(5, '550e8400-e29b-41d4-a716-446655440404', 2, 43, 2, 999.00, 1);   -- Beanie
+INSERT INTO cart (uuid, user_id, is_active, total_items, total_price) VALUES
+  ('b175be98-bf9d-4fa5-ba95-eb9f2ab6d7ff', 1, 1, 3, 79247.00),
+  ('daf87601-f8d2-418a-b3ca-5644cd34f823', 2, 1, 3, 3497.00);
+
+INSERT INTO cart_items (uuid, cart_id, product_id, quantity, price, is_active) VALUES
+  ('42f52623-0b85-49c7-95fe-769e726461b0', 1, 1, 1, 74999.00, 1),
+  ('63e103e9-ad1c-4730-93e5-ba8549a8578a', 1, 4, 2, 1499.00,  1),
+  ('b5e857f0-92ea-4e96-9b90-55397161c4a6', 1, 7, 1, 2249.00,  1),
+  ('6f3f5476-e5fa-47af-8181-a7250a5616e9', 2, 4, 1, 1499.00,  1),
+  ('88bcb61a-1f08-4af6-acfa-6abbeefd39c0', 2, 6, 2,  999.00,  1);

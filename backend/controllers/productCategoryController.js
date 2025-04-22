@@ -1,7 +1,18 @@
 import * as categoryModel from "../models/productCategoryModel.js";
 export const getAllCategories = async (req, res) => {
   try {
-    const categories = await categoryModel.getAllCategories();
+    let { page = 1, limit = 10 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid page or limit value",
+      });
+    }
+
+    const categories = await categoryModel.getAllCategories(page, limit);
     if (categories.length === 0) {
       return res.status(404).json({
         success: false,

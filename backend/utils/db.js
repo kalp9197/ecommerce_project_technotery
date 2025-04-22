@@ -15,7 +15,7 @@ const createDbPool = mysql.createPool({
 const initializeDatabase = async () => {
   try {
     await createDbPool.query(
-      `CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`,
+      `CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`
     );
   } catch (error) {
     throw new Error(`Failed to create database: ${error.message}`);
@@ -61,7 +61,7 @@ export const updateExpiredTokens = async () => {
   try {
     const result = await query(
       "UPDATE user_tokens SET is_expired = 1 WHERE expires_at < ? AND is_expired = 0",
-      [now],
+      [now]
     );
 
     return result?.affectedRows || 0;

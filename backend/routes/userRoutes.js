@@ -6,7 +6,7 @@ import {
   loginSchema,
 } from "../middlewares/validator.js";
 import { authenticate } from "../middlewares/auth.js";
-import {isAdmin} from '../middlewares/adminAuth.js'
+import { isAdmin } from "../middlewares/adminAuth.js";
 
 const router = express.Router();
 
@@ -17,9 +17,9 @@ router.post("/refresh-token", authenticate, userController.refreshToken);
 router.post(
   "/activateDeactivate",
   authenticate,
-  userController.activateDeactivate,
+  userController.activateDeactivate
 );
 
-router.get('/all', authenticate, isAdmin, userController.getAllUsers)
+router.get("/all", authenticate, isAdmin, userController.getAllUsers);
 
 export default router;
