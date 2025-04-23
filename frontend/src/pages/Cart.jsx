@@ -41,13 +41,17 @@ const Cart = () => {
     };
   }, [clearError]);
 
-  const handleUpdateQuantity = async (itemId, currentQuantity, newQuantity) => {
+  const handleUpdateQuantity = async (
+    productUuid,
+    currentQuantity,
+    newQuantity
+  ) => {
     if (newQuantity < 1) return;
-    await updateItem(itemId, newQuantity, currentQuantity);
+    await updateItem(productUuid, newQuantity, currentQuantity);
   };
 
-  const handleRemoveItem = async (itemId) => {
-    await removeItem(itemId);
+  const handleRemoveItem = async (productUuid) => {
+    await removeItem(productUuid);
   };
 
   const handleClearCart = async () => {
@@ -131,7 +135,7 @@ const Cart = () => {
             <div className="divide-y">
               {cartItems.map((item, index) => (
                 <div
-                  key={item.id}
+                  key={item.uuid}
                   className={`p-4 flex items-center ${
                     item.isOptimistic ? "opacity-50" : ""
                   }`}
@@ -165,12 +169,14 @@ const Cart = () => {
                       className="h-8 w-8"
                       onClick={() =>
                         handleUpdateQuantity(
-                          item.id,
+                          item.product_id,
                           item.quantity,
-                          item.quantity - 1,
+                          item.quantity - 1
                         )
                       }
-                      disabled={isItemPending(item.id) || item.quantity <= 1}
+                      disabled={
+                        isItemPending(item.product_id) || item.quantity <= 1
+                      }
                     >
                       <MinusCircle className="h-4 w-4" />
                     </Button>
@@ -183,12 +189,12 @@ const Cart = () => {
                       className="h-8 w-8"
                       onClick={() =>
                         handleUpdateQuantity(
-                          item.id,
+                          item.product_id,
                           item.quantity,
-                          item.quantity + 1,
+                          item.quantity + 1
                         )
                       }
-                      disabled={isItemPending(item.id)}
+                      disabled={isItemPending(item.product_id)}
                     >
                       <PlusCircle className="h-4 w-4" />
                     </Button>
@@ -198,15 +204,15 @@ const Cart = () => {
                     <div className="font-medium text-foreground">
                       ₹
                       {((parseFloat(item.price) || 0) * item.quantity).toFixed(
-                        2,
+                        2
                       )}
                     </div>
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-8 w-8 mt-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleRemoveItem(item.id)}
-                      disabled={isItemPending(item.id)}
+                      onClick={() => handleRemoveItem(item.product_id)}
+                      disabled={isItemPending(item.product_id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -221,7 +227,9 @@ const Cart = () => {
               variant="outline"
               className="text-destructive hover:bg-destructive/10"
               onClick={handleClearCart}
-              disabled={cartItems.some((item) => isItemPending(item.id))}
+              disabled={cartItems.some((item) =>
+                isItemPending(item.product_id)
+              )}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Clear Cart

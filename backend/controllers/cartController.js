@@ -56,10 +56,10 @@ export const addItemToCart = async (req, res) => {
 export const updateCartItem = async (req, res) => {
   try {
     const userId = req.user.id;
-    const itemId = req.params.id;
+    const productUuid = req.params.uuid;
     const { quantity } = req.body;
 
-    const item = await cartModel.updateCartItem(userId, itemId, quantity);
+    const item = await cartModel.updateCartItem(userId, productUuid, quantity);
     const cartData = await cartModel.getCartItems(userId);
 
     res.status(200).json({
@@ -94,9 +94,9 @@ export const updateCartItem = async (req, res) => {
 export const deactivateCartItem = async (req, res) => {
   try {
     const userId = req.user.id;
-    const itemId = req.params.id;
+    const productUuid = req.params.uuid;
 
-    await cartModel.deactivateCartItem(userId, itemId);
+    await cartModel.deactivateCartItem(userId, productUuid);
     const cartData = await cartModel.getCartItems(userId);
 
     res.status(200).json({

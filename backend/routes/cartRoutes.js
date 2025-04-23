@@ -24,13 +24,13 @@ router.post(
   cartController.addItemToCart
 );
 router.put(
-  "/items/:id",
+  "/items/:uuid",
   isNotAdmin,
   validate(updateCartItemSchema),
   cartController.updateCartItem
 );
 router.delete(
-  "/items/deactivate/:id",
+  "/items/deactivate/:uuid",
   isNotAdmin,
   validate(deactivateCartItemSchema),
   cartController.deactivateCartItem

@@ -56,7 +56,7 @@ export const addToCart = async (productId, quantity = 1) => {
         product_uuid: productId,
         quantity,
       },
-      { headers: getAuthHeader() },
+      { headers: getAuthHeader() }
     );
     return response.data;
   } catch (error) {
@@ -75,7 +75,7 @@ export const addToCart = async (productId, quantity = 1) => {
 };
 
 // Update cart item quantity
-export const updateCartItem = async (itemId, quantity) => {
+export const updateCartItem = async (productUuid, quantity) => {
   if (!isUserAuthenticated()) {
     return {
       success: false,
@@ -86,9 +86,9 @@ export const updateCartItem = async (itemId, quantity) => {
 
   try {
     const response = await api.put(
-      `/cart/items/${itemId}`,
+      `/cart/items/${productUuid}`,
       { quantity },
-      { headers: getAuthHeader() },
+      { headers: getAuthHeader() }
     );
     return response.data;
   } catch (error) {
@@ -107,7 +107,7 @@ export const updateCartItem = async (itemId, quantity) => {
 };
 
 // Deactivate cart item (instead of removing)
-export const removeFromCart = async (itemId) => {
+export const removeFromCart = async (productUuid) => {
   if (!isUserAuthenticated()) {
     return {
       success: false,
@@ -117,11 +117,9 @@ export const removeFromCart = async (itemId) => {
   }
 
   try {
-    const response = await api.delete(
-      `/cart/items/deactivate/${itemId}`,
-      {},
-      { headers: getAuthHeader() },
-    );
+    const response = await api.delete(`/cart/items/deactivate/${productUuid}`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (error.response?.status === 401) {
@@ -153,7 +151,7 @@ export const clearCart = async () => {
     const response = await api.delete(
       "/cart/items/deactivateAll",
       {},
-      { headers: getAuthHeader() },
+      { headers: getAuthHeader() }
     );
     return response.data;
   } catch (error) {

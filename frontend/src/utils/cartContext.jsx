@@ -84,7 +84,7 @@ export function CartProvider({ children }) {
       (
         parseFloat(prev) +
         (parseFloat(productDetails.price) || 0) * quantity
-      ).toFixed(2),
+      ).toFixed(2)
     );
 
     try {
@@ -99,7 +99,7 @@ export function CartProvider({ children }) {
           (
             parseFloat(prev) -
             (parseFloat(productDetails.price) || 0) * quantity
-          ).toFixed(2),
+          ).toFixed(2)
         );
         setError(response.message || "Failed to add item to cart");
       }
@@ -111,7 +111,7 @@ export function CartProvider({ children }) {
         (
           parseFloat(prev) -
           (parseFloat(productDetails.price) || 0) * quantity
-        ).toFixed(2),
+        ).toFixed(2)
       );
       setError("Failed to add item to cart. Please try again.");
     } finally {
@@ -124,13 +124,13 @@ export function CartProvider({ children }) {
   };
 
   // Update cart item
-  const updateItem = async (itemId, newQuantity, oldQuantity) => {
+  const updateItem = async (productUuid, newQuantity, oldQuantity) => {
     if (!isAuthenticated || newQuantity < 1) return;
 
-    setPendingOperations((prev) => new Set(prev).add(itemId));
+    setPendingOperations((prev) => new Set(prev).add(productUuid));
     setError(null);
 
-    const item = cartItems.find((item) => item.id === itemId);
+    const item = cartItems.find((item) => item.product_id === productUuid);
     if (!item) return;
 
     const quantityDiff = newQuantity - oldQuantity;
@@ -139,20 +139,24 @@ export function CartProvider({ children }) {
     // Optimistic update
     setCartItems((prev) =>
       prev.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item,
-      ),
+        item.product_id === productUuid
+          ? { ...item, quantity: newQuantity }
+          : item
+      )
     );
     setCartCount((prev) => prev + quantityDiff);
     setCartTotal((prev) => (parseFloat(prev) + priceDiff).toFixed(2));
 
     try {
-      const response = await updateCartItemService(itemId, newQuantity);
+      const response = await updateCartItemService(productUuid, newQuantity);
       if (!response.success) {
         // Revert optimistic update
         setCartItems((prev) =>
           prev.map((item) =>
-            item.id === itemId ? { ...item, quantity: oldQuantity } : item,
-          ),
+            item.product_id === productUuid
+              ? { ...item, quantity: oldQuantity }
+              : item
+          )
         );
         setCartCount((prev) => prev - quantityDiff);
         setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));
@@ -162,8 +166,10 @@ export function CartProvider({ children }) {
       // Revert optimistic update
       setCartItems((prev) =>
         prev.map((item) =>
-          item.id === itemId ? { ...item, quantity: oldQuantity } : item,
-        ),
+          item.product_id === productUuid
+            ? { ...item, quantity: oldQuantity }
+            : item
+        )
       );
       setCartCount((prev) => prev - quantityDiff);
       setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));
@@ -171,31 +177,33 @@ export function CartProvider({ children }) {
     } finally {
       setPendingOperations((prev) => {
         const next = new Set(prev);
-        next.delete(itemId);
+        next.delete(productUuid);
         return next;
       });
     }
   };
 
   // Remove item from cart
-  const removeItem = async (itemId) => {
+  const removeItem = async (productUuid) => {
     if (!isAuthenticated) return;
 
-    setPendingOperations((prev) => new Set(prev).add(itemId));
+    setPendingOperations((prev) => new Set(prev).add(productUuid));
     setError(null);
 
-    const item = cartItems.find((item) => item.id === itemId);
+    const item = cartItems.find((item) => item.product_id === productUuid);
     if (!item) return;
 
     const itemTotal = (parseFloat(item.price) || 0) * item.quantity;
 
     // Optimistic update
-    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+    setCartItems((prev) =>
+      prev.filter((item) => item.product_id !== productUuid)
+    );
     setCartCount((prev) => prev - item.quantity);
     setCartTotal((prev) => (parseFloat(prev) - itemTotal).toFixed(2));
 
     try {
-      const response = await removeFromCart(itemId);
+      const response = await removeFromCart(productUuid);
       if (!response.success) {
         // Revert optimistic update
         setCartItems((prev) => [...prev, item]);
@@ -212,7 +220,7 @@ export function CartProvider({ children }) {
     } finally {
       setPendingOperations((prev) => {
         const next = new Set(prev);
-        next.delete(itemId);
+        next.delete(productUuid);
         return next;
       });
     }
