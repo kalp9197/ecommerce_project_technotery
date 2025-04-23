@@ -8,23 +8,7 @@ const getCart = async (userId) => {
       "SELECT id, uuid, total_items, total_price FROM cart WHERE user_id = ? AND is_active = 1 LIMIT 1",
       [userId]
     );
-
-    if (!cart) {
-      // Create new cart if none exists
-      const uuid = uuidv4();
-      const result = await query(
-        "INSERT INTO cart (uuid, user_id, total_items, total_price, is_active) VALUES (?, ?, 0, 0, 1)",
-        [uuid, userId]
-      );
-
-      const [newCart] = await query(
-        "SELECT id, uuid, total_items, total_price FROM cart WHERE id = ?",
-        [result.insertId]
-      );
-      return newCart;
-    }
-
-    return cart;
+    return cart || null; // Return null if no cart exists
   } catch (error) {
     throw new Error(`Error retrieving cart: ${error.message}`);
   }
@@ -50,7 +34,20 @@ const updateCartTotals = async (cartUuid) => {
 // Add product to cart or update quantity if already exists
 export const addToCart = async (userId, productUuid, quantity = 1) => {
   try {
-    const cart = await getCart(userId);
+    let cart = await getCart(userId);
+
+    // Create new cart if none exists
+    if (!cart) {
+      const uuid = uuidv4();
+      const result = await query(
+        "INSERT INTO cart (uuid, user_id, total_items, total_price, is_active) VALUES (?, ?, 0, 0, 1)",
+        [uuid, userId]
+      );
+      [cart] = await query(
+        "SELECT id, uuid, total_items, total_price FROM cart WHERE id = ?",
+        [result.insertId]
+      );
+    }
 
     const [product] = await query(
       `SELECT p.id, p.price, p.quantity, p.name
@@ -95,8 +92,8 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
       await query(
         `INSERT INTO cart_items 
          (uuid, cart_id, product_id, quantity, price, is_active, added_at) 
-         VALUES (?, (SELECT id FROM cart WHERE uuid = ?), ?, ?, ?, 1, NOW())`,
-        [uuidv4(), cart.uuid, product.id, quantity, product.price]
+         VALUES (?, ?, ?, ?, ?, 1, NOW())`,
+        [uuidv4(), cart.id, product.id, quantity, product.price]
       );
 
       // Update product quantity in inventory
@@ -121,8 +118,8 @@ export const getCartItems = async (userId) => {
 
     const items = await query(
       `SELECT 
-         ci.id, ci.uuid, ci.quantity, ci.price, ci.is_active,
-         p.uuid AS product_id, p.name, p.price AS current_price,
+         ci.id, ci.uuid as item_uuid, ci.quantity, ci.price, ci.is_active,
+         p.uuid AS product_uuid, p.name, p.price AS current_price,
          pc.name AS category_name,
          pi.image_path AS image
        FROM cart_items ci
@@ -150,7 +147,7 @@ export const getCartItems = async (userId) => {
 };
 
 // Update item quantity and recalculate cart totals
-export const updateCartItem = async (userId, productUuid, quantity) => {
+export const updateCartItem = async (userId, itemUuid, quantity) => {
   try {
     const cart = await getCart(userId);
 
@@ -158,8 +155,8 @@ export const updateCartItem = async (userId, productUuid, quantity) => {
       `SELECT ci.id, ci.uuid, ci.quantity, ci.product_id, p.uuid as product_uuid, p.price, p.quantity as available_quantity, p.name 
        FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
-       WHERE p.uuid = ? AND ci.cart_id = ? AND ci.is_active = 1 AND p.is_active = 1`,
-      [productUuid, cart.id]
+       WHERE ci.uuid = ? AND ci.cart_id = ? AND ci.is_active = 1 AND p.is_active = 1`,
+      [itemUuid, cart.id]
     );
 
     if (!item) throw new Error("Item not found or inactive");
@@ -182,17 +179,17 @@ export const updateCartItem = async (userId, productUuid, quantity) => {
 
     // Update product inventory - only if quantity is changing
     if (quantityDiff !== 0) {
-      await query(
-        `UPDATE products SET quantity = quantity - ? WHERE uuid = ?`,
-        [quantityDiff, productUuid]
-      );
+      await query(`UPDATE products SET quantity = quantity - ? WHERE id = ?`, [
+        quantityDiff,
+        item.product_id,
+      ]);
     }
 
     await updateCartTotals(cart.uuid);
 
     return {
-      uuid: item.uuid,
-      product_uuid: productUuid,
+      item_uuid: item.uuid,
+      product_uuid: item.product_uuid,
       quantity,
       price: +item.price,
     };
@@ -202,7 +199,7 @@ export const updateCartItem = async (userId, productUuid, quantity) => {
 };
 
 // Remove item from cart (soft delete)
-export const deactivateCartItem = async (userId, productUuid) => {
+export const deactivateCartItem = async (userId, itemUuid) => {
   try {
     const cart = await getCart(userId);
 
@@ -210,16 +207,16 @@ export const deactivateCartItem = async (userId, productUuid) => {
       `SELECT ci.id, ci.uuid, ci.quantity, ci.product_id, p.uuid as product_uuid
        FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
-       WHERE p.uuid = ? AND ci.cart_id = ? AND ci.is_active = 1`,
-      [productUuid, cart.id]
+       WHERE ci.uuid = ? AND ci.cart_id = ? AND ci.is_active = 1`,
+      [itemUuid, cart.id]
     );
 
     if (!item) throw new Error("Item not found or already inactive");
 
     // Return quantity to product inventory
-    await query("UPDATE products SET quantity = quantity + ? WHERE uuid = ?", [
+    await query("UPDATE products SET quantity = quantity + ? WHERE id = ?", [
       item.quantity,
-      productUuid,
+      item.product_id,
     ]);
 
     await query("UPDATE cart_items SET is_active = 0 WHERE uuid = ?", [

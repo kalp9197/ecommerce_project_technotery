@@ -1,43 +1,43 @@
 import express from "express";
-import { authenticate } from "../middlewares/auth.js";
 import * as cartController from "../controllers/cartController.js";
-import { isNotAdmin } from "../middlewares/adminAuth.js";
-
+import { authenticate } from "../middlewares/auth.js";
 import {
   validate,
   addToCartSchema,
   updateCartItemSchema,
   deactivateCartItemSchema,
+  deactivateAllCartItemsSchema,
 } from "../middlewares/validator.js";
 
 const router = express.Router();
 
-// All cart operations require authentication
+// All cart routes require authentication
 router.use(authenticate);
 
-// Regular user cart routes - users can only manage their own carts
-router.get("/", isNotAdmin, cartController.getUserCart);
-router.post(
-  "/items",
-  isNotAdmin,
-  validate(addToCartSchema),
-  cartController.addItemToCart
-);
+// Get user's cart
+router.get("/", cartController.getUserCart);
+
+// Add item to cart
+router.post("/items", validate(addToCartSchema), cartController.addItemToCart);
+
+// Update cart item quantity
 router.put(
   "/items/:uuid",
-  isNotAdmin,
   validate(updateCartItemSchema),
   cartController.updateCartItem
 );
+
+// Remove item from cart
 router.delete(
   "/items/deactivate/:uuid",
-  isNotAdmin,
   validate(deactivateCartItemSchema),
   cartController.deactivateCartItem
 );
+
+// Clear cart (deactivate all items)
 router.delete(
   "/items/deactivateAll",
-  isNotAdmin,
+  validate(deactivateAllCartItemsSchema),
   cartController.deactivateAllCartItems
 );
 

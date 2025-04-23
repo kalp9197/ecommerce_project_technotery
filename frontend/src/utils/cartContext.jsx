@@ -16,8 +16,25 @@ export function CartProvider({ children }) {
   const [cartTotal, setCartTotal] = useState("0.00");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [pendingOperations, setPendingOperations] = useState(new Set());
+  const [pendingItems, setPendingItems] = useState(new Set());
   const { isAuthenticated } = useAuth();
+
+  // Helper to track pending operations
+  const addPendingItem = (itemUuid) => {
+    setPendingItems((prev) => new Set([...prev, itemUuid]));
+  };
+
+  const removePendingItem = (itemUuid) => {
+    setPendingItems((prev) => {
+      const next = new Set(prev);
+      next.delete(itemUuid);
+      return next;
+    });
+  };
+
+  const isItemPending = (itemUuid) => {
+    return pendingItems.has(itemUuid);
+  };
 
   // Function to fetch cart data
   const fetchCart = React.useCallback(async () => {
@@ -64,7 +81,7 @@ export function CartProvider({ children }) {
   const addItem = async (productId, quantity = 1, productDetails = {}) => {
     if (!isAuthenticated) return;
 
-    setPendingOperations((prev) => new Set(prev).add(productId));
+    addPendingItem(productId);
     setError(null);
 
     // Optimistic update
@@ -115,11 +132,7 @@ export function CartProvider({ children }) {
       );
       setError("Failed to add item to cart. Please try again.");
     } finally {
-      setPendingOperations((prev) => {
-        const next = new Set(prev);
-        next.delete(productId);
-        return next;
-      });
+      removePendingItem(productId);
     }
   };
 
@@ -127,7 +140,7 @@ export function CartProvider({ children }) {
   const updateItem = async (productUuid, newQuantity, oldQuantity) => {
     if (!isAuthenticated || newQuantity < 1) return;
 
-    setPendingOperations((prev) => new Set(prev).add(productUuid));
+    addPendingItem(productUuid);
     setError(null);
 
     const item = cartItems.find((item) => item.product_id === productUuid);
@@ -175,11 +188,7 @@ export function CartProvider({ children }) {
       setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));
       setError("Failed to update item quantity. Please try again.");
     } finally {
-      setPendingOperations((prev) => {
-        const next = new Set(prev);
-        next.delete(productUuid);
-        return next;
-      });
+      removePendingItem(productUuid);
     }
   };
 
@@ -187,7 +196,7 @@ export function CartProvider({ children }) {
   const removeItem = async (productUuid) => {
     if (!isAuthenticated) return;
 
-    setPendingOperations((prev) => new Set(prev).add(productUuid));
+    addPendingItem(productUuid);
     setError(null);
 
     const item = cartItems.find((item) => item.product_id === productUuid);
@@ -218,11 +227,7 @@ export function CartProvider({ children }) {
       setCartTotal((prev) => (parseFloat(prev) + itemTotal).toFixed(2));
       setError("Failed to remove item. Please try again.");
     } finally {
-      setPendingOperations((prev) => {
-        const next = new Set(prev);
-        next.delete(productUuid);
-        return next;
-      });
+      removePendingItem(productUuid);
     }
   };
 
@@ -263,7 +268,7 @@ export function CartProvider({ children }) {
     cartTotal,
     loading,
     error,
-    isItemPending: (id) => pendingOperations.has(id),
+    isItemPending,
     refreshCart: fetchCart,
     addItem,
     updateItem,
