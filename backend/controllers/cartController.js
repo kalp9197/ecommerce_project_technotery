@@ -136,3 +136,28 @@ export const deactivateAllCartItems = async (req, res) => {
     });
   }
 };
+
+// Batch update cart items
+export const batchUpdateCartItems = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const items = req.body;
+
+    const result = await cartModel.batchUpdateCartItems(userId, items);
+
+    res.status(200).json({
+      success: true,
+      message: "Cart items updated successfully",
+      data: {
+        updated_items: result.success,
+        errors: result.errors,
+        cart: result.cart,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error updating cart items",
+    });
+  }
+};

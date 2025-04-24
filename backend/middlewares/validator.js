@@ -189,6 +189,25 @@ export const updateCartItemSchema = [
     .toInt(),
 ];
 
+export const batchUpdateCartItemsSchema = [
+  body()
+    .isArray()
+    .withMessage("Request body must be an array")
+    .notEmpty()
+    .withMessage("Array cannot be empty"),
+  body("*.item_uuid")
+    .notEmpty()
+    .withMessage("item_uuid is required")
+    .isUUID(4)
+    .withMessage("item_uuid must be a valid UUID v4"),
+  body("*.quantity")
+    .notEmpty()
+    .withMessage("Quantity is required")
+    .isInt({ min: 1 })
+    .withMessage("Quantity must be a positive integer")
+    .toInt(),
+];
+
 export const deactivateCartItemSchema = [
   param("uuid")
     .notEmpty()

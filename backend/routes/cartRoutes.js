@@ -7,6 +7,7 @@ import {
   updateCartItemSchema,
   deactivateCartItemSchema,
   deactivateAllCartItemsSchema,
+  batchUpdateCartItemsSchema,
 } from "../middlewares/validator.js";
 
 const router = express.Router();
@@ -19,6 +20,13 @@ router.get("/", cartController.getUserCart);
 
 // Add item to cart
 router.post("/items", validate(addToCartSchema), cartController.addItemToCart);
+
+// Batch update cart items
+router.put(
+  "/items/batch",
+  validate(batchUpdateCartItemsSchema),
+  cartController.batchUpdateCartItems
+);
 
 // Update cart item quantity
 router.put(

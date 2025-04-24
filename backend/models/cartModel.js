@@ -42,7 +42,7 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
       const result = await query(
         "INSERT INTO cart (uuid, user_id, total_items, total_price, is_active) VALUES (?, ?, 0, 0, 1)",
         [uuid, userId]
-      );
+      );      
       [cart] = await query(
         "SELECT id, uuid, total_items, total_price FROM cart WHERE id = ?",
         [result.insertId]
@@ -260,5 +260,44 @@ export const deactivateAllCartItems = async (userId) => {
     return { success: true };
   } catch (error) {
     throw new Error(`Error deactivating all cart items: ${error.message}`);
+  }
+};
+
+// Batch update cart items
+export const batchUpdateCartItems = async (userId, items) => {
+  try {
+    const cart = await getCart(userId);
+    if (!cart) throw new Error("Cart not found");
+
+    const results = [];
+    const errors = [];
+
+    // Process each item update sequentially to maintain inventory consistency
+    for (const item of items) {
+      try {
+        const result = await updateCartItem(
+          userId,
+          item.item_uuid,
+          item.quantity
+        );
+        results.push(result);
+      } catch (error) {
+        errors.push({
+          item_uuid: item.item_uuid,
+          error: error.message,
+        });
+      }
+    }
+
+    // Get final cart state
+    // const finalCartState = await getCartItems(userId);
+
+    return {
+      success: results,
+      errors,
+      // cart: finalCartState
+    };
+  } catch (error) {
+    throw new Error(`Error updating cart items: ${error.message}`);
   }
 };
