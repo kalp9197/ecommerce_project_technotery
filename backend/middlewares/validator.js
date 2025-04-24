@@ -217,3 +217,11 @@ export const deactivateCartItemSchema = [
 ];
 
 export const deactivateAllCartItemsSchema = [];
+
+export const completeOrderSchema = [
+  body("order_completed")
+    .notEmpty()
+    .withMessage("order_completed status is required")
+    .isBoolean()
+    .withMessage("order_completed must be a boolean value"),
+];

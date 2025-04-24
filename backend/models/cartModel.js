@@ -42,7 +42,7 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
       const result = await query(
         "INSERT INTO cart (uuid, user_id, total_items, total_price, is_active) VALUES (?, ?, 0, 0, 1)",
         [uuid, userId]
-      );      
+      );
       [cart] = await query(
         "SELECT id, uuid, total_items, total_price FROM cart WHERE id = ?",
         [result.insertId]
@@ -289,15 +289,30 @@ export const batchUpdateCartItems = async (userId, items) => {
       }
     }
 
-    // Get final cart state
-    // const finalCartState = await getCartItems(userId);
-
     return {
       success: results,
       errors,
-      // cart: finalCartState
     };
   } catch (error) {
     throw new Error(`Error updating cart items: ${error.message}`);
+  }
+};
+
+export const completeOrder = async (userId) => {
+  try {
+    const cart = await getCart(userId);
+    if (!cart) {
+      throw new Error("No active cart found");
+    }
+
+    // Deactivate the cart
+    await query(
+      "UPDATE cart SET is_active = 0, updated_at = NOW() WHERE id = ?",
+      [cart.id]
+    );
+
+    return { success: true };
+  } catch (error) {
+    throw new Error(`Error completing order: ${error.message}`);
   }
 };

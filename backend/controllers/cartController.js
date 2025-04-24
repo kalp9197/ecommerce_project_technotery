@@ -161,3 +161,30 @@ export const batchUpdateCartItems = async (req, res) => {
     });
   }
 };
+
+// Complete order and deactivate current cart
+export const completeOrder = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { order_completed } = req.body;
+
+    if (!order_completed) {
+      return res.status(400).json({
+        success: false,
+        message: "Order not marked as completed",
+      });
+    }
+
+    await cartModel.completeOrder(userId);
+
+    res.status(200).json({
+      success: true,
+      message: "Order completed and cart deactivated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error completing order",
+    });
+  }
+};

@@ -8,6 +8,7 @@ import {
   deactivateCartItemSchema,
   deactivateAllCartItemsSchema,
   batchUpdateCartItemsSchema,
+  completeOrderSchema,
 } from "../middlewares/validator.js";
 
 const router = express.Router();
@@ -47,6 +48,13 @@ router.delete(
   "/items/deactivateAll",
   validate(deactivateAllCartItemsSchema),
   cartController.deactivateAllCartItems
+);
+
+// Complete order and deactivate cart
+router.post(
+  "/complete-order",
+  validate(completeOrderSchema),
+  cartController.completeOrder
 );
 
 export default router;
