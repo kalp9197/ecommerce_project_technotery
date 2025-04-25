@@ -37,8 +37,8 @@ export const getImageByUuid = async (uuid) => {
 
 export const addProductImageByProductUuid = async (productUuid, imageData) => {
   try {
-    const { image_url, is_featured, user_id } = imageData;
-    let finalImageUrl = image_url;
+    const { image_path, is_featured, user_id } = imageData;
+    let finalImagePath = image_path;
 
     const product = await query(
       "SELECT id FROM products WHERE uuid = ? AND is_active = 1",
@@ -50,9 +50,9 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
     }
 
     // handle base64 image if provided
-    if (image_url && image_url.startsWith("data:image/")) {
+    if (image_path && image_path.startsWith("data:image/")) {
       // extract the base64 data from the data URL
-      const matches = image_url.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      const matches = image_path.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
 
       if (matches && matches.length === 3) {
         const type = matches[1];
@@ -73,20 +73,18 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
         }
         fs.writeFileSync(filePath, buffer);
 
-        //update image url to use the relative path
-        finalImageUrl = `/uploads/${filename}`;
+        //update image path to use the relative path
+        finalImagePath = `/uploads/${filename}`;
       }
     }
-
-    // get the product ID from UUID using product query
 
     const p_id = product[0].id;
     const uuid = uuidv4();
 
     // Insert the image
     const result = await query(
-      "INSERT INTO product_images (uuid, p_id, image_url, is_featured, is_active, created_by, updated_by) VALUES (?, ?, ?, ?, 1, ?, ?)",
-      [uuid, p_id, finalImageUrl, is_featured ? 1 : 0, user_id, user_id]
+      "INSERT INTO product_images (uuid, p_id, image_path, is_featured, is_active, created_by, updated_by) VALUES (?, ?, ?, ?, 1, ?, ?)",
+      [uuid, p_id, finalImagePath, is_featured ? 1 : 0, user_id, user_id]
     );
 
     if (!result?.affectedRows) {
@@ -109,7 +107,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
 
 export const updateProductImageByUuid = async (uuid, imageData) => {
   try {
-    const { is_featured, is_active, image_url } = imageData;
+    const { is_featured, is_active, image_path } = imageData;
 
     // First get the image to check existence and get p_id if needed
     const image = await query("SELECT * FROM product_images WHERE uuid = ?", [
@@ -125,12 +123,12 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
       is_featured === undefined ? image[0].is_featured : is_featured ? 1 : 0;
     const activeValue = is_active === undefined ? null : is_active ? 1 : 0;
 
-    let finalImageUrl = image_url;
+    let finalImagePath = image_path;
 
     // Process base64 image if provided
-    if (image_url && image_url.startsWith("data:image/")) {
+    if (image_path && image_path.startsWith("data:image/")) {
       // extract the base64 data from the data URL
-      const matches = image_url.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      const matches = image_path.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
 
       if (matches && matches.length === 3) {
         const type = matches[1];
@@ -151,18 +149,18 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
         }
         fs.writeFileSync(filePath, buffer);
 
-        //update image url to use the relative path
-        finalImageUrl = `/uploads/${filename}`;
+        //update image path to use the relative path
+        finalImagePath = `/uploads/${filename}`;
       }
     }
 
-    // Build the SQL query based on whether image_url is provided
+    // Build the SQL query based on whether image_path is provided
     let sql, params;
 
-    if (finalImageUrl) {
+    if (finalImagePath) {
       sql =
-        "UPDATE product_images SET is_featured = ?, is_active = COALESCE(?, is_active), image_url = ? WHERE uuid = ?";
-      params = [featuredValue, activeValue, finalImageUrl, uuid];
+        "UPDATE product_images SET is_featured = ?, is_active = COALESCE(?, is_active), image_path = ? WHERE uuid = ?";
+      params = [featuredValue, activeValue, finalImagePath, uuid];
     } else {
       sql =
         "UPDATE product_images SET is_featured = ?, is_active = COALESCE(?, is_active) WHERE uuid = ?";

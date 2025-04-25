@@ -4,11 +4,23 @@ import { v4 as uuidv4 } from "uuid";
 // Get or create active cart for user
 const getCart = async (userId) => {
   try {
-    const [cart] = await query(
+    let [cart] = await query(
       "SELECT id, uuid, total_items, total_price FROM cart WHERE user_id = ? AND is_active = 1 LIMIT 1",
       [userId]
     );
-    return cart || null; // Return null if no cart exists
+    // Create new cart if none exists
+    if (!cart) {
+      const uuid = uuidv4();
+      const result = await query(
+        "INSERT INTO cart (uuid, user_id, total_items, total_price, is_active) VALUES (?, ?, 0, 0, 1)",
+        [uuid, userId]
+      );
+      [cart] = await query(
+        "SELECT id, uuid, total_items, total_price FROM cart WHERE id = ?",
+        [result.insertId]
+      );
+    }
+    return cart;
   } catch (error) {
     throw new Error(`Error retrieving cart: ${error.message}`);
   }
@@ -31,23 +43,94 @@ const updateCartTotals = async (cartUuid) => {
   }
 };
 
+// // Add product to cart or update quantity if already exists
+// export const addToCart = async (userId, productUuid, quantity = 1) => {
+//   let connection;
+//   try {
+//     // Get connection from the pool
+//     connection = await query("START TRANSACTION");
+
+//     let cart = await getCart(userId);
+
+//     const [product] = await query(
+//       `SELECT p.id, p.price, p.quantity, p.name
+//        FROM products p
+//        WHERE p.uuid = ? AND p.is_active = 1
+//        FOR UPDATE`, // Lock the row to prevent concurrent modifications
+//       [productUuid]
+//     );
+
+//     if (!product) throw new Error("Product not found or inactive");
+
+//     if (product.quantity < quantity) {
+//       await query("ROLLBACK");
+//       throw new Error(
+//         `Insufficient stock for ${product.name}. Only ${product.quantity} available.`
+//       );
+//     }
+
+//     const [existing] = await query(
+//       `SELECT ci.id, ci.quantity, ci.is_active
+//        FROM cart_items ci
+//        JOIN cart c ON ci.cart_id = c.id
+//        WHERE c.uuid = ? AND ci.product_id = ?
+//        FOR UPDATE`, // Lock the row to prevent concurrent modifications
+//       [cart.uuid, product.id]
+//     );
+
+//     if (existing) {
+//       const newQty = existing.is_active
+//         ? existing.quantity + quantity
+//         : quantity;
+//       await query(
+//         `UPDATE cart_items
+//          SET quantity = ?, price = ?, is_active = 1, added_at = NOW()
+//          WHERE id = ?`,
+//         [newQty, product.price, existing.id]
+//       );
+//     } else {
+//       await query(
+//         `INSERT INTO cart_items
+//          (uuid, cart_id, product_id, quantity, price, is_active, added_at)
+//          VALUES (?, ?, ?, ?, ?, 1, NOW())`,
+//         [uuidv4(), cart.id, product.id, quantity, product.price]
+//       );
+//     }
+
+//     // Update product quantity in inventory
+//     await query(`UPDATE products SET quantity = quantity - ? WHERE id = ?`, [
+//       quantity,
+//       product.id,
+//     ]);
+
+//     // Update cart totals
+//     const [totals] = await query(
+//       "SELECT COUNT(*) AS total_items, COALESCE(SUM(quantity * price), 0) AS total_price FROM cart_items ci JOIN cart c ON ci.cart_id = c.id WHERE c.uuid = ? AND ci.is_active = 1",
+//       [cart.uuid]
+//     );
+
+//     await query(
+//       "UPDATE cart SET total_items = ?, total_price = ?, updated_at = NOW() WHERE uuid = ?",
+//       [totals.total_items, totals.total_price, cart.uuid]
+//     );
+
+//     // If everything succeeded, commit the transaction
+//     await query("COMMIT");
+
+//     return { product_id: product.id, quantity, price: product.price };
+//   } catch (error) {
+//     // If there was an error, rollback the transaction
+//     if (connection) {
+//       await query("ROLLBACK");
+//     }
+//     throw new Error(`Error adding to cart: ${error.message}`);
+//   }
+// };
+
 // Add product to cart or update quantity if already exists
 export const addToCart = async (userId, productUuid, quantity = 1) => {
   try {
     let cart = await getCart(userId);
-
-    // Create new cart if none exists
-    if (!cart) {
-      const uuid = uuidv4();
-      const result = await query(
-        "INSERT INTO cart (uuid, user_id, total_items, total_price, is_active) VALUES (?, ?, 0, 0, 1)",
-        [uuid, userId]
-      );
-      [cart] = await query(
-        "SELECT id, uuid, total_items, total_price FROM cart WHERE id = ?",
-        [result.insertId]
-      );
-    }
 
     const [product] = await query(
       `SELECT p.id, p.price, p.quantity, p.name

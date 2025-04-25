@@ -5,7 +5,7 @@ export const getAllCategories = async (page, limit) => {
   try {
     const offset = (page - 1) * limit;
     const result = await query(
-      `SELECT * FROM product_categories WHERE is_active = 1 ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`
+      `SELECT * FROM product_categories WHERE is_active = 1 ORDER BY id ASC LIMIT ${limit} OFFSET ${offset}`
     );
 
     // Return an empty array instead of null if no categories are found

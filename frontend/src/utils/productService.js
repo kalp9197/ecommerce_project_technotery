@@ -1,5 +1,14 @@
 import api from "./axios";
 
+// Helper function to get full image URL
+export const getFullImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith("http")) return imagePath;
+  // Otherwise, prefix with backend URL
+  return `http://localhost:8000${imagePath}`;
+};
+
 // Product API services
 export const getProducts = async () => {
   try {

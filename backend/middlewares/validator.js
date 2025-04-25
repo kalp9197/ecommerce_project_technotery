@@ -153,7 +153,7 @@ export const imageUpdateSchema = [
     .isBoolean()
     .withMessage("is_active must be a boolean value"),
 
-  body("image_path")
+  body("image_url")
     .optional()
     .isString()
     .withMessage("Image path must be a string"),

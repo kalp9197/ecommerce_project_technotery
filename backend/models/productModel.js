@@ -19,7 +19,7 @@ export const getAllProducts = async (limit, offset) => {
       FROM products p 
       JOIN product_categories pc ON p.p_cat_id = pc.id
       WHERE p.is_active = 1 AND pc.is_active = 1 
-      ORDER BY p.created_at DESC
+      ORDER BY p.id ASC
       LIMIT ${limit} OFFSET ${offset}
     `
     );

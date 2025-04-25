@@ -137,13 +137,13 @@ export function CartProvider({ children }) {
   };
 
   // Update cart item
-  const updateItem = async (productUuid, newQuantity, oldQuantity) => {
+  const updateItem = async (itemUuid, newQuantity, oldQuantity) => {
     if (!isAuthenticated || newQuantity < 1) return;
 
-    addPendingItem(productUuid);
+    addPendingItem(itemUuid);
     setError(null);
 
-    const item = cartItems.find((item) => item.product_id === productUuid);
+    const item = cartItems.find((item) => item.item_uuid === itemUuid);
     if (!item) return;
 
     const quantityDiff = newQuantity - oldQuantity;
@@ -152,21 +152,19 @@ export function CartProvider({ children }) {
     // Optimistic update
     setCartItems((prev) =>
       prev.map((item) =>
-        item.product_id === productUuid
-          ? { ...item, quantity: newQuantity }
-          : item
+        item.item_uuid === itemUuid ? { ...item, quantity: newQuantity } : item
       )
     );
     setCartCount((prev) => prev + quantityDiff);
     setCartTotal((prev) => (parseFloat(prev) + priceDiff).toFixed(2));
 
     try {
-      const response = await updateCartItemService(productUuid, newQuantity);
+      const response = await updateCartItemService(itemUuid, newQuantity);
       if (!response.success) {
         // Revert optimistic update
         setCartItems((prev) =>
           prev.map((item) =>
-            item.product_id === productUuid
+            item.item_uuid === itemUuid
               ? { ...item, quantity: oldQuantity }
               : item
           )
@@ -179,7 +177,7 @@ export function CartProvider({ children }) {
       // Revert optimistic update
       setCartItems((prev) =>
         prev.map((item) =>
-          item.product_id === productUuid
+          item.item_uuid === itemUuid
             ? { ...item, quantity: oldQuantity }
             : item
         )
@@ -188,31 +186,29 @@ export function CartProvider({ children }) {
       setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));
       setError("Failed to update item quantity. Please try again.");
     } finally {
-      removePendingItem(productUuid);
+      removePendingItem(itemUuid);
     }
   };
 
   // Remove item from cart
-  const removeItem = async (productUuid) => {
+  const removeItem = async (itemUuid) => {
     if (!isAuthenticated) return;
 
-    addPendingItem(productUuid);
+    addPendingItem(itemUuid);
     setError(null);
 
-    const item = cartItems.find((item) => item.product_id === productUuid);
+    const item = cartItems.find((item) => item.item_uuid === itemUuid);
     if (!item) return;
 
     const itemTotal = (parseFloat(item.price) || 0) * item.quantity;
 
     // Optimistic update
-    setCartItems((prev) =>
-      prev.filter((item) => item.product_id !== productUuid)
-    );
+    setCartItems((prev) => prev.filter((item) => item.item_uuid !== itemUuid));
     setCartCount((prev) => prev - item.quantity);
     setCartTotal((prev) => (parseFloat(prev) - itemTotal).toFixed(2));
 
     try {
-      const response = await removeFromCart(productUuid);
+      const response = await removeFromCart(itemUuid);
       if (!response.success) {
         // Revert optimistic update
         setCartItems((prev) => [...prev, item]);
@@ -227,7 +223,7 @@ export function CartProvider({ children }) {
       setCartTotal((prev) => (parseFloat(prev) + itemTotal).toFixed(2));
       setError("Failed to remove item. Please try again.");
     } finally {
-      removePendingItem(productUuid);
+      removePendingItem(itemUuid);
     }
   };
 
