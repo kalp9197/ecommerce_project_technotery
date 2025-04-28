@@ -149,26 +149,14 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
         }
         fs.writeFileSync(filePath, buffer);
 
-        //update image path to use the relative path
         finalImagePath = `/uploads/${filename}`;
       }
     }
 
-    // Build the SQL query based on whether image_path is provided
-    let sql, params;
-
-    if (finalImagePath) {
-      sql =
-        "UPDATE product_images SET is_featured = ?, is_active = COALESCE(?, is_active), image_path = ? WHERE uuid = ?";
-      params = [featuredValue, activeValue, finalImagePath, uuid];
-    } else {
-      sql =
-        "UPDATE product_images SET is_featured = ?, is_active = COALESCE(?, is_active) WHERE uuid = ?";
-      params = [featuredValue, activeValue, uuid];
-    }
-
-    // Update the image
-    const result = await query(sql, params);
+    const result = await query(
+      "UPDATE product_images SET is_featured = ?, is_active = COALESCE(?, is_active), image_path = COALESCE(?, image_path) WHERE uuid = ?",
+      [featuredValue, activeValue, finalImagePath, uuid]
+    );
 
     if (!result?.affectedRows) {
       throw new Error("Failed to update product image");
