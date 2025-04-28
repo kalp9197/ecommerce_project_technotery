@@ -93,7 +93,11 @@ export const categoryUuidParam = [
 
 // Product validation schemas
 export const productSchema = [
-  body("p_cat_uuid").notEmpty().withMessage("Category ID is required"),
+  body("p_cat_uuid")
+    .notEmpty()
+    .withMessage("Category ID is required")
+    .isUUID(4)
+    .withMessage("Category ID must be a valid UUID v4"),
 
   body("name")
     .trim()
@@ -111,6 +115,15 @@ export const productSchema = [
     .withMessage("Price must be a number")
     .custom((value) => value >= 0)
     .withMessage("Price cannot be negative"),
+
+  body("quantity")
+    .notEmpty()
+    .withMessage("Quantity is required")
+    .isInt()
+    .withMessage("Quantity must be an integer")
+    .custom((value) => value >= 0)
+    .withMessage("Quantity cannot be negative")
+    .toInt(),
 ];
 
 export const productUuidParam = [

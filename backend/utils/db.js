@@ -53,19 +53,62 @@ const query = async (sql, params) => {
   }
 };
 
-export { pool, query, testConnection };
+// Start a transaction
+const beginTransaction = async () => {
+  const connection = await pool.getConnection();
+  await connection.beginTransaction();
+  return connection;
+};
 
-export const updateExpiredTokens = async () => {
+// Execute a query within a transaction
+const queryWithConnection = async (connection, sql, params) => {
+  try {
+    const [results] = await connection.execute(sql, params);
+    return results;
+  } catch (error) {
+    throw new Error(`Query error: ${error.message}`);
+  }
+};
+
+// Commit a transaction
+const commit = async (connection) => {
+  try {
+    await connection.commit();
+  } finally {
+    connection.release();
+  }
+};
+
+// Rollback a transaction
+const rollback = async (connection) => {
+  try {
+    await connection.rollback();
+  } finally {
+    connection.release();
+  }
+};
+
+// Update expired tokens in the database
+const updateExpiredTokens = async () => {
   const now = new Date().toISOString();
-
   try {
     const result = await query(
       "UPDATE user_tokens SET is_expired = 1 WHERE expires_at < ? AND is_expired = 0",
       [now]
     );
-
     return result?.affectedRows || 0;
   } catch (error) {
     return 0;
   }
+};
+
+export {
+  pool,
+  query,
+  testConnection,
+  beginTransaction,
+  queryWithConnection,
+  commit,
+  rollback,
+  updateExpiredTokens,
 };

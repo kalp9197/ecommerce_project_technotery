@@ -10,6 +10,7 @@ import {
   batchUpdateCartItemsSchema,
   completeOrderSchema,
 } from "../middlewares/validator.js";
+import { isNotAdmin } from "../middlewares/adminAuth.js";
 
 const router = express.Router();
 
@@ -17,15 +18,16 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get user's cart
-router.get("/", cartController.getUserCart);
+router.get("/", isNotAdmin,cartController.getUserCart);
 
 // Add item to cart
-router.post("/items", validate(addToCartSchema), cartController.addItemToCart);
+router.post("/items", validate(addToCartSchema), isNotAdmin,cartController.addItemToCart);
 
 // Batch update cart items
 router.put(
   "/items/batch",
   validate(batchUpdateCartItemsSchema),
+  isNotAdmin,
   cartController.batchUpdateCartItems
 );
 
@@ -33,6 +35,7 @@ router.put(
 router.put(
   "/items/:uuid",
   validate(updateCartItemSchema),
+  isNotAdmin,
   cartController.updateCartItem
 );
 
@@ -40,6 +43,7 @@ router.put(
 router.delete(
   "/items/deactivate/:uuid",
   validate(deactivateCartItemSchema),
+  isNotAdmin,
   cartController.deactivateCartItem
 );
 
@@ -47,6 +51,7 @@ router.delete(
 router.delete(
   "/items/deactivateAll",
   validate(deactivateAllCartItemsSchema),
+  isNotAdmin,
   cartController.deactivateAllCartItems
 );
 
@@ -54,6 +59,7 @@ router.delete(
 router.post(
   "/complete-order",
   validate(completeOrderSchema),
+  isNotAdmin,
   cartController.completeOrder
 );
 

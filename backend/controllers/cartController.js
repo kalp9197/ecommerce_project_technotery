@@ -26,16 +26,11 @@ export const addItemToCart = async (req, res) => {
     const userId = req.user.id;
     const { product_uuid, quantity = 1 } = req.body;
 
-    const item = await cartModel.addToCart(userId, product_uuid, quantity);
-    const cartData = await cartModel.getCartItems(userId);
+    await cartModel.addToCart(userId, product_uuid, quantity);
 
     res.status(201).json({
       success: true,
       message: "Item added to cart successfully",
-      data: {
-        item,
-        ...cartData,
-      },
     });
   } catch (error) {
     // Check for insufficient stock error
@@ -60,15 +55,10 @@ export const updateCartItem = async (req, res) => {
     const { quantity } = req.body;
 
     const item = await cartModel.updateCartItem(userId, productUuid, quantity);
-    const cartData = await cartModel.getCartItems(userId);
 
     res.status(200).json({
       success: true,
       message: "Cart item updated successfully",
-      data: {
-        item,
-        ...cartData,
-      },
     });
   } catch (error) {
     // Check for specific error types
@@ -97,12 +87,10 @@ export const deactivateCartItem = async (req, res) => {
     const productUuid = req.params.uuid;
 
     await cartModel.deactivateCartItem(userId, productUuid);
-    const cartData = await cartModel.getCartItems(userId);
 
     res.status(200).json({
       success: true,
       message: "Item removed from cart successfully",
-      data: cartData,
     });
   } catch (error) {
     const code = error.message.includes("not found") ? 404 : 500;

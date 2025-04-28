@@ -69,21 +69,9 @@ export const getProductByUuid = async (uuid) => {
   }
 };
 
-export const createProduct = async (body, user_id) => {
+export const createProduct = async (body) => {
   try {
-    const { p_cat_uuid, name, description, price } = body;
-
-    // Validate required fields
-    if (!p_cat_uuid) {
-      throw new Error("Product category UUID is required");
-    }
-    if (!name) {
-      throw new Error("Product name is required");
-    }
-    if (!price && price !== 0) {
-      throw new Error("Product price is required");
-    }
-
+    const { p_cat_uuid, name, description, price, quantity } = body;
     const uuid = uuidv4();
 
     // Get category ID
@@ -92,29 +80,18 @@ export const createProduct = async (body, user_id) => {
       [p_cat_uuid]
     );
 
-    // Check if category exists
     if (!categoryResult || !categoryResult.length || !categoryResult[0].id) {
       throw new Error("Invalid or inactive product category");
     }
 
     const categoryId = categoryResult[0].id;
-
-    // Use empty string if description is undefined
     const safeDescription = description || "";
 
     // Insert product with the retrieved category ID
     const result = await query(
-      `INSERT INTO products (uuid, p_cat_id, name, description, price, is_active, created_by, updated_by) 
-       VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
-      [
-        uuid,
-        categoryId,
-        name,
-        safeDescription,
-        price,
-        user_id || null,
-        user_id || null,
-      ]
+      `INSERT INTO products (uuid, p_cat_id, name, description, price, quantity, is_active) 
+       VALUES (?, ?, ?, ?, ?, ?, 1)`,
+      [uuid, categoryId, name, safeDescription, price, quantity]
     );
 
     if (!result || result.affectedRows === 0) {
@@ -131,16 +108,6 @@ export const updateProductByUuid = async (uuid, body) => {
   try {
     const { p_cat_uuid, name, description, price } = body;
 
-    // Check if at least one field is provided
-    if (
-      !p_cat_uuid &&
-      !name &&
-      description === undefined &&
-      price === undefined
-    ) {
-      throw new Error("No fields provided for update");
-    }
-
     let p_cat_id = null;
     if (p_cat_uuid) {
       // Get category ID if provided
@@ -156,35 +123,17 @@ export const updateProductByUuid = async (uuid, body) => {
       p_cat_id = categoryResult[0].id;
     }
 
-    // Build the update SQL dynamically
-    let updateSQL = "UPDATE products SET updated_at = NOW()";
-    const params = [];
-
-    if (p_cat_id !== null) {
-      updateSQL += ", p_cat_id = ?";
-      params.push(p_cat_id);
-    }
-
-    if (name !== undefined) {
-      updateSQL += ", name = ?";
-      params.push(name);
-    }
-
-    if (description !== undefined) {
-      updateSQL += ", description = ?";
-      params.push(description);
-    }
-
-    if (price !== undefined) {
-      updateSQL += ", price = ?";
-      params.push(price);
-    }
-
-    updateSQL += " WHERE uuid = ? AND is_active = 1";
-    params.push(uuid);
-
-    // Execute the update query
-    const result = await query(updateSQL, params);
+    // Execute the update query with all fields
+    const result = await query(
+      `UPDATE products 
+       SET updated_at = NOW(),
+           p_cat_id = COALESCE(?, p_cat_id),
+           name = COALESCE(?, name),
+           description = COALESCE(?, description),
+           price = COALESCE(?, price)
+       WHERE uuid = ? AND is_active = 1`,
+      [p_cat_id, name, description, price, uuid]
+    );
 
     if (result.affectedRows === 0) {
       // Check if the product exists
@@ -195,7 +144,6 @@ export const updateProductByUuid = async (uuid, body) => {
       if (!exists || !exists.length) {
         throw new Error("Product not found");
       } else {
-        // Product exists but might be inactive or no changes were made
         throw new Error(
           "No changes made to the product or product is inactive"
         );
