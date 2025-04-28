@@ -1,4 +1,4 @@
-import { validationResult, body, param } from "express-validator";
+import { validationResult, body, param, query } from "express-validator";
 
 // Validation middleware
 export const validate = (validations) => {
@@ -237,4 +237,15 @@ export const completeOrderSchema = [
     .withMessage("order_completed status is required")
     .isBoolean()
     .withMessage("order_completed must be a boolean value"),
+];
+
+// Product search validation schemas
+export const searchProductsSchema = [
+  query("search").optional(),
+  query("minPrice").optional(),
+  query("maxPrice").optional(),
+  query("orderBy").optional(),
+  query("orderDir").optional(),
+  query("page").optional(),
+  query("limit").optional(),
 ];

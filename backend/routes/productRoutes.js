@@ -11,6 +11,7 @@ import {
   productUuidParamForImage,
   imageUuidParam,
   imageUpdateSchema,
+  searchProductsSchema,
 } from "../middlewares/validator.js";
 
 const router = express.Router();
@@ -18,10 +19,16 @@ const router = express.Router();
 // Public product routes (no authentication required)
 router.get("/", productController.getProducts);
 router.get(
+  "/search", 
+  validate(searchProductsSchema), 
+  productController.searchProducts
+);
+router.get(
   "/:uuid",
   validate(productUuidParam),
   productController.getProductByUUID
 );
+
 
 // Protected routes (authentication required)
 // Apply authentication middleware to all routes below this point

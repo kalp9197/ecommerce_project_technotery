@@ -32,6 +32,60 @@ export const getAllProducts = async (limit, offset) => {
   }
 };
 
+export const searchProducts = async (params) => {
+  try {
+    const {
+      search = "",
+      minPrice,
+      maxPrice,
+      orderBy = "name",
+      orderDir = "asc",
+      page = 1,
+      limit = 10,
+    } = params;
+
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.max(Number(limit) || 10, 1);
+    const offset = (pageNum - 1) * limitNum;
+
+    // Start WHERE clause
+    let where = `p.is_active = 1`;
+
+    if (search.trim()) {
+      where += ` AND (p.name LIKE '%${search.trim()}%' )`;
+    }
+    if (!isNaN(minPrice) && minPrice !== "") {
+      where += ` AND p.price >= ${Number(minPrice)}`;
+    }
+    if (!isNaN(maxPrice) && maxPrice !== "") {
+      where += ` AND p.price <= ${Number(maxPrice)}`;
+    }
+
+    // Validate orderBy and orderDir
+    const allowedFields = ["name", "price", "created_at"];
+    const orderField = allowedFields.includes(orderBy) ? orderBy : "name";
+    const orderDirection = orderDir === "desc" ? "desc" : "asc";
+
+    const sql = `
+      SELECT p.*, pc.name AS category_name
+      FROM products p
+      JOIN product_categories pc ON p.p_cat_id = pc.id
+      WHERE ${where} AND pc.is_active = 1
+      ORDER BY p.${orderField} ${orderDirection}
+      LIMIT ${limitNum} OFFSET ${offset}
+    `;
+
+    const products = await query(sql);
+
+    return {
+      products,
+      pagination: { page: pageNum, limit: limitNum },
+    };
+  } catch (err) {
+    throw new Error(`Error searching products: ${err.message}`);
+  }
+};
+
 export const getProductByUuid = async (uuid) => {
   try {
     const rows = await query(

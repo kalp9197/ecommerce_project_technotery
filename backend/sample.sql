@@ -126,7 +126,27 @@ INSERT INTO products (uuid, p_cat_id, name, description, price, quantity, is_act
   ('523d2171-0a98-4ddd-bda1-db31ecdda11b', 3, 'Programming 101','Learn the basics of programming',                  2249.00,  50, TRUE, 1, 1),
   ('80e5fb6f-8167-4fec-9cc9-97cf337d9456', 3, 'Python Mastery', 'Comprehensive guide to Python programming',         2999.00,  40, TRUE, 1, 1),
   ('ab3f992a-ab2f-4c7a-a002-e2751b428542', 4, 'Coffee Maker',   'Automatic coffee maker for your kitchen',           6749.00,  30, TRUE, 1, 1),
-  ('0bfc5892-e4f2-4c19-997d-1778fe2d3e17', 4, 'Air Fryer',      '5‑quart air fryer for healthy cooking',             7999.00,  20, TRUE, 1, 1);
+  ('0bfc5892-e4f2-4c19-997d-1778fe2d3e17', 4, 'Air Fryer',      '5‑quart air fryer for healthy cooking',             7999.00,  20, TRUE, 1, 1),
+   ('1f94f6d7-1c9e-47a6-95a4-d86a5ab2f3d4', 1, 'Tablet Z10', 'Lightweight tablet with 10-inch display', 29999.00, 40, TRUE, 1, 1),
+  ('8b0e3d3c-bf13-4c45-b870-00e21592e2e1', 1, 'Bluetooth Speaker', 'Portable Bluetooth speaker with deep bass', 4999.00, 60, TRUE, 1, 1),
+  ('a8712179-3bfb-48a1-a9ff-d1e8d5a5f383', 1, 'Smartwatch X2', 'Fitness tracking smartwatch with heart monitor', 6999.00, 50, TRUE, 1, 1),
+  ('f6c2a429-4cc2-4506-bcb0-d3c27c19ab7c', 1, 'Gaming Console', 'Next-gen gaming console with 4K support', 44999.00, 20, TRUE, 1, 1),
+  ('d4d78f45-65e9-4e88-b4aa-5f9d8ec3f235', 1, 'Noise Cancelling Headphones', 'Premium over-ear headphones', 15999.00, 25, TRUE, 1, 1),
+  ('30de9f2e-c2ee-42d3-94d5-d6b7cf1340e5', 2, 'Leather Boots', 'Durable leather boots for men', 5999.00, 35, TRUE, 1, 1),
+  ('a4e091d3-8ba6-4a6c-a343-cd91a930d1f5', 2, 'Summer Dress', 'Floral summer dress for women', 3499.00, 45, TRUE, 1, 1),
+  ('ef69c4a4-47e5-4fd1-99c8-4a453e169598', 2, 'Hoodie', 'Cozy cotton hoodie for chilly weather', 2499.00, 60, TRUE, 1, 1),
+  ('87224f8e-14f7-4f90-8c7b-c0c5cf56ef7d', 2, 'Sneakers', 'Lightweight sneakers for everyday use', 3999.00, 70, TRUE, 1, 1),
+  ('ea5d898c-7cb8-4555-a36b-8a6d70bb00c5', 2, 'Formal Shirt', 'Classic white formal shirt', 1999.00, 80, TRUE, 1, 1),
+  ('61d6b3f0-f5b7-4b60-9882-2e62d16b8c8d', 3, 'Advanced Java', 'Master Java programming with real-world projects', 2599.00, 40, TRUE, 1, 1),
+  ('fb20516b-2c19-4d46-94a8-5ffcc2e2c1c7', 3, 'Machine Learning Basics', 'Introduction to machine learning algorithms', 3499.00, 35, TRUE, 1, 1),
+  ('09b3ef12-1234-4235-9e4b-1a65b6b9d2c1', 3, 'Creative Writing', 'Develop your storytelling skills', 1999.00, 30, TRUE, 1, 1),
+  ('d05e0c0e-5d93-4200-89d3-dfcb6c5428f3', 3, 'Digital Marketing', 'Comprehensive guide to digital marketing', 2799.00, 25, TRUE, 1, 1),
+  ('d1c9a9f2-8965-4ad0-9de1-ccaa4d2a7de3', 3, 'Cooking Made Easy', 'Essential cooking techniques for beginners', 1499.00, 50, TRUE, 1, 1),
+  ('aa6cbfe1-2212-4a99-869c-9b6c59e04a64', 4, 'Vacuum Cleaner', 'Powerful and lightweight vacuum cleaner', 12499.00, 20, TRUE, 1, 1),
+  ('91cf6381-d820-4d90-87d2-5f5dbf2b2249', 4, 'Blender', 'High-speed blender for smoothies', 4499.00, 30, TRUE, 1, 1),
+  ('54055ca7-7c6d-4b84-8261-9fa9c1e489b6', 4, 'Electric Kettle', 'Fast boiling electric kettle', 2499.00, 40, TRUE, 1, 1),
+  ('7f8c4a91-b148-4728-9ff6-02e8dfd2120f', 4, 'Microwave Oven', 'Compact microwave oven for small kitchens', 8999.00, 15, TRUE, 1, 1),
+  ('dbd88c91-dc7d-4d29-8288-973f6f732ce6', 4, 'Rice Cooker', 'Automatic rice cooker with keep-warm function', 3799.00, 25, TRUE, 1, 1);
 
 INSERT INTO product_images (uuid, p_id, image_path, is_featured, is_active, created_by, updated_by) VALUES
   ('506a4f16-9ea6-4338-89f3-722699f34961', 1, '/images/smartphone-front.jpg',  TRUE,  TRUE, 1, 1),

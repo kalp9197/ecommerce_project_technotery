@@ -46,8 +46,14 @@ const testConnection = async () => {
 
 const query = async (sql, params) => {
   try {
-    const [results] = await pool.execute(sql, params);
-    return results;
+    // If params are not provided, use query() instead of execute()
+    if (!params || params.length === 0) {
+      const [results] = await pool.query(sql);
+      return results;
+    } else {
+      const [results] = await pool.execute(sql, params);
+      return results;
+    }
   } catch (error) {
     throw new Error(`Query error: ${error.message}`);
   }

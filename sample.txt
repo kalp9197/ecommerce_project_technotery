@@ -1,0 +1,4 @@
+{
+    "success": false,
+    "message": "Error searching products: Query error: Incorrect arguments to mysqld_stmt_execute"
+}

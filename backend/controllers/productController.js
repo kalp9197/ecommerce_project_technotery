@@ -36,6 +36,32 @@ export const getProducts = async (req, res) => {
   }
 };
 
+export const searchProducts = async (req, res) => {
+  try {
+    const result = await productModel.searchProducts(req.query);
+    
+    if (!result.products || result.products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found matching your criteria",
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      data: result.products,
+      pagination: result.pagination
+    });
+  }
+  catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "An error occurred while searching for products",
+    });
+  } 
+}
+
 export const getProductByUUID = async (req, res) => {
   try {
     const product = await productModel.getProductByUuid(req.params.uuid);
