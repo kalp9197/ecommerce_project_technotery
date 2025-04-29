@@ -10,6 +10,7 @@ import categoryRoutes from "./routes/productCategoryRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import reviewRoutes from "./routes/productReviewRoutes.js";
 import rateLimit from "express-rate-limit";
 
 // Get dirname for ES Modules
@@ -50,6 +51,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {

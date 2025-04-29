@@ -100,6 +100,19 @@ CREATE TABLE IF NOT EXISTS cart_items (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS product_reviews (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  uuid         VARCHAR(36) NOT NULL UNIQUE,
+  product_id   INT         NOT NULL,
+  user_id      INT         NOT NULL,
+  rating       DECIMAL(3,1) NOT NULL,
+  review       TEXT,
+  created_at   TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE
+);
+
 -- Seed data with raw, valid UUIDv4 values
 
 INSERT INTO users (uuid, name, email, password, is_active, is_admin) VALUES
@@ -175,3 +188,16 @@ INSERT INTO cart_items (uuid, cart_id, product_id, quantity, price, is_active) V
   ('b5e857f0-92ea-4e96-9b90-55397161c4a6', 1, 7, 1, 2249.00,  TRUE),
   ('6f3f5476-e5fa-47af-8181-a7250a5616e9', 2, 4, 1, 1499.00,  TRUE),
   ('88bcb61a-1f08-4af6-acfa-6abbeefd39c0', 2, 6, 2,  999.00,  TRUE);
+
+-- Sample product reviews
+INSERT INTO product_reviews (uuid, product_id, user_id, rating, review, created_at) VALUES
+  ('e47cc3d2-9bd9-4c62-9c56-23cc1d3b9c8d', 1, 2, 4.5, 'Great smartphone! The camera quality is excellent, and battery life is impressive.', '2023-04-15 09:30:00'),
+  ('18c7e182-8490-41d1-92c2-8f7a958be4ea', 2, 2, 5.0, 'Perfect laptop for development work. Fast performance and excellent build quality.', '2023-04-16 14:22:00'),
+  ('f2e87c59-779a-4b1e-a9aa-e14b71bee32f', 3, 2, 3.5, 'Good sound quality but battery life could be better.', '2023-04-17 18:45:00'),
+  ('a93b8c1d-5e3f-4cd2-a1b2-cf9e03d57630', 4, 1, 4.0, 'Comfortable and good quality fabric.', '2023-04-18 10:10:00'),
+  ('7df6ef9b-015e-4a74-bfe8-a7c0e6cbf14a', 5, 2, 5.0, 'Stylish jacket, exactly as described. Perfect fit!', '2023-04-19 13:15:00'),
+  ('c2e7d2b8-9b4a-49f7-8c1e-3a3b7e8d9f5a', 7, 1, 4.5, 'Great introduction to programming concepts. Well-written and easy to follow.', '2023-04-20 15:30:00'),
+  ('1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d', 8, 2, 5.0, 'Comprehensive Python book! I went from beginner to writing my own applications.', '2023-04-21 17:45:00'),
+  ('9f8e7d6c-5b4a-3c2d-1e0f-9a8b7c6d5e4f', 9, 1, 3.0, 'Works well but a bit noisy during operation.', '2023-04-22 08:00:00'),
+  ('6d5e4f3a-2b1c-0d9e-8f7g-6h5j4k3l2m1n', 10, 2, 4.5, 'Great air fryer! Makes crispy food with minimal oil.', '2023-04-23 11:20:00'),
+  ('3g4h5j6k-7l8m-9n0p-1q2r-3s4t5u6v7w8x', 12, 1, 4.0, 'Good sound quality for the price. Battery lasts all day.', '2023-04-24 19:15:00');
