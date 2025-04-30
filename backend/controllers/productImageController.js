@@ -66,7 +66,7 @@ export const addProductImage = async (req, res) => {
 export const updateProductImageByUuid = async (req, res) => {
   try {
     const { uuid } = req.params;
-    const { is_featured, is_active, image_url } = req.body;
+    const { is_featured, is_active, image_path } = req.body;
 
     // Check if image exists
     const image = await imageModel.getImageByUuid(uuid);
@@ -77,13 +77,11 @@ export const updateProductImageByUuid = async (req, res) => {
       });
     }
 
-    // Add user_id to update data if it exists in request
-    const updateData = {
-      is_featured: is_featured !== undefined ? is_featured : undefined,
-      is_active: is_active !== undefined ? is_active : undefined,
-      image_url: image_url || undefined,
-      user_id: req.user.id, // Add user ID for tracking who made the update
-    };
+    // Only include properties that are actually provided in the request
+    const updateData = {};
+    if (is_featured !== undefined) updateData.is_featured = is_featured;
+    if (is_active !== undefined) updateData.is_active = is_active;
+    if (image_path !== undefined) updateData.image_path = image_path;
 
     const updatedImage = await imageModel.updateProductImageByUuid(
       uuid,
@@ -96,9 +94,6 @@ export const updateProductImageByUuid = async (req, res) => {
         message: "Failed to update image",
       });
     }
-
-    // Get the updated image to return in the response
-    const refreshedImage = await imageModel.getImageByUuid(uuid);
 
     res.status(200).json({
       success: true,

@@ -7,6 +7,7 @@ import {
   reviewUuidParam,
   productUuidParamForReviews,
   updateReviewSchema,
+  paginationSchema,
 } from "../middlewares/validator.js";
 
 const router = express.Router();
@@ -14,7 +15,7 @@ const router = express.Router();
 // Public routes (no authentication required)
 router.get(
   "/product/:productUuid",
-  validate(productUuidParamForReviews),
+  validate([...productUuidParamForReviews, ...paginationSchema]),
   productReviewController.getReviewsByProductUuid
 );
 

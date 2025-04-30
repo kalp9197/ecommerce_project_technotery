@@ -18,10 +18,15 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get user's cart
-router.get("/", isNotAdmin,cartController.getUserCart);
+router.get("/", isNotAdmin, cartController.getUserCart);
 
 // Add item to cart
-router.post("/items", validate(addToCartSchema), isNotAdmin,cartController.addItemToCart);
+router.post(
+  "/items",
+  validate(addToCartSchema),
+  isNotAdmin,
+  cartController.addItemToCart
+);
 
 // Batch update cart items
 router.put(

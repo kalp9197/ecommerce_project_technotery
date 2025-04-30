@@ -20,28 +20,35 @@ export const validate = (validations) => {
   };
 };
 
-// User validation schemas
+// Enhanced user validation schemas
 export const registerSchema = [
   body("name")
     .trim()
     .notEmpty()
     .withMessage("Name is required")
     .isLength({ min: 2, max: 50 })
-    .withMessage("Name must be between 2 and 50 characters"),
+    .withMessage("Name must be between 2 and 50 characters")
+    .matches(/^[a-zA-Z\s]+$/)
+    .withMessage("Name can only contain letters and spaces"),
 
   body("email")
     .trim()
     .notEmpty()
     .withMessage("Email is required")
     .isEmail()
-    .withMessage("Please provide a valid email"),
+    .withMessage("Please provide a valid email")
+    .normalizeEmail(),
 
   body("password")
     .trim()
     .notEmpty()
     .withMessage("Password is required")
-    .isLength({ min: 6 })
-    .withMessage("Password must be at least 6 characters long"),
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .withMessage(
+      "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character"
+    ),
 
   body("is_admin")
     .optional()
@@ -56,20 +63,103 @@ export const loginSchema = [
     .notEmpty()
     .withMessage("Email is required")
     .isEmail()
-    .withMessage("Please provide a valid email"),
+    .withMessage("Please provide a valid email")
+    .normalizeEmail(),
 
   body("password").trim().notEmpty().withMessage("Password is required"),
+];
+
+export const refreshTokenSchema = [
+  body("refresh_token")
+    .notEmpty()
+    .withMessage("Refresh token is required")
+    .isJWT()
+    .withMessage("Invalid refresh token format"),
 ];
 
 export const userUuidParam = [
   param("uuid").isUUID(4).withMessage("User UUID must be a valid UUID v4"),
 ];
 
-export const activateDeactivateSchema = [
-  body("status")
+// Payment validation schemas
+export const checkoutSessionSchema = [
+  body("cartItems")
+    .isArray()
+    .withMessage("Cart items must be an array")
+    .notEmpty()
+    .withMessage("Cart items cannot be empty"),
+  body("cartItems.*.name")
+    .notEmpty()
+    .withMessage("Product name is required")
+    .isString()
+    .withMessage("Product name must be a string"),
+  body("cartItems.*.price")
+    .notEmpty()
+    .withMessage("Price is required")
+    .isFloat({ min: 0 })
+    .withMessage("Price must be a positive number"),
+  body("cartItems.*.quantity")
+    .notEmpty()
+    .withMessage("Quantity is required")
+    .isInt({ min: 1 })
+    .withMessage("Quantity must be a positive integer"),
+  body("cartItems.*.image")
     .optional()
-    .isBoolean()
-    .withMessage("Status must be a boolean value"),
+    .isURL()
+    .withMessage("Image must be a valid URL"),
+];
+
+// Enhanced user management validation schemas
+export const activateDeactivateSchema = [
+  body("status").isBoolean().withMessage("Status must be a boolean value"),
+  body("reason")
+    .optional()
+    .isString()
+    .withMessage("Reason must be a string")
+    .isLength({ max: 500 })
+    .withMessage("Reason cannot exceed 500 characters"),
+];
+
+// Common pagination validation schema
+export const paginationSchema = [
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Page must be a positive integer")
+    .toInt(),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Limit must be between 1 and 100")
+    .toInt(),
+];
+
+// Enhance search validation with more specific rules
+export const searchProductsSchema = [
+  query("search")
+    .optional()
+    .isString()
+    .withMessage("Search query must be a string")
+    .trim(),
+  query("minPrice")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Minimum price must be a positive number")
+    .toFloat(),
+  query("maxPrice")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Maximum price must be a positive number")
+    .toFloat(),
+  query("orderBy")
+    .optional()
+    .isIn(["name", "price", "created_at"])
+    .withMessage("Order by must be one of: name, price, created_at"),
+  query("orderDir")
+    .optional()
+    .isIn(["asc", "desc"])
+    .withMessage("Order direction must be either asc or desc"),
+  ...paginationSchema,
 ];
 
 // Product category validation schemas
@@ -182,8 +272,8 @@ export const addToCartSchema = [
 
   body("quantity")
     .optional()
-    .isInt({ min: 1 })
-    .withMessage("Quantity must be a positive integer")
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Quantity must be between 1 and 100")
     .toInt(),
 ];
 
@@ -197,8 +287,8 @@ export const updateCartItemSchema = [
   body("quantity")
     .notEmpty()
     .withMessage("Quantity is required")
-    .isInt({ min: 1 })
-    .withMessage("Quantity must be a positive integer")
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Quantity must be between 1 and 100")
     .toInt(),
 ];
 
@@ -207,7 +297,9 @@ export const batchUpdateCartItemsSchema = [
     .isArray()
     .withMessage("Request body must be an array")
     .notEmpty()
-    .withMessage("Array cannot be empty"),
+    .withMessage("Array cannot be empty")
+    .custom((value) => value.length <= 50)
+    .withMessage("Cannot update more than 50 items at once"),
   body("*.item_uuid")
     .notEmpty()
     .withMessage("item_uuid is required")
@@ -216,8 +308,8 @@ export const batchUpdateCartItemsSchema = [
   body("*.quantity")
     .notEmpty()
     .withMessage("Quantity is required")
-    .isInt({ min: 1 })
-    .withMessage("Quantity must be a positive integer")
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Quantity must be between 1 and 100")
     .toInt(),
 ];
 
@@ -239,17 +331,6 @@ export const completeOrderSchema = [
     .withMessage("order_completed must be a boolean value"),
 ];
 
-// Product search validation schemas
-export const searchProductsSchema = [
-  query("search").optional(),
-  query("minPrice").optional(),
-  query("maxPrice").optional(),
-  query("orderBy").optional(),
-  query("orderDir").optional(),
-  query("page").optional(),
-  query("limit").optional(),
-];
-
 // Product review validation schemas
 export const productReviewSchema = [
   body("product_uuid")
@@ -263,23 +344,18 @@ export const productReviewSchema = [
     .withMessage("Rating is required")
     .isFloat({ min: 0, max: 5 })
     .withMessage("Rating must be a number between 0 and 5"),
-    
-  body("review")
-    .optional()
-    .isString()
-    .withMessage("Review must be a string")
+
+  body("review").optional().isString().withMessage("Review must be a string"),
 ];
 
 export const reviewUuidParam = [
-  param("uuid")
-    .isUUID(4)
-    .withMessage("Review UUID must be a valid UUID v4")
+  param("uuid").isUUID(4).withMessage("Review UUID must be a valid UUID v4"),
 ];
 
 export const productUuidParamForReviews = [
   param("productUuid")
     .isUUID(4)
-    .withMessage("Product UUID must be a valid UUID v4")
+    .withMessage("Product UUID must be a valid UUID v4"),
 ];
 
 export const updateReviewSchema = [
@@ -287,9 +363,17 @@ export const updateReviewSchema = [
     .optional()
     .isFloat({ min: 0, max: 5 })
     .withMessage("Rating must be a number between 0 and 5"),
-    
-  body("review")
-    .optional()
-    .isString()
-    .withMessage("Review must be a string")
+
+  body("review").optional().isString().withMessage("Review must be a string"),
+];
+
+// Webhook validation schema
+export const webhookSchema = [
+  body().custom((value, { req }) => {
+    const signature = req.headers["stripe-signature"];
+    if (!signature) {
+      throw new Error("Stripe signature is required");
+    }
+    return true;
+  }),
 ];

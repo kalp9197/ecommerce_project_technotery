@@ -140,24 +140,28 @@ export const updateReview = async (uuid, userId, rating, review) => {
       );
     }
 
-    // Update the review
+    // Map undefined inputs to null so COALESCE works
+    const safeRating = typeof rating !== 'undefined' ? rating : null;
+    const safeReview = typeof review !== 'undefined' ? review : null;
+
+    // Perform update using COALESCE to skip nulls
     const result = await query(
       `
-      UPDATE product_reviews 
-      SET 
+      UPDATE product_reviews
+      SET
         rating = COALESCE(?, rating),
         review = COALESCE(?, review),
         updated_at = CURRENT_TIMESTAMP
       WHERE uuid = ?
       `,
-      [rating, review, uuid]
+      [safeRating, safeReview, uuid]
     );
 
     if (result.affectedRows === 0) {
       throw new Error("No changes made to the review");
     }
 
-    // Get updated review
+    // Return the updated review
     return await getReviewByUuid(uuid);
   } catch (error) {
     throw new Error(`Error updating review: ${error.message}`);

@@ -4,6 +4,9 @@ import {
   validate,
   registerSchema,
   loginSchema,
+  refreshTokenSchema,
+  activateDeactivateSchema,
+  paginationSchema,
 } from "../middlewares/validator.js";
 import { authenticate } from "../middlewares/auth.js";
 import { isAdmin } from "../middlewares/adminAuth.js";
@@ -12,14 +15,26 @@ const router = express.Router();
 
 router.post("/register", validate(registerSchema), userController.register);
 router.post("/login", validate(loginSchema), userController.login);
-router.post("/refresh-token", authenticate, userController.refreshToken);
+router.post(
+  "/refresh-token",
+  validate(refreshTokenSchema),
+  authenticate,
+  userController.refreshToken
+);
 
 router.post(
   "/activateDeactivate",
   authenticate,
+  validate(activateDeactivateSchema),
   userController.activateDeactivate
 );
 
-router.get("/all", authenticate, isAdmin, userController.getAllUsers);
+router.get(
+  "/all",
+  authenticate,
+  isAdmin,
+  validate(paginationSchema),
+  userController.getAllUsers
+);
 
 export default router;

@@ -6,12 +6,17 @@ import {
   validate,
   categorySchema,
   categoryUuidParam,
+  paginationSchema,
 } from "../middlewares/validator.js";
 
 const router = express.Router();
 
 // Public category routes (no authentication required)
-router.get("/", categoryController.getAllCategories);
+router.get(
+  "/",
+  validate(paginationSchema),
+  categoryController.getAllCategories
+);
 router.get(
   "/:uuid",
   validate(categoryUuidParam),
