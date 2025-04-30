@@ -55,7 +55,7 @@ export const updateCartItem = async (req, res) => {
     const { quantity } = req.body;
 
     const item = await cartModel.updateCartItem(userId, productUuid, quantity);
-
+    if (!item) throw new Error("Item not found or inactive");
     res.status(200).json({
       success: true,
       message: "Cart item updated successfully",
@@ -132,14 +132,18 @@ export const batchUpdateCartItems = async (req, res) => {
     const items = req.body;
 
     const result = await cartModel.batchUpdateCartItems(userId, items);
-
+    if (!result){
+      return res.status(400).json({
+        success: false,
+        message: "Error updating cart items",
+      })
+    }
     res.status(200).json({
       success: true,
       message: "Cart items updated successfully",
       data: {
         updated_items: result.success,
         errors: result.errors,
-        cart: result.cart,
       },
     });
   } catch (error) {

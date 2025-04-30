@@ -62,17 +62,16 @@ export const createCategory = async (req, res) => {
     // Create and fetch the new category
     const categoryUuid = await categoryModel.createCategory({ name }, userId);
 
-    const categories = await categoryModel.getCategoryByUuid(categoryUuid);
-    if (!categories || categories.length === 0) {
-      return res.status(404).json({
+    if (!categoryUuid) {
+      return res.status(400).json({
         success: false,
-        message: "Category not found",
+        message: "Failed to create category",
       });
     }
 
     res.status(201).json({
       success: true,
-      data: categories[0],
+      msg: "Category created successfully",
     });
   } catch (error) {
     // Check for specific error cases
@@ -105,14 +104,20 @@ export const updateCategoryByUuid = async (req, res) => {
       });
     }
 
-    await categoryModel.updateCategoryByUuid(uuid, { name, is_active }, userId);
-
-    // Get updated data
-    const updatedCategories = await categoryModel.getCategoryByUuid(uuid);
-
+    const updatedCategories = await categoryModel.updateCategoryByUuid(
+      uuid,
+      { name, is_active },
+      userId
+    );
+    if (!updatedCategories || updatedCategories.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to update category",
+      });
+    }
     res.status(200).json({
       success: true,
-      data: updatedCategories[0],
+      msg: "Category updated successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -135,15 +140,16 @@ export const deleteCategoryByUuid = async (req, res) => {
       });
     }
 
-    const originalCategory = categories[0];
     const result = await categoryModel.deleteCategoryByUuid(uuid);
-
+    if (!result) {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to delete category",
+      });
+    }
     res.status(200).json({
       success: true,
       message: "Category deleted successfully",
-      data: {
-        deleted_category: originalCategory,
-      },
     });
   } catch (error) {
     // Special handling for categories with products

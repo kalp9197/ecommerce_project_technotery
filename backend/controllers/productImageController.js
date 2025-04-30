@@ -103,7 +103,6 @@ export const updateProductImageByUuid = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Image updated successfully",
-      data: refreshedImage,
     });
   } catch (error) {
     res.status(500).json({

@@ -13,18 +13,21 @@ export const getReviewsByProductUuid = async (req, res) => {
         message: "No reviews found for this product",
       });
     }
-    
-    // Calculate average rating - ensure all ratings are parsed as numbers
-    const totalRating = reviews.reduce((sum, review) => sum + parseFloat(review.rating || 0), 0);
+
+    let totalRating = 0;
+    for (const review of reviews) {
+      totalRating += parseFloat(review.rating) || 0;
+    }
+
     const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
-    
+
     res.status(200).json({
       success: true,
       message: "Product reviews retrieved successfully",
       data: {
         reviews: reviews,
         averageRating: parseFloat(averageRating.toFixed(1)),
-        totalReviews: reviews.length
+        totalReviews: reviews.length,
       },
     });
   } catch (error) {
@@ -40,7 +43,7 @@ export const getReviewByUuid = async (req, res) => {
   try {
     const uuid = req.params.uuid;
     const productUuid = req.params.productUuid;
-    const review = await productReviewModel.getReviewByUuid(uuid,productUuid);
+    const review = await productReviewModel.getReviewByUuid(uuid, productUuid);
     if (!review) {
       return res.status(404).json({
         success: false,
@@ -127,11 +130,9 @@ export const updateReview = async (req, res) => {
       rating,
       review
     );
-
     res.status(200).json({
       success: true,
       message: "Review updated successfully",
-      data: updatedReview,
     });
   } catch (error) {
     if (
