@@ -123,39 +123,23 @@ export const getProductByUuid = async (uuid) => {
   }
 };
 
-export const createProduct = async (body) => {
-  try {
-    const { p_cat_uuid, name, description, price, quantity } = body;
-    const uuid = uuidv4();
+export const createProduct = async (productData) => {
+  const { sku, name, category, price, quantity, images } = productData;
 
-    // Get category ID
-    const categoryResult = await query(
-      `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
-      [p_cat_uuid]
-    );
+  const result = await query(
+    "INSERT INTO products (sku, name, category, price, quantity, images) VALUES (?, ?, ?, ?, ?, ?)",
+    [sku, name, category, price, quantity, JSON.stringify(images)]
+  );
 
-    if (!categoryResult || !categoryResult.length || !categoryResult[0].id) {
-      throw new Error("Invalid or inactive product category");
-    }
-
-    const categoryId = categoryResult[0].id;
-    const safeDescription = description || "";
-
-    // Insert product with the retrieved category ID
-    const result = await query(
-      `INSERT INTO products (uuid, p_cat_id, name, description, price, quantity, is_active) 
-       VALUES (?, ?, ?, ?, ?, ?, 1)`,
-      [uuid, categoryId, name, safeDescription, price, quantity]
-    );
-
-    if (!result || result.affectedRows === 0) {
-      throw new Error("Failed to create product");
-    }
-
-    return uuid;
-  } catch (error) {
-    throw new Error(`Error creating product: ${error.message}`);
-  }
+  return {
+    id: result.insertId,
+    sku,
+    name,
+    category,
+    price,
+    quantity,
+    images,
+  };
 };
 
 export const updateProductByUuid = async (uuid, body) => {
@@ -233,5 +217,57 @@ export const deleteProductByUuid = async (uuid) => {
     return result;
   } catch (error) {
     throw new Error(`Error deleting product: ${error.message}`);
+  }
+};
+
+export const getProductBySKU = async (sku) => {
+  try {
+    const results = await query("SELECT * FROM products WHERE sku = ?", [sku]);
+    if (results.length === 0) {
+      return null;
+    }
+
+    const product = results[0];
+    // Parse images JSON string to array
+    product.images = JSON.parse(product.images || "[]");
+
+    return product;
+  } catch (error) {
+    throw new Error(`Error fetching product by SKU: ${error.message}`);
+  }
+};
+
+export const bulkCreateProducts = async (productsData) => {
+  try {
+    const createdProducts = [];
+
+    for (const productData of productsData) {
+      const result = await createProduct(productData);
+      createdProducts.push(result);
+    }
+
+    return createdProducts;
+  } catch (error) {
+    throw new Error(`Error creating products: ${error.message}`);
+  }
+};
+
+export const ensureProductsTable = async () => {
+  try {
+    await query(`
+    CREATE TABLE IF NOT EXISTS products (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      sku VARCHAR(255) NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      category VARCHAR(255) NOT NULL,
+      price DECIMAL(10, 2) NOT NULL,
+      quantity INT NOT NULL,
+      images TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+  } catch (error) {
+    throw new Error(`Error creating products table: ${error.message}`);
   }
 };
