@@ -14,9 +14,13 @@ const StripeCheckoutButton = ({ className }) => {
     setError(null);
 
     try {
-      await createCheckoutSession(cartItems);
-    } catch (_) {
-      setError("Checkout failed");
+      const response = await createCheckoutSession(cartItems);
+      if (!response.success) {
+        setError(response.message || "Checkout failed. Please try again.");
+      }
+    } catch (err) {
+      setError("An error occurred during checkout. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -32,8 +36,8 @@ const StripeCheckoutButton = ({ className }) => {
       </Button>
 
       {error && (
-        <div className="mt-2 text-sm text-red-500 flex items-center">
-          <AlertCircle className="h-4 w-4 mr-1" />
+        <div className="mt-2 text-sm text-destructive flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
           <span>{error}</span>
         </div>
       )}
