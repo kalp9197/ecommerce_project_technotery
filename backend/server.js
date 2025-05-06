@@ -12,6 +12,7 @@ import cartRoutes from "./routes/cartRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import reviewRoutes from "./routes/productReviewRoutes.js";
 import fileUploadRoutes from "./routes/fileUploadRoutes.js";
+import emailTestRoutes from "./routes/emailTestRoutes.js";
 import rateLimit from "express-rate-limit";
 
 // Get dirname for ES Modules
@@ -54,6 +55,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/files", fileUploadRoutes);
+app.use("/api/email-test", emailTestRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {

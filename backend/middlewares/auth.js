@@ -46,26 +46,13 @@ const verifyToken = async (req) => {
     );
 
     if (!tokens || !tokens.length) {
-      // Try to find a refreshable token
-      const refreshableTokens = await query(
-        "SELECT ut.* FROM user_tokens ut " +
-          "JOIN users u ON ut.user_id = u.id " +
-          "WHERE u.uuid = ? AND ut.refresh_cycles > 0 ORDER BY ut.id DESC LIMIT 1",
-        [userUuid]
-      );
-
-      if (refreshableTokens?.length) {
-        return {
-          error: "Token expired but can be refreshed",
-          status: 401,
-          canRefresh: true,
-          tokenId: refreshableTokens[0].id,
-          refreshCycles: refreshableTokens[0].refresh_cycles,
-          is_expired: 1,
-        };
-      }
-
-      return { error: "No active token found for user", status: 404 };
+      // Don't suggest token refreshing, force login instead
+      return {
+        error: "Token expired. Please log in again.",
+        status: 401,
+        requiresLogin: true,
+        is_expired: 1,
+      };
     }
 
     const userToken = tokens[0];
@@ -79,21 +66,11 @@ const verifyToken = async (req) => {
         userToken.id,
       ]);
 
-      // Check if token can be refreshed
-      if (userToken.refresh_cycles > 0) {
-        return {
-          error: "Token expired but can be refreshed",
-          status: 401,
-          canRefresh: true,
-          tokenId: userToken.id,
-          refreshCycles: userToken.refresh_cycles,
-          is_expired: 1,
-        };
-      }
-
+      // Don't suggest token refreshing, force login instead
       return {
-        error: "Token has expired",
+        error: "Token expired. Please log in again.",
         status: 401,
+        requiresLogin: true,
         is_expired: 1,
       };
     }
@@ -110,28 +87,13 @@ const verifyToken = async (req) => {
     };
   } catch (error) {
     if (error.name === "TokenExpiredError") {
-      // When JWT is expired, check if we can refresh
-      const decoded = jwt.decode(token);
-      if (decoded && decoded.uuid) {
-        const refreshableTokens = await query(
-          "SELECT ut.* FROM user_tokens ut " +
-            "JOIN users u ON ut.user_id = u.id " +
-            "WHERE u.uuid = ? AND ut.refresh_cycles > 0 ORDER BY ut.id DESC LIMIT 1",
-          [decoded.uuid]
-        );
-
-        if (refreshableTokens?.length) {
-          return {
-            error: "Token expired but can be refreshed",
-            status: 401,
-            canRefresh: true,
-            tokenId: refreshableTokens[0].id,
-            refreshCycles: refreshableTokens[0].refresh_cycles,
-            is_expired: 1,
-          };
-        }
-      }
-      return { error: "Token has expired", status: 401, is_expired: 1 };
+      // Don't suggest token refreshing, force login instead
+      return {
+        error: "Token has expired. Please log in again.",
+        status: 401,
+        requiresLogin: true,
+        is_expired: 1,
+      };
     }
     return { error: "Authentication error", status: 500 };
   }
@@ -142,55 +104,20 @@ export const authenticate = async (req, res, next) => {
     // Update any expired tokens in the database
     await updateExpiredTokens();
 
-    // Special handling for refresh-token endpoint
-    if (req.originalUrl.includes("/refresh-token")) {
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith("Bearer ")) {
-        const token = authHeader.split(" ")[1];
-        const decoded = jwt.decode(token);
-
-        if (decoded && decoded.uuid) {
-          const refreshableTokens = await query(
-            "SELECT ut.* FROM user_tokens ut " +
-              "JOIN users u ON ut.user_id = u.id " +
-              "WHERE u.uuid = ? AND ut.refresh_cycles > 0 ORDER BY ut.id DESC LIMIT 1",
-            [decoded.uuid]
-          );
-
-          if (refreshableTokens?.length) {
-            const userToken = refreshableTokens[0];
-            req.tokenId = userToken.id;
-            req.refreshCycles = userToken.refresh_cycles;
-            req.user = decoded;
-            req.is_expired = 1;
-
-            // Get and add user id
-            const userData = await query(
-              "SELECT id FROM users WHERE uuid = ? AND is_active = 1",
-              [decoded.uuid]
-            );
-            if (userData && userData.length > 0) {
-              req.user.id = userData[0].id;
-            }
-
-            return next();
-          }
-        }
-      }
-    }
+    // No special handling for refresh-token endpoint
+    // Let the controller handle all token validation and refreshing
 
     // Standard auth
     const result = await verifyToken(req);
     if (result.error) {
-      // Tell client to refresh their token if possible
-      if (result.canRefresh) {
+      // Tell client to log in again if token is expired
+      if (result.requiresLogin) {
         return res.status(401).json({
           success: false,
-          message: "Token expired. Please refresh your token.",
-          requiresRefresh: true,
+          message:
+            "Token expired. Please log in again to generate a new token.",
+          requiresLogin: true,
           is_expired: 1,
-          tokenId: result.tokenId,
-          refreshCycles: result.refreshCycles,
         });
       }
 

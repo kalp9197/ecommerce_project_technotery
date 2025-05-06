@@ -4,26 +4,31 @@ CREATE DATABASE my_db;
 USE my_db;
 
 -- Create tables
+-- Note: The users table includes email_verified field, but verification tokens are stored in user_tokens table
 CREATE TABLE IF NOT EXISTS users (
-  id           INT AUTO_INCREMENT PRIMARY KEY,
-  uuid         VARCHAR(36) NOT NULL UNIQUE,
-  name         VARCHAR(100) NOT NULL,
-  email        VARCHAR(100) NOT NULL UNIQUE,
-  password     VARCHAR(255) NOT NULL,
-  is_active    BOOLEAN     NOT NULL DEFAULT TRUE,
-  is_admin     BOOLEAN     NOT NULL DEFAULT FALSE,
-  created_at   TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at   TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  id                        INT AUTO_INCREMENT PRIMARY KEY,
+  uuid                      VARCHAR(36) NOT NULL UNIQUE,
+  name                      VARCHAR(100) NOT NULL,
+  email                     VARCHAR(100) NOT NULL UNIQUE,
+  password                  VARCHAR(255) NOT NULL,
+  is_active                 BOOLEAN     NOT NULL DEFAULT TRUE,
+  is_admin                  BOOLEAN     NOT NULL DEFAULT FALSE,
+  email_verified            BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS user_tokens (
-  id              INT AUTO_INCREMENT PRIMARY KEY,
-  uuid            VARCHAR(36) NOT NULL UNIQUE,
-  user_id         INT         NOT NULL,
-  expires_at      TIMESTAMP   NOT NULL,
-  is_expired      BOOLEAN     NOT NULL DEFAULT FALSE,
-  last_login_date TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  refresh_cycles  INT         NOT NULL DEFAULT 5,
+  id                        INT AUTO_INCREMENT PRIMARY KEY,
+  uuid                      VARCHAR(36) NOT NULL UNIQUE,
+  user_id                   INT         NOT NULL,
+  token                     TEXT        NULL,
+  expires_at                TIMESTAMP   NOT NULL,
+  is_expired                BOOLEAN     NOT NULL DEFAULT FALSE,
+  last_login_date           TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  refresh_cycles            INT         NOT NULL DEFAULT 5,
+  verification_token        VARCHAR(255) NULL,
+  verification_token_expires TIMESTAMP   NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -93,7 +98,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
   product_id INT         NOT NULL,
   quantity   INT         NOT NULL DEFAULT 1,
   price      DECIMAL(10,2) NOT NULL,
-  is_active  BOOLEAN     NOT NULL DEFAULT TRUE, 
+  is_active  BOOLEAN     NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (cart_id)    REFERENCES cart(id)     ON DELETE CASCADE,
@@ -115,9 +120,9 @@ CREATE TABLE IF NOT EXISTS product_reviews (
 
 -- Seed data with raw, valid UUIDv4 values
 
-INSERT INTO users (uuid, name, email, password, is_active, is_admin) VALUES
-  ('33cd07d3-96e1-45b5-9f59-11c8a07b25b7', 'Admin User',   'admin@example.com',  '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', TRUE, TRUE),
-  ('5de5afcf-8414-4dcc-8542-fcaf3fb672cd', 'Regular User', 'user@example.com',   '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', TRUE, FALSE);
+INSERT INTO users (uuid, name, email, password, is_active, is_admin, email_verified) VALUES
+  ('33cd07d3-96e1-45b5-9f59-11c8a07b25b7', 'Admin User',   'admin@example.com',  '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', TRUE, TRUE, TRUE),
+  ('5de5afcf-8414-4dcc-8542-fcaf3fb672cd', 'Regular User', 'user@example.com',   '$2a$10$HIJKgf5eTENF1kqmjNHYjO.t7KwSfGa2NJJoH/NnmOoLn1z5AKP56', TRUE, FALSE, TRUE);
 
 INSERT INTO user_tokens (uuid, user_id, expires_at, is_expired, last_login_date, refresh_cycles) VALUES
   ('ae3857e5-859f-4e5a-96ce-062997e6453a', 1, '2025-05-21 12:00:00', FALSE, CURRENT_TIMESTAMP, 5),

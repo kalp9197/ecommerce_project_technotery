@@ -17,14 +17,9 @@ if (!fs.existsSync(uploadsDir)) {
 //Upload and process CSV and ZIP files
 export const uploadFiles = async (req, res) => {
   try {
-    if (!req.files) {
-      return res.status(400).json({
-        success: false,
-        message: "No files were uploaded",
-      });
-    }
-
-    if (!req.files.csv && !req.files.zip) {
+    // Prepare files for processing
+    // If files were not provided with the correct keys, find them in the request
+    if (!req.files.csv || !req.files.zip) {
       const fileKeys = Object.keys(req.files);
       let csvFile = null;
       let zipFile = null;
@@ -48,44 +43,17 @@ export const uploadFiles = async (req, res) => {
         }
       }
 
-      if (!csvFile || !zipFile) {
-        return res.status(400).json({
-          success: false,
-          message: "Both CSV and ZIP files are required",
-          uploadedFileTypes: Object.keys(req.files).map((key) => {
-            if (Array.isArray(req.files[key])) {
-              return req.files[key].map((f) => f.name);
-            }
-            return req.files[key].name;
-          }),
-        });
+      // Set the files for processing
+      if (csvFile && zipFile) {
+        req.files.csv = csvFile;
+        req.files.zip = zipFile;
       }
-
-      req.files.csv = csvFile;
-      req.files.zip = zipFile;
     }
 
     const csvFile = req.files.csv;
     const zipFile = req.files.zip;
-
-    if (!csvFile || !zipFile) {
-      return res.status(400).json({
-        success: false,
-        message: "Both CSV and ZIP files are required",
-      });
-    }
-
     const csvBaseName = path.parse(csvFile.name).name;
     const zipBaseName = path.parse(zipFile.name).name;
-
-    if (csvBaseName !== zipBaseName) {
-      return res.status(400).json({
-        success: false,
-        message: "Both files must have the same base name",
-        csvName: csvFile.name,
-        zipName: zipFile.name,
-      });
-    }
 
     const timestamp = Date.now();
     const csvPath = path.join(uploadsDir, `${timestamp}_${csvFile.name}`);

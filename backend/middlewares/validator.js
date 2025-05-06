@@ -1,4 +1,5 @@
 import { validationResult, body, param, query } from "express-validator";
+import path from "path";
 
 // Validation middleware
 export const validate = (validations) => {
@@ -71,10 +72,11 @@ export const loginSchema = [
 
 export const refreshTokenSchema = [
   body("refresh_token")
-    .notEmpty()
-    .withMessage("Refresh token is required")
-    .isJWT()
-    .withMessage("Invalid refresh token format"),
+    .optional()
+    .isString()
+    .withMessage("Refresh token must be a string"),
+
+  body("token").optional().isString().withMessage("Token must be a string"),
 ];
 
 export const userUuidParam = [
@@ -161,6 +163,25 @@ export const paginationSchema = [
     .isInt({ min: 1, max: 100 })
     .withMessage("Limit must be between 1 and 100")
     .toInt(),
+];
+
+export const verifyEmailSchema = [
+  param("token")
+    .trim()
+    .notEmpty()
+    .withMessage("Verification token is required")
+    .isLength({ min: 32, max: 64 })
+    .withMessage("Invalid verification token format"),
+];
+
+export const resendVerificationEmailSchema = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email")
+    .normalizeEmail(),
 ];
 
 // Enhance search validation with more specific rules
@@ -403,6 +424,89 @@ export const webhookSchema = [
     if (!signature) {
       throw new Error("Stripe signature is required");
     }
+    return true;
+  }),
+];
+
+// Email test validation schema
+export const emailTestSchema = [
+  body("to")
+    .trim()
+    .notEmpty()
+    .withMessage("Recipient email is required")
+    .isEmail()
+    .withMessage("Please provide a valid recipient email")
+    .normalizeEmail(),
+
+  body("subject")
+    .trim()
+    .notEmpty()
+    .withMessage("Email subject is required")
+    .isString()
+    .withMessage("Subject must be a string"),
+
+  body("text")
+    .trim()
+    .notEmpty()
+    .withMessage("Email content is required")
+    .isString()
+    .withMessage("Email content must be a string"),
+
+  body("html")
+    .optional()
+    .isString()
+    .withMessage("HTML content must be a string"),
+];
+
+// File upload validation schema
+export const fileUploadSchema = [
+  body().custom((value, { req }) => {
+    if (!req.files) {
+      throw new Error("No files were uploaded");
+    }
+
+    // Check if files are provided with the correct keys
+    if (!req.files.csv && !req.files.zip) {
+      // Try to find CSV and ZIP files in the request
+      const fileKeys = Object.keys(req.files);
+      let csvFound = false;
+      let zipFound = false;
+
+      for (const key of fileKeys) {
+        if (Array.isArray(req.files[key])) {
+          for (const file of req.files[key]) {
+            if (file.name.toLowerCase().endsWith(".csv")) csvFound = true;
+            if (file.name.toLowerCase().endsWith(".zip")) zipFound = true;
+          }
+        } else {
+          const file = req.files[key];
+          if (file.name.toLowerCase().endsWith(".csv")) csvFound = true;
+          if (file.name.toLowerCase().endsWith(".zip")) zipFound = true;
+        }
+      }
+
+      if (!csvFound || !zipFound) {
+        throw new Error("Both CSV and ZIP files are required");
+      }
+    } else {
+      // Check if both CSV and ZIP files exist
+      if (!req.files.csv || !req.files.zip) {
+        throw new Error("Both CSV and ZIP files are required");
+      }
+    }
+
+    // Check if file names match
+    const csvFile = req.files.csv;
+    const zipFile = req.files.zip;
+    const csvBaseName = path.parse(csvFile.name).name;
+    const zipBaseName = path.parse(zipFile.name).name;
+
+    if (csvBaseName !== zipBaseName) {
+      throw new Error(
+        `File base names must match: ${csvFile.name} vs ${zipFile.name}`
+      );
+    }
+
     return true;
   }),
 ];

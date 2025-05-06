@@ -2,6 +2,7 @@ import { query } from "../utils/db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
+import crypto from "crypto";
 
 export const getUserByUuid = async (uuid) => {
   try {
@@ -40,6 +41,61 @@ export const getUserByEmail = async (body) => {
   }
 };
 
+export const generateVerificationToken = async (userId) => {
+  try {
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 24);
+    const tokenUuid = uuidv4();
+
+    // First, expire any existing verification tokens for this user
+    await query(
+      "UPDATE user_tokens SET is_expired = 1 WHERE user_id = ? AND verification_token IS NOT NULL",
+      [userId]
+    );
+
+    // Create a new verification token
+    const result = await query(
+      "INSERT INTO user_tokens (uuid, user_id, expires_at, is_expired, verification_token, verification_token_expires) VALUES (?, ?, ?, 0, ?, ?)",
+      [tokenUuid, userId, expires, token, expires]
+    );
+
+    if (!result?.affectedRows)
+      throw new Error("Verification token creation failed");
+
+    return token;
+  } catch (error) {
+    throw new Error(`Token generation failed: ${error.message}`);
+  }
+};
+
+export const verifyEmail = async (token) => {
+  try {
+    // Find the token in user_tokens table
+    const tokenData = await query(
+      "SELECT ut.user_id, u.uuid FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE ut.verification_token = ? AND ut.verification_token_expires > NOW() AND ut.is_expired = 0",
+      [token]
+    );
+
+    if (!tokenData?.length) throw new Error("Invalid or expired token");
+
+    // Mark the user as verified
+    await query("UPDATE users SET email_verified = 1 WHERE id = ?", [
+      tokenData[0].user_id,
+    ]);
+
+    // Mark the verification token as expired
+    await query(
+      "UPDATE user_tokens SET is_expired = 1 WHERE user_id = ? AND verification_token IS NOT NULL",
+      [tokenData[0].user_id]
+    );
+
+    return tokenData[0].uuid;
+  } catch (error) {
+    throw new Error(`Verification failed: ${error.message}`);
+  }
+};
+
 export const createUser = async (body) => {
   try {
     const { name, email, password, is_admin } = body;
@@ -53,13 +109,20 @@ export const createUser = async (body) => {
     const adminStatus = is_admin === 1 || is_admin === true ? 1 : 0;
 
     const result = await query(
-      "INSERT INTO users (uuid, name, email, password, is_active, is_admin) VALUES (?, ?, ?, ?, 1, ?)",
+      "INSERT INTO users (uuid, name, email, password, is_active, is_admin, email_verified) VALUES (?, ?, ?, ?, 1, ?, 0)",
       [uuid, name, email, hashedPassword, adminStatus]
     );
 
     if (!result?.affectedRows) {
       throw new Error("Failed to create user");
     }
+
+    // Generate verification token
+    const userData = await query("SELECT id FROM users WHERE uuid = ?", [uuid]);
+    if (userData?.length) {
+      await generateVerificationToken(userData[0].id);
+    }
+
     return uuid;
   } catch (error) {
     if (
@@ -132,8 +195,8 @@ export const generateToken = async (userUuid) => {
     // Then create a new token
     const tokenUuid = uuidv4();
     const result = await query(
-      "INSERT INTO user_tokens (uuid, user_id, expires_at, is_expired, last_login_date, refresh_cycles) VALUES (?, ?, ?, 0, ?, ?)",
-      [tokenUuid, userId, expiresAt, now, initialRefreshCycles]
+      "INSERT INTO user_tokens (uuid, user_id, token, expires_at, is_expired, last_login_date, refresh_cycles) VALUES (?, ?, ?, ?, 0, ?, ?)",
+      [tokenUuid, userId, token, expiresAt, now, initialRefreshCycles]
     );
 
     if (!result?.affectedRows) throw new Error("Token creation failed");
@@ -274,8 +337,15 @@ export const refreshToken = async (tokenId) => {
     // Create a new token with decremented refresh cycles
     const newTokenUuid = uuidv4();
     const result = await query(
-      "INSERT INTO user_tokens (uuid, user_id, expires_at, is_expired, last_login_date, refresh_cycles) VALUES (?, ?, ?, 0, ?, ?)",
-      [newTokenUuid, token.user_id, newExpiresAt, now, newRefreshCycles]
+      "INSERT INTO user_tokens (uuid, user_id, token, expires_at, is_expired, last_login_date, refresh_cycles) VALUES (?, ?, ?, ?, 0, ?, ?)",
+      [
+        newTokenUuid,
+        token.user_id,
+        newToken,
+        newExpiresAt,
+        now,
+        newRefreshCycles,
+      ]
     );
 
     if (!result?.affectedRows) throw new Error("Token refresh failed");
@@ -297,6 +367,34 @@ export const refreshToken = async (tokenId) => {
     };
   } catch (error) {
     throw new Error(`${error.message}`);
+  }
+};
+
+export const resendVerificationEmail = async (email) => {
+  try {
+    // Check if user exists and is active
+    const users = await query(
+      "SELECT id, uuid, name, email_verified FROM users WHERE email = ? AND is_active = 1",
+      [email]
+    );
+
+    if (!users?.length) throw new Error("User not found");
+
+    // If user is already verified, don't send another verification email
+    if (users[0].email_verified === 1) {
+      throw new Error("Email is already verified");
+    }
+
+    // Generate a new verification token
+    const token = await generateVerificationToken(users[0].id);
+
+    return {
+      userUuid: users[0].uuid,
+      name: users[0].name,
+      token,
+    };
+  } catch (error) {
+    throw new Error(`Failed to resend: ${error.message}`);
   }
 };
 

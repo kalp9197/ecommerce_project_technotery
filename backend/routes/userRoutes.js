@@ -4,9 +4,10 @@ import {
   validate,
   registerSchema,
   loginSchema,
-  refreshTokenSchema,
   activateDeactivateSchema,
   paginationSchema,
+  verifyEmailSchema,
+  resendVerificationEmailSchema,
 } from "../middlewares/validator.js";
 import { authenticate } from "../middlewares/auth.js";
 import { isAdmin } from "../middlewares/adminAuth.js";
@@ -15,12 +16,18 @@ const router = express.Router();
 
 router.post("/register", validate(registerSchema), userController.register);
 router.post("/login", validate(loginSchema), userController.login);
-router.post(
-  "/refresh-token",
-  validate(refreshTokenSchema),
-  authenticate,
-  userController.refreshToken
+router.get(
+  "/verify-email/:token",
+  validate(verifyEmailSchema),
+  userController.verifyEmail
 );
+router.post(
+  "/resend-verification",
+  validate(resendVerificationEmailSchema),
+  userController.resendVerificationEmail
+);
+// No validation to make it more flexible
+router.post("/refresh-token", userController.refreshToken);
 
 router.post(
   "/activateDeactivate",
