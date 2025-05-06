@@ -8,7 +8,7 @@ import {
   productUuidParamForReviews,
   updateReviewSchema,
   paginationSchema,
-} from "../middlewares/validator.js";
+} from "../validations/index.js";
 
 const router = express.Router();
 

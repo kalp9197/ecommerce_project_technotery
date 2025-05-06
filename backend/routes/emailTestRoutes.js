@@ -1,6 +1,6 @@
 import express from "express";
 import { sendEmail } from "../utils/emailService.js";
-import { validate, emailTestSchema } from "../middlewares/validator.js";
+import { validate, emailTestSchema } from "../validations/index.js";
 
 const router = express.Router();
 

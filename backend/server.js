@@ -5,14 +5,16 @@ import { testConnection } from "./utils/db.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import userRoutes from "./routes/userRoutes.js";
-import categoryRoutes from "./routes/productCategoryRoutes.js";
-import productRoutes from "./routes/productRoutes.js";
-import cartRoutes from "./routes/cartRoutes.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
-import reviewRoutes from "./routes/productReviewRoutes.js";
-import fileUploadRoutes from "./routes/fileUploadRoutes.js";
-import emailTestRoutes from "./routes/emailTestRoutes.js";
+import {
+  userRoutes,
+  productCategoryRoutes as categoryRoutes,
+  productRoutes,
+  cartRoutes,
+  paymentRoutes,
+  productReviewRoutes as reviewRoutes,
+  fileUploadRoutes,
+  emailTestRoutes,
+} from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 
 // Get dirname for ES Modules

@@ -8,7 +8,7 @@ import {
   validate,
   checkoutSessionSchema,
   webhookSchema,
-} from "../middlewares/validator.js";
+} from "../validations/index.js";
 
 const router = express.Router();
 

@@ -9,7 +9,7 @@ import {
   deactivateAllCartItemsSchema,
   batchUpdateCartItemsSchema,
   completeOrderSchema,
-} from "../middlewares/validator.js";
+} from "../validations/index.js";
 import { isNotAdmin } from "../middlewares/adminAuth.js";
 
 const router = express.Router();

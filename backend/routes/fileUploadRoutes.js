@@ -1,7 +1,7 @@
 import express from "express";
 import { uploadFiles } from "../controllers/fileUploadController.js";
 import fileUpload from "express-fileupload";
-import { validate, fileUploadSchema } from "../middlewares/validator.js";
+import { validate, fileUploadSchema } from "../validations/index.js";
 
 const router = express.Router();
 

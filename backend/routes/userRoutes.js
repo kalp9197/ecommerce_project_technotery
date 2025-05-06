@@ -8,7 +8,7 @@ import {
   paginationSchema,
   verifyEmailSchema,
   resendVerificationEmailSchema,
-} from "../middlewares/validator.js";
+} from "../validations/index.js";
 import { authenticate } from "../middlewares/auth.js";
 import { isAdmin } from "../middlewares/adminAuth.js";
 
