@@ -123,7 +123,7 @@ A full-stack e-commerce application with a React frontend and Node.js backend.
 ## Development
 
 - Frontend runs on: http://localhost:5173
-- Backend API runs on: http://localhost:3000
+- Backend API runs on: http://localhost:8000
 
 ## Building for Production
 
