@@ -1,4 +1,4 @@
-import { query } from "../utils/db.js";
+import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
@@ -11,7 +11,7 @@ const __dirname = dirname(__filename);
 
 export const getImagesByProductUuid = async (productUuid) => {
   try {
-    const images = await query(
+    const images = await dbService.query(
       `SELECT pi.* 
        FROM product_images pi 
        JOIN products p ON p.id = pi.p_id 
@@ -26,9 +26,10 @@ export const getImagesByProductUuid = async (productUuid) => {
 
 export const getImageByUuid = async (uuid) => {
   try {
-    const result = await query("SELECT * FROM product_images WHERE uuid = ? ", [
-      uuid,
-    ]);
+    const result = await dbService.query(
+      "SELECT * FROM product_images WHERE uuid = ? ",
+      [uuid]
+    );
     return result?.[0] || null;
   } catch (error) {
     throw new Error(`Error fetching image: ${error.message}`);
@@ -40,7 +41,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
     const { image_path, is_featured, user_id } = imageData;
     let finalImagePath = image_path;
 
-    const product = await query(
+    const product = await dbService.query(
       "SELECT id FROM products WHERE uuid = ? AND is_active = 1",
       [productUuid]
     );
@@ -82,7 +83,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
     const uuid = uuidv4();
 
     // Insert the image
-    const result = await query(
+    const result = await dbService.query(
       "INSERT INTO product_images (uuid, p_id, image_path, is_featured, is_active, created_by, updated_by) VALUES (?, ?, ?, ?, 1, ?, ?)",
       [uuid, p_id, finalImagePath, is_featured ? 1 : 0, user_id, user_id]
     );
@@ -93,7 +94,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
 
     // If this is a featured image, unset others
     if (is_featured) {
-      await query(
+      await dbService.query(
         "UPDATE product_images SET is_featured = 0 WHERE p_id = ? AND uuid != ? AND is_active = 1",
         [p_id, uuid]
       );
@@ -110,9 +111,10 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
     const { is_featured, is_active, image_path } = imageData;
 
     // First get the image to check existence and get p_id if needed
-    const image = await query("SELECT * FROM product_images WHERE uuid = ?", [
-      uuid,
-    ]);
+    const image = await dbService.query(
+      "SELECT * FROM product_images WHERE uuid = ?",
+      [uuid]
+    );
 
     if (!image?.[0]) {
       throw new Error("Image not found");
@@ -153,7 +155,7 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
       }
     }
 
-    const result = await query(
+    const result = await dbService.query(
       "UPDATE product_images SET is_featured = ?, is_active = COALESCE(?, is_active), image_path = COALESCE(?, image_path) WHERE uuid = ?",
       [featuredValue, activeValue, finalImagePath, uuid]
     );
@@ -164,7 +166,7 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
 
     // If setting as featured and image is active, unset other images for this product
     if (featuredValue === 1 && (activeValue === null || activeValue === 1)) {
-      await query(
+      await dbService.query(
         "UPDATE product_images SET is_featured = 0 WHERE p_id = ? AND uuid != ? AND is_active = 1",
         [image[0].p_id, uuid]
       );
@@ -178,7 +180,7 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
 
 export const deleteProductImageByUuid = async (uuid) => {
   try {
-    const result = await query(
+    const result = await dbService.query(
       "UPDATE product_images SET is_active = 0 WHERE uuid = ? AND is_active = 1",
       [uuid]
     );

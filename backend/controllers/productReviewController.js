@@ -1,4 +1,5 @@
 import * as productReviewModel from "../models/productReviewModel.js";
+import { HTTP_STATUS } from "../constants/index.js";
 
 // Get all reviews for a product
 export const getReviewsByProductUuid = async (req, res) => {
@@ -8,7 +9,7 @@ export const getReviewsByProductUuid = async (req, res) => {
       productUuid
     );
     if (!reviews || reviews.length === 0) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "No reviews found for this product",
       });
@@ -21,7 +22,7 @@ export const getReviewsByProductUuid = async (req, res) => {
 
     const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Product reviews retrieved successfully",
       data: {
@@ -31,7 +32,7 @@ export const getReviewsByProductUuid = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while fetching reviews",
     });
@@ -45,25 +46,25 @@ export const getReviewByUuid = async (req, res) => {
     const productUuid = req.params.productUuid;
     const review = await productReviewModel.getReviewByUuid(uuid, productUuid);
     if (!review) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Review not found",
       });
     }
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Review retrieved successfully",
       data: review,
     });
   } catch (error) {
     if (error.message.includes("not found")) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: error.message,
       });
     }
 
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while fetching the review",
     });
@@ -84,33 +85,33 @@ export const createReview = async (req, res) => {
     );
 
     if (!reviewUuid) {
-      return res.status(500).json({
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: "An error occurred while creating the review",
       });
     }
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: "Review created successfully",
       data: { uuid: reviewUuid },
     });
   } catch (error) {
     if (error.message.includes("already reviewed")) {
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: error.message,
       });
     }
 
     if (error.message.includes("not found")) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: error.message,
       });
     }
 
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while creating the review",
     });
@@ -130,7 +131,7 @@ export const updateReview = async (req, res) => {
       rating,
       review
     );
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Review updated successfully",
     });
@@ -139,13 +140,13 @@ export const updateReview = async (req, res) => {
       error.message.includes("not found") ||
       error.message.includes("don't have permission")
     ) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: error.message,
       });
     }
 
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while updating the review",
     });
@@ -160,26 +161,26 @@ export const deleteReview = async (req, res) => {
 
     await productReviewModel.deleteReview(uuid, userId);
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Review deleted successfully",
     });
   } catch (error) {
     if (error.message.includes("not found")) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: error.message,
       });
     }
 
     if (error.message.includes("don't have permission")) {
-      return res.status(403).json({
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
         message: error.message,
       });
     }
 
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while deleting the review",
     });

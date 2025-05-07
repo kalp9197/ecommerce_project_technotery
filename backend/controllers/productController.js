@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "../constants/index.js";
 import * as productModel from "../models/productModel.js";
 
 export const getProducts = async (req, res) => {
@@ -7,7 +8,7 @@ export const getProducts = async (req, res) => {
     limit = parseInt(limit);
 
     if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Invalid page or limit value",
       });
@@ -17,19 +18,19 @@ export const getProducts = async (req, res) => {
     const result = await productModel.getAllProducts(limit, offset);
 
     if (!result.products || result.products.length === 0) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "No products found",
       });
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Products fetched successfully",
       data: result.products,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while fetching products",
     });
@@ -41,20 +42,20 @@ export const searchProducts = async (req, res) => {
     const result = await productModel.searchProducts(req.query);
 
     if (!result.products || result.products.length === 0) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "No products found matching your criteria",
       });
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Products fetched successfully",
       data: result.products,
       pagination: result.pagination,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message:
         error.message || "An error occurred while searching for products",
@@ -67,15 +68,15 @@ export const getProductByUUID = async (req, res) => {
     const product = await productModel.getProductByUuid(req.params.uuid);
 
     if (!product) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Product not found",
       });
     }
 
-    res.status(200).json({ success: true, data: product });
+    res.status(HTTP_STATUS.OK).json({ success: true, data: product });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while fetching the product",
     });
@@ -90,26 +91,26 @@ export const addProduct = async (req, res) => {
     );
 
     if (!productUuid) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Failed to create product",
       });
     }
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: "Product created successfully",
       data: { uuid: productUuid },
     });
   } catch (error) {
     if (error.message.includes("already exists")) {
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: error.message,
       });
     }
 
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while creating the product",
     });
@@ -124,26 +125,26 @@ export const updateProductByUUID = async (req, res) => {
     );
 
     if (!updatedProduct || updatedProduct.affectedRows === 0) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Product not found or no changes made",
       });
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Product updated successfully",
     });
   } catch (error) {
     // Check for specific error cases to return appropriate status codes
     if (error.message.includes("already exists")) {
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: error.message,
       });
     }
 
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while updating the product",
     });
@@ -157,26 +158,26 @@ export const removeProductByUUID = async (req, res) => {
     );
 
     if (!deletedProduct || deletedProduct.affectedRows === 0) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Product not found or already inactive",
       });
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Product deleted successfully",
     });
   } catch (error) {
     // Check for specific error messages related to images
     if (error.message.includes("active images")) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: error.message,
       });
     }
 
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "An error occurred while deleting the product",
     });

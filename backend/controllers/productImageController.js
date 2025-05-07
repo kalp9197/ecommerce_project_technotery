@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "../constants/index.js";
 import * as imageModel from "../models/productImageModel.js";
 import { getProductByUuid } from "../models/productModel.js";
 
@@ -8,7 +9,7 @@ export const getProductImagesByUuid = async (req, res) => {
     // Check if product exists
     const product = await getProductByUuid(productUuid);
     if (!product) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Product not found",
       });
@@ -17,13 +18,13 @@ export const getProductImagesByUuid = async (req, res) => {
     const images = await imageModel.getImagesByProductUuid(productUuid);
 
     // Empty array is a valid response, just means no images for this product
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       count: images.length,
       data: images,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: `Failed to get product images: ${error.message}`,
     });
@@ -37,7 +38,7 @@ export const addProductImage = async (req, res) => {
     const product = await getProductByUuid(productUuid);
 
     if (!product) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Product not found or inactive",
       });
@@ -50,13 +51,13 @@ export const addProductImage = async (req, res) => {
       imageData
     );
 
-    return res.status(201).json({
+    return res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: "Product image added successfully",
       uuid,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
       message: error.message,
     });
@@ -71,7 +72,7 @@ export const updateProductImageByUuid = async (req, res) => {
     // Check if image exists
     const image = await imageModel.getImageByUuid(uuid);
     if (!image) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Image not found",
       });
@@ -89,18 +90,18 @@ export const updateProductImageByUuid = async (req, res) => {
     );
 
     if (!updatedImage || updatedImage.affectedRows === 0) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Failed to update image",
       });
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Image updated successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: `Failed to update product image: ${error.message}`,
     });
@@ -114,7 +115,7 @@ export const deleteProductImageByUuid = async (req, res) => {
     // Check if image exists
     const image = await imageModel.getImageByUuid(uuid);
     if (!image) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Image not found",
       });
@@ -122,18 +123,18 @@ export const deleteProductImageByUuid = async (req, res) => {
 
     const deletedImage = await imageModel.deleteProductImageByUuid(uuid);
     if (!deletedImage || deletedImage.affectedRows === 0) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Failed to delete image",
       });
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Image deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: `Failed to delete product image: ${error.message}`,
     });

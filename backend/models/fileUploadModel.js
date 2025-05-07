@@ -1,16 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
-import {
-  query,
-  beginTransaction,
-  queryWithConnection,
-  commit,
-  rollback,
-} from "../utils/db.js";
+import { dbService } from "../services/index.js";
 
 const exec = (conn) =>
   conn
-    ? (sql, params) => queryWithConnection(conn, sql, params)
-    : (sql, params) => query(sql, params);
+    ? (sql, params) => dbService.queryWithConnection(conn, sql, params)
+    : (sql, params) => dbService.query(sql, params);
 
 // Find or create category
 export const findOrCreateCategory = async (name, conn = null) => {
@@ -105,17 +99,17 @@ export const saveProductWithImages = async (data, images = [], conn = null) => {
 
 // Save in bulk with transaction
 export const bulkSaveProducts = async (dataList) => {
-  const conn = await beginTransaction();
+  const conn = await dbService.beginTransaction();
   try {
     const results = [];
     for (const { product, images } of dataList) {
       if (!product.name || !product.category || !product.price) continue;
       results.push(await saveProductWithImages(product, images, conn));
     }
-    await commit(conn);
+    await dbService.commit(conn);
     return results;
   } catch (err) {
-    await rollback(conn);
+    await dbService.rollback(conn);
     throw err;
   }
 };

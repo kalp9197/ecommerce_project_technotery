@@ -1,32 +1,34 @@
-import { query } from "../utils/db.js";
+import { dbService } from "../services/index.js";
+import { HTTP_STATUS } from "../constants/index.js";
 
 export const isAdmin = async (req, res, next) => {
   try {
     if (!req.user || !req.user.uuid) {
-      return res.status(401).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required",
       });
     }
 
-    const result = await query(
+    const result = await dbService.query(
       "SELECT is_admin FROM users WHERE uuid = ? AND is_active = 1",
       [req.user.uuid]
     );
 
     if (!result?.length || result[0].is_admin !== 1) {
-      return res.status(403).json({
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
-        message: "Access denied. Admin privileges required.",
+        message: "Admin privileges required",
       });
     }
 
     // User is an admin, proceed
     next();
   } catch (error) {
-    return res.status(500).json({
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Admin authorization error: ${error.message}`,
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };
@@ -34,30 +36,31 @@ export const isAdmin = async (req, res, next) => {
 export const isNotAdmin = async (req, res, next) => {
   try {
     if (!req.user || !req.user.uuid) {
-      return res.status(401).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required",
       });
     }
 
-    const result = await query(
+    const result = await dbService.query(
       "SELECT is_admin FROM users WHERE uuid = ? AND is_active = 1",
       [req.user.uuid]
     );
 
     if (!result?.length || result[0].is_admin === 1) {
-      return res.status(403).json({
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
-        message: "Access denied. Admin users cannot perform cart operations.",
+        message: "You don't have permission to perform this action",
       });
     }
 
     // User is not an admin, proceed
     next();
   } catch (error) {
-    return res.status(500).json({
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Authorization error: ${error.message}`,
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };

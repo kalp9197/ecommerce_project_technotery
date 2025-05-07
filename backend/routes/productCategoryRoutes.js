@@ -2,24 +2,19 @@ import express from "express";
 import * as categoryController from "../controllers/productCategoryController.js";
 import { authenticate } from "../middlewares/auth.js";
 import { isAdmin } from "../middlewares/adminAuth.js";
-import {
-  validate,
-  categorySchema,
-  categoryUuidParam,
-  paginationSchema,
-} from "../validations/index.js";
+import * as validation from "../validations/index.js";
 
 const router = express.Router();
 
 // Public category routes (no authentication required)
 router.get(
   "/",
-  validate(paginationSchema),
+  validation.validate(validation.paginationSchema),
   categoryController.getAllCategories
 );
 router.get(
   "/:uuid",
-  validate(categoryUuidParam),
+  validation.validate(validation.categoryUuidParam),
   categoryController.getCategoryByUuid
 );
 
@@ -32,21 +27,24 @@ router.post(
   "/",
   authenticate,
   isAdmin,
-  validate(categorySchema),
+  validation.validate(validation.categorySchema),
   categoryController.createCategory
 );
 router.put(
   "/:uuid",
   authenticate,
   isAdmin,
-  validate([...categoryUuidParam, ...categorySchema]),
+  validation.validate([
+    ...validation.categoryUuidParam,
+    ...validation.categorySchema,
+  ]),
   categoryController.updateCategoryByUuid
 );
 router.delete(
   "/:uuid",
   authenticate,
   isAdmin,
-  validate(categoryUuidParam),
+  validation.validate(validation.categoryUuidParam),
   categoryController.deleteCategoryByUuid
 );
 

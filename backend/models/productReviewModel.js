@@ -1,10 +1,10 @@
-import { query } from "../utils/db.js";
+import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
 // Get all reviews for a product
 export const getReviewsByProductUuid = async (productUuid) => {
   try {
-    const reviews = await query(
+    const reviews = await dbService.query(
       `
       SELECT 
         pr.uuid,
@@ -35,7 +35,7 @@ export const getReviewsByProductUuid = async (productUuid) => {
 // Get a single review by UUID
 export const getReviewByUuid = async (uuid) => {
   try {
-    const reviews = await query(
+    const reviews = await dbService.query(
       `
       SELECT 
         pr.uuid,
@@ -74,7 +74,7 @@ export const createReview = async (productUuid, userId, rating, review) => {
     }
 
     // Get product ID from UUID
-    const productResult = await query(
+    const productResult = await dbService.query(
       `SELECT id FROM products WHERE uuid = ? AND is_active = 1`,
       [productUuid]
     );
@@ -86,7 +86,7 @@ export const createReview = async (productUuid, userId, rating, review) => {
     const productId = productResult[0].id;
 
     // Check if user has already reviewed this product
-    const existingReview = await query(
+    const existingReview = await dbService.query(
       `SELECT id FROM product_reviews WHERE product_id = ? AND user_id = ?`,
       [productId, userId]
     );
@@ -98,7 +98,7 @@ export const createReview = async (productUuid, userId, rating, review) => {
     const uuid = uuidv4();
 
     // Insert the review
-    const result = await query(
+    const result = await dbService.query(
       `
       INSERT INTO product_reviews 
         (uuid, product_id, user_id, rating, review) 
@@ -129,7 +129,7 @@ export const updateReview = async (uuid, userId, rating, review) => {
     }
 
     // Check if review exists and belongs to the user
-    const reviewResult = await query(
+    const reviewResult = await dbService.query(
       `SELECT id FROM product_reviews WHERE uuid = ? AND user_id = ?`,
       [uuid, userId]
     );
@@ -141,11 +141,11 @@ export const updateReview = async (uuid, userId, rating, review) => {
     }
 
     // Map undefined inputs to null so COALESCE works
-    const safeRating = typeof rating !== 'undefined' ? rating : null;
-    const safeReview = typeof review !== 'undefined' ? review : null;
+    const safeRating = typeof rating !== "undefined" ? rating : null;
+    const safeReview = typeof review !== "undefined" ? review : null;
 
     // Perform update using COALESCE to skip nulls
-    const result = await query(
+    const result = await dbService.query(
       `
       UPDATE product_reviews
       SET
@@ -172,7 +172,7 @@ export const updateReview = async (uuid, userId, rating, review) => {
 export const deleteReview = async (uuid, userId) => {
   try {
     // Check if review exists and belongs to the user or user is admin
-    const reviewCheck = await query(
+    const reviewCheck = await dbService.query(
       `
       SELECT pr.id 
       FROM product_reviews pr
@@ -186,7 +186,7 @@ export const deleteReview = async (uuid, userId) => {
     }
 
     // Check if user owns the review or is admin
-    const userCheck = await query(
+    const userCheck = await dbService.query(
       `
       SELECT 1
       FROM product_reviews pr
@@ -201,9 +201,10 @@ export const deleteReview = async (uuid, userId) => {
     }
 
     // Delete the review
-    const result = await query(`DELETE FROM product_reviews WHERE uuid = ?`, [
-      uuid,
-    ]);
+    const result = await dbService.query(
+      `DELETE FROM product_reviews WHERE uuid = ?`,
+      [uuid]
+    );
 
     if (result.affectedRows === 0) {
       throw new Error("Failed to delete review");

@@ -1,27 +1,23 @@
 import express from "express";
 import * as productReviewController from "../controllers/productReviewController.js";
 import { authenticate } from "../middlewares/auth.js";
-import {
-  validate,
-  productReviewSchema,
-  reviewUuidParam,
-  productUuidParamForReviews,
-  updateReviewSchema,
-  paginationSchema,
-} from "../validations/index.js";
+import * as validation from "../validations/index.js";
 
 const router = express.Router();
 
 // Public routes (no authentication required)
 router.get(
   "/product/:productUuid",
-  validate([...productUuidParamForReviews, ...paginationSchema]),
+  validation.validate([
+    ...validation.productUuidParamForReviews,
+    ...validation.paginationSchema,
+  ]),
   productReviewController.getReviewsByProductUuid
 );
 
 router.get(
   "/:uuid",
-  validate(reviewUuidParam),
+  validation.validate(validation.reviewUuidParam),
   productReviewController.getReviewByUuid
 );
 
@@ -30,19 +26,22 @@ router.use(authenticate);
 
 router.post(
   "/",
-  validate(productReviewSchema),
+  validation.validate(validation.productReviewSchema),
   productReviewController.createReview
 );
 
 router.put(
   "/:uuid",
-  validate([...reviewUuidParam, ...updateReviewSchema]),
+  validation.validate([
+    ...validation.reviewUuidParam,
+    ...validation.updateReviewSchema,
+  ]),
   productReviewController.updateReview
 );
 
 router.delete(
   "/:uuid",
-  validate(reviewUuidParam),
+  validation.validate(validation.reviewUuidParam),
   productReviewController.deleteReview
 );
 

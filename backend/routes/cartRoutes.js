@@ -1,15 +1,7 @@
 import express from "express";
 import * as cartController from "../controllers/cartController.js";
 import { authenticate } from "../middlewares/auth.js";
-import {
-  validate,
-  addToCartSchema,
-  updateCartItemSchema,
-  deactivateCartItemSchema,
-  deactivateAllCartItemsSchema,
-  batchUpdateCartItemsSchema,
-  completeOrderSchema,
-} from "../validations/index.js";
+import * as validation from "../validations/index.js";
 import { isNotAdmin } from "../middlewares/adminAuth.js";
 
 const router = express.Router();
@@ -23,7 +15,7 @@ router.get("/", isNotAdmin, cartController.getUserCart);
 // Add item to cart
 router.post(
   "/items",
-  validate(addToCartSchema),
+  validation.validate(validation.addToCartSchema),
   isNotAdmin,
   cartController.addItemToCart
 );
@@ -31,7 +23,7 @@ router.post(
 // Batch update cart items
 router.put(
   "/items/batch",
-  validate(batchUpdateCartItemsSchema),
+  validation.validate(validation.batchUpdateCartItemsSchema),
   isNotAdmin,
   cartController.batchUpdateCartItems
 );
@@ -39,7 +31,7 @@ router.put(
 // Update cart item quantity
 router.put(
   "/items/:uuid",
-  validate(updateCartItemSchema),
+  validation.validate(validation.updateCartItemSchema),
   isNotAdmin,
   cartController.updateCartItem
 );
@@ -47,7 +39,7 @@ router.put(
 // Remove item from cart
 router.delete(
   "/items/deactivate/:uuid",
-  validate(deactivateCartItemSchema),
+  validation.validate(validation.deactivateCartItemSchema),
   isNotAdmin,
   cartController.deactivateCartItem
 );
@@ -55,7 +47,7 @@ router.delete(
 // Clear cart (deactivate all items)
 router.delete(
   "/items/deactivateAll",
-  validate(deactivateAllCartItemsSchema),
+  validation.validate(validation.deactivateAllCartItemsSchema),
   isNotAdmin,
   cartController.deactivateAllCartItems
 );
@@ -63,7 +55,7 @@ router.delete(
 // Complete order and deactivate cart
 router.post(
   "/complete-order",
-  validate(completeOrderSchema),
+  validation.validate(validation.completeOrderSchema),
   isNotAdmin,
   cartController.completeOrder
 );

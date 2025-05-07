@@ -1,10 +1,10 @@
-import { query } from "../utils/db.js";
+import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
 export const getAllCategories = async (page, limit) => {
   try {
     const offset = (page - 1) * limit;
-    const result = await query(
+    const result = await dbService.query(
       `SELECT * FROM product_categories WHERE is_active = 1 ORDER BY id ASC LIMIT ${limit} OFFSET ${offset}`
     );
 
@@ -17,7 +17,7 @@ export const getAllCategories = async (page, limit) => {
 
 export const getCategoryByUuid = async (uuid) => {
   try {
-    const result = await query(
+    const result = await dbService.query(
       "SELECT * FROM product_categories WHERE uuid = ? AND is_active = 1",
       [uuid]
     );
@@ -33,7 +33,7 @@ export const createCategory = async (categoryData, userId) => {
     const uuid = uuidv4();
 
     // Check for duplicate
-    const existingCategory = await query(
+    const existingCategory = await dbService.query(
       `SELECT id FROM product_categories WHERE LOWER(name) = LOWER(?) AND is_active = 1`,
       [name]
     );
@@ -43,7 +43,7 @@ export const createCategory = async (categoryData, userId) => {
     }
 
     // Create category with user ID (passing null if userId is undefined)
-    const result = await query(
+    const result = await dbService.query(
       `INSERT INTO product_categories (uuid, name, is_active, created_by, updated_by)
        VALUES (?, ?, 1, ?, ?)`,
       [uuid, name, userId || null, userId || null]
@@ -64,7 +64,7 @@ export const updateCategoryByUuid = async (uuid, categoryData, userId) => {
     const { name } = categoryData;
 
     // First, check if the category exists
-    const existingCategory = await query(
+    const existingCategory = await dbService.query(
       `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
       [uuid]
     );
@@ -74,7 +74,7 @@ export const updateCategoryByUuid = async (uuid, categoryData, userId) => {
     }
 
     // Check for duplicate name (excluding the current category)
-    const duplicateCheck = await query(
+    const duplicateCheck = await dbService.query(
       `SELECT id FROM product_categories 
        WHERE LOWER(name) = LOWER(?) 
        AND uuid != ? 
@@ -87,7 +87,7 @@ export const updateCategoryByUuid = async (uuid, categoryData, userId) => {
     }
 
     // Update the category (passing null if userId is undefined)
-    const result = await query(
+    const result = await dbService.query(
       `UPDATE product_categories 
        SET name = ?, updated_by = ?
        WHERE uuid = ? AND is_active = 1`,
@@ -107,7 +107,7 @@ export const updateCategoryByUuid = async (uuid, categoryData, userId) => {
 export const deleteCategoryByUuid = async (uuid) => {
   try {
     // First find the category and check for associated products
-    const categoryCheck = await query(
+    const categoryCheck = await dbService.query(
       `SELECT 
         c.id, 
         (SELECT COUNT(*) FROM products p WHERE p.p_cat_id = c.id AND p.is_active = 1) as product_count
@@ -128,7 +128,7 @@ export const deleteCategoryByUuid = async (uuid) => {
     }
 
     // Now deactivate the category since it has no active products
-    const result = await query(
+    const result = await dbService.query(
       "UPDATE product_categories SET is_active = 0 WHERE id = ?",
       [categoryCheck[0].id]
     );

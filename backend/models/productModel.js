@@ -1,4 +1,4 @@
-import { query } from "../utils/db.js";
+import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
 export const getAllProducts = async (limit, offset) => {
@@ -7,7 +7,7 @@ export const getAllProducts = async (limit, offset) => {
     offset = Number(offset);
 
     // Get paginated products with category info
-    const products = await query(
+    const products = await dbService.query(
       `
       SELECT 
         p.*, 
@@ -75,7 +75,7 @@ export const searchProducts = async (params) => {
       LIMIT ${limitNum} OFFSET ${offset}
     `;
 
-    const products = await query(sql);
+    const products = await dbService.query(sql);
 
     return {
       products,
@@ -88,7 +88,7 @@ export const searchProducts = async (params) => {
 
 export const getProductByUuid = async (uuid) => {
   try {
-    const rows = await query(
+    const rows = await dbService.query(
       `
       SELECT 
         p.id AS product_id,
@@ -126,7 +126,7 @@ export const getProductByUuid = async (uuid) => {
 export const createProduct = async (productData) => {
   const { sku, name, category, price, quantity, images } = productData;
 
-  const result = await query(
+  const result = await dbService.query(
     "INSERT INTO products (sku, name, category, price, quantity, images) VALUES (?, ?, ?, ?, ?, ?)",
     [sku, name, category, price, quantity, JSON.stringify(images)]
   );
@@ -149,7 +149,7 @@ export const updateProductByUuid = async (uuid, body) => {
     let p_cat_id = null;
     if (p_cat_uuid) {
       // Get category ID if provided
-      const categoryResult = await query(
+      const categoryResult = await dbService.query(
         `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
         [p_cat_uuid]
       );
@@ -162,7 +162,7 @@ export const updateProductByUuid = async (uuid, body) => {
     }
 
     // Execute the update query with all fields
-    const result = await query(
+    const result = await dbService.query(
       `UPDATE products 
        SET updated_at = NOW(),
            p_cat_id = COALESCE(?, p_cat_id),
@@ -175,9 +175,10 @@ export const updateProductByUuid = async (uuid, body) => {
 
     if (result.affectedRows === 0) {
       // Check if the product exists
-      const exists = await query("SELECT id FROM products WHERE uuid = ?", [
-        uuid,
-      ]);
+      const exists = await dbService.query(
+        "SELECT id FROM products WHERE uuid = ?",
+        [uuid]
+      );
 
       if (!exists || !exists.length) {
         throw new Error("Product not found");
@@ -202,7 +203,7 @@ export const updateProductByUuid = async (uuid, body) => {
 // Soft delete product by UUID (mark as inactive)
 export const deleteProductByUuid = async (uuid) => {
   try {
-    const result = await query(
+    const result = await dbService.query(
       `UPDATE products p
        SET p.is_active = 0
        WHERE p.uuid = ? 
@@ -222,7 +223,10 @@ export const deleteProductByUuid = async (uuid) => {
 
 export const getProductBySKU = async (sku) => {
   try {
-    const results = await query("SELECT * FROM products WHERE sku = ?", [sku]);
+    const results = await dbService.query(
+      "SELECT * FROM products WHERE sku = ?",
+      [sku]
+    );
     if (results.length === 0) {
       return null;
     }
@@ -254,7 +258,7 @@ export const bulkCreateProducts = async (productsData) => {
 
 export const ensureProductsTable = async () => {
   try {
-    await query(`
+    await dbService.query(`
     CREATE TABLE IF NOT EXISTS products (
       id INT AUTO_INCREMENT PRIMARY KEY,
       sku VARCHAR(255) NOT NULL UNIQUE,

@@ -1,4 +1,5 @@
 import * as cartModel from "../models/cartModel.js";
+import { HTTP_STATUS } from "../constants/index.js";
 
 // Get user's active cart with all items
 export const getUserCart = async (req, res) => {
@@ -7,15 +8,15 @@ export const getUserCart = async (req, res) => {
 
     const cartData = await cartModel.getCartItems(userId);
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Cart retrieved successfully",
+      message: "Resource fetched successfully",
       data: cartData,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Error retrieving cart",
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -28,21 +29,21 @@ export const addItemToCart = async (req, res) => {
 
     await cartModel.addToCart(userId, product_uuid, quantity);
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       success: true,
-      message: "Item added to cart successfully",
+      message: "Resource created successfully",
     });
   } catch (error) {
     // Check for insufficient stock error
     if (error.message.includes("Insufficient stock")) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: error.message,
       });
     }
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Error adding item to cart",
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -56,26 +57,26 @@ export const updateCartItem = async (req, res) => {
 
     const item = await cartModel.updateCartItem(userId, productUuid, quantity);
     if (!item) throw new Error("Item not found or inactive");
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Cart item updated successfully",
+      message: "Resource updated successfully",
     });
   } catch (error) {
     // Check for specific error types
     if (error.message.includes("not found")) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: error.message,
+        message: "Resource not found",
       });
     } else if (error.message.includes("Insufficient stock")) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: error.message,
       });
     }
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message,
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -88,15 +89,19 @@ export const deactivateCartItem = async (req, res) => {
 
     await cartModel.deactivateCartItem(userId, productUuid);
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Item removed from cart successfully",
+      message: "Resource deleted successfully",
     });
   } catch (error) {
-    const code = error.message.includes("not found") ? 404 : 500;
+    const code = error.message.includes("not found")
+      ? HTTP_STATUS.NOT_FOUND
+      : HTTP_STATUS.INTERNAL_SERVER_ERROR;
     res.status(code).json({
       success: false,
-      message: error.message,
+      message: error.message.includes("not found")
+        ? "Resource not found"
+        : "Internal server error",
     });
   }
 };
@@ -108,9 +113,9 @@ export const deactivateAllCartItems = async (req, res) => {
 
     await cartModel.deactivateAllCartItems(userId);
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Cart cleared successfully",
+      message: "Resource deleted successfully",
       data: {
         total_items: 0,
         total_price: "0.00",
@@ -118,9 +123,9 @@ export const deactivateAllCartItems = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Error clearing cart",
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -133,23 +138,23 @@ export const batchUpdateCartItems = async (req, res) => {
 
     const result = await cartModel.batchUpdateCartItems(userId, items);
     if (!result) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Error updating cart items",
+        message: "Internal server error",
       });
     }
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Cart items updated successfully",
+      message: "Resource updated successfully",
       data: {
         updated_items: result.success,
         errors: result.errors,
       },
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Error updating cart items",
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -161,22 +166,22 @@ export const completeOrder = async (req, res) => {
     const { order_completed } = req.body;
 
     if (!order_completed) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Order not marked as completed",
+        message: "Invalid input data",
       });
     }
 
     await cartModel.completeOrder(userId);
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Order completed and cart deactivated successfully",
+      message: "Order completed successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Error completing order",
+      message: error.message || "Internal server error",
     });
   }
 };

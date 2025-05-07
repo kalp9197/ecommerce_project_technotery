@@ -1,27 +1,11 @@
 import nodemailer from "nodemailer";
-
-// Create transporter for development
-const createDevTransporter = async () => {
-  const testAccount = await nodemailer.createTestAccount();
-  return {
-    transporter: nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    }),
-    testAccount,
-  };
-};
+import { createDevTransporter, defaultSender } from "../config/email.config.js";
 
 // Send email
 export const sendEmail = async (options) => {
   try {
     const { transporter, testAccount } = await createDevTransporter();
-    const from = `"E-Commerce Store" <${testAccount.user}>`;
+    const from = options.from || defaultSender;
 
     const info = await transporter.sendMail({
       from,

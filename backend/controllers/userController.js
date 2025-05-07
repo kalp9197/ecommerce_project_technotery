@@ -1,67 +1,31 @@
 import * as userModel from "../models/userModel.js";
-import { query } from "../utils/db.js";
+import { dbService, userService, emailService } from "../services/index.js";
+import { HTTP_STATUS } from "../constants/index.js";
+import { appConfig } from "../config/app.config.js";
+import { JWT_CONFIG } from "../constants/index.js";
 import jwt from "jsonwebtoken";
-import {
-  sendEmail,
-  getVerificationEmailTemplate,
-} from "../utils/emailService.js";
 
 export const register = async (req, res) => {
   try {
-    const existingUser = await userModel.getUserByEmail(req.body);
-    if (existingUser) {
-      return res.status(409).json({
+    const result = await userService.registerUser(req.body);
+
+    return res.status(HTTP_STATUS.CREATED).json({
+      success: true,
+      message:
+        "User registered successfully. Please check your email to verify your account.",
+      data: { email: result.user.email, email_verified: false },
+    });
+  } catch (error) {
+    if (error.message.includes("already exists")) {
+      return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
         message: "User with this email already exists",
       });
     }
 
-    const userUuid = await userModel.createUser(req.body);
-    if (!userUuid) {
-      return res.status(422).json({
-        success: false,
-        message: "User registration failed",
-      });
-    }
-
-    const newUser = await userModel.getUserByUuid(userUuid);
-
-    // Send verification email
-    try {
-      const userData = await query(
-        "SELECT ut.verification_token FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE u.uuid = ? AND ut.verification_token IS NOT NULL AND ut.is_expired = 0",
-        [userUuid]
-      );
-
-      if (userData?.length && userData[0].verification_token) {
-        const verificationUrl = `${
-          process.env.FRONTEND_URL || "http://localhost:5173"
-        }/verify-email?token=${userData[0].verification_token}`;
-        const emailTemplate = getVerificationEmailTemplate(
-          newUser.name,
-          verificationUrl
-        );
-        await sendEmail({
-          to: newUser.email,
-          subject: emailTemplate.subject,
-          text: emailTemplate.text,
-          html: emailTemplate.html,
-        });
-      }
-    } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-    }
-
-    return res.status(201).json({
-      success: true,
-      message:
-        "User registered successfully. Please check your email to verify your account.",
-      data: { email: newUser.email, email_verified: false },
-    });
-  } catch (error) {
-    return res.status(500).json({
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Registration failed: ${error.message}`,
+      message: `Internal server error: ${error.message}`,
     });
   }
 };
@@ -71,7 +35,7 @@ export const login = async (req, res) => {
     const user = await userModel.getUserByEmail(req.body);
     if (!user) {
       return res
-        .status(404)
+        .status(HTTP_STATUS.NOT_FOUND)
         .json({ success: false, message: "User not found" });
     }
 
@@ -81,13 +45,13 @@ export const login = async (req, res) => {
     );
     if (!isPasswordValid) {
       return res
-        .status(401)
+        .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ success: false, message: "Invalid password" });
     }
 
     // Check email verification status
     if (user.email_verified !== 1 && user.is_admin !== 1) {
-      return res.status(403).json({
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
         message:
           "Email not verified. Please verify your email before logging in.",
@@ -98,16 +62,16 @@ export const login = async (req, res) => {
     const tokenData = await userModel.generateToken(user.uuid);
     if (!tokenData) {
       return res
-        .status(401)
+        .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ success: false, message: "Token generation failed" });
     }
 
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Login successful",
       token: tokenData.token,
       refreshCycles: tokenData.refreshCycles,
-      expiresInMinutes: parseInt(process.env.TOKEN_EXPIRES_IN_MINUTES),
+      expiresInMinutes: JWT_CONFIG.EXPIRES_IN_MINUTES,
       user: {
         email: user.email,
         is_admin: user.is_admin === 1,
@@ -116,7 +80,7 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     return res
-      .status(500)
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: `Login failed: ${error.message}` });
   }
 };
@@ -127,7 +91,7 @@ export const activateDeactivate = async (req, res) => {
     const user = await userModel.getUserByUuidWithoutActiveFilter(uuid);
     if (!user) {
       return res
-        .status(404)
+        .status(HTTP_STATUS.NOT_FOUND)
         .json({ success: false, message: "User not found" });
     }
 
@@ -135,7 +99,7 @@ export const activateDeactivate = async (req, res) => {
     const result = await userModel.updateUserStatus(uuid, newStatus);
     if (!result) {
       return res
-        .status(500)
+        .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
         .json({ success: false, message: "Failed to update user status" });
     }
 
@@ -143,13 +107,13 @@ export const activateDeactivate = async (req, res) => {
       await userModel.generateToken(uuid);
     }
 
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: newStatus === 0 ? "Account deactivated" : "Account activated",
       ...(newStatus === 0 && { data: { tokens_expired: true } }),
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: `Status update failed: ${error.message}`,
     });
@@ -167,7 +131,7 @@ export const refreshToken = async (req, res) => {
       req.query.refresh_token;
 
     if (!tokenId && !token) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Token identifier or token is required",
       });
@@ -184,14 +148,14 @@ export const refreshToken = async (req, res) => {
 
       if (!tokenId) {
         // Try to find by token value
-        tokenInfo = await query(
+        tokenInfo = await dbService.query(
           "SELECT * FROM user_tokens WHERE token = ? AND is_expired = 0",
           [token]
         );
 
         // If not found, try by UUID
         if (!tokenInfo?.length && decodedToken?.uuid) {
-          tokenInfo = await query(
+          tokenInfo = await dbService.query(
             "SELECT ut.* FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE u.uuid = ? AND ut.is_expired = 0 ORDER BY ut.id DESC LIMIT 1",
             [decodedToken.uuid]
           );
@@ -200,16 +164,16 @@ export const refreshToken = async (req, res) => {
     }
 
     if (tokenId && !tokenInfo?.length) {
-      tokenInfo = await query("SELECT * FROM user_tokens WHERE id = ?", [
-        tokenId,
-      ]);
+      tokenInfo = await dbService.query(
+        "SELECT * FROM user_tokens WHERE id = ?",
+        [tokenId]
+      );
     }
 
     if (!tokenInfo?.length) {
-      return res.status(401).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message:
-          "Token not found or expired. Please log in again to generate a new token.",
+        message: "Token has expired. Please login again.",
         requiresLogin: true,
       });
     }
@@ -218,13 +182,13 @@ export const refreshToken = async (req, res) => {
 
     // Check if we've hit max refresh limit
     if (tokenInfo[0].refresh_cycles <= 1) {
-      await query("UPDATE user_tokens SET is_expired = 1 WHERE id = ?", [
-        currentTokenId,
-      ]);
-      return res.status(403).json({
+      await dbService.query(
+        "UPDATE user_tokens SET is_expired = 1 WHERE id = ?",
+        [currentTokenId]
+      );
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
-        message:
-          "Maximum token refresh limit reached. Please log in again to generate a new token.",
+        message: "Maximum token refresh limit reached. Please login again.",
         refreshCycles: 0,
         is_expired: 1,
         requiresLogin: true,
@@ -233,33 +197,33 @@ export const refreshToken = async (req, res) => {
 
     // Generate fresh token with updated refresh count
     const refreshData = await userModel.refreshToken(currentTokenId);
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Token refreshed successfully",
       token: refreshData.token,
       refreshCycles: refreshData.refreshCycles,
-      expiresInMinutes: parseInt(process.env.TOKEN_EXPIRES_IN_MINUTES) || 1,
+      expiresInMinutes: appConfig.tokenExpiresInMinutes,
     });
   } catch (error) {
     if (error.message.includes("max token refresh reached")) {
       const currentTokenId = req.tokenId;
       if (currentTokenId) {
-        await query("UPDATE user_tokens SET is_expired = 1 WHERE id = ?", [
-          currentTokenId,
-        ]);
+        await dbService.query(
+          "UPDATE user_tokens SET is_expired = 1 WHERE id = ?",
+          [currentTokenId]
+        );
       }
-      return res.status(403).json({
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
-        message:
-          "Maximum token refresh limit reached. Please log in again to generate a new token.",
+        message: "Maximum token refresh limit reached. Please login again.",
         refreshCycles: 0,
         is_expired: 1,
         requiresLogin: true,
       });
     }
-    return res.status(401).json({
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
       success: false,
-      message: `Token refresh failed: ${error.message}`,
+      message: `Invalid or expired token: ${error.message}`,
     });
   }
 };
@@ -269,19 +233,19 @@ export const verifyEmail = async (req, res) => {
     const { token } = req.params;
     if (!token) {
       return res
-        .status(400)
+        .status(HTTP_STATUS.BAD_REQUEST)
         .json({ success: false, message: "Verification token is required" });
     }
 
     await userModel.verifyEmail(token);
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message:
         "Email verified successfully. You can now log in to your account.",
       email_verified: true,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
       message: error.message || "Email verification failed",
     });
@@ -293,34 +257,21 @@ export const resendVerificationEmail = async (req, res) => {
     const { email } = req.body;
     if (!email) {
       return res
-        .status(400)
+        .status(HTTP_STATUS.BAD_REQUEST)
         .json({ success: false, message: "Email is required" });
     }
 
-    const userData = await userModel.resendVerificationEmail(email);
-    const verificationUrl = `${
-      process.env.FRONTEND_URL || "http://localhost:5173"
-    }/verify-email?token=${userData.token}`;
+    // Use the userService to handle resending verification email
+    await userService.resendUserVerificationEmail(email);
 
-    const emailTemplate = getVerificationEmailTemplate(
-      userData.name,
-      verificationUrl
-    );
-    await sendEmail({
-      to: email,
-      subject: emailTemplate.subject,
-      text: emailTemplate.text,
-      html: emailTemplate.html,
-    });
-
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Verification email sent successfully",
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
-      message: error.message || "Failed to resend verification email",
+      message: error.message || "Failed to send email",
     });
   }
 };
@@ -333,18 +284,18 @@ export const getAllUsers = async (req, res) => {
 
     if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
       return res
-        .status(400)
+        .status(HTTP_STATUS.BAD_REQUEST)
         .json({ success: false, message: "Invalid page or limit value" });
     }
 
     const result = await userModel.getAllUsers(page, limit);
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Users fetched successfully",
       data: result.users,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "Internal server error",
     });

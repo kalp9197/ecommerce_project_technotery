@@ -1,12 +1,13 @@
-import { query } from "../utils/db.js";
+import { dbService } from "../services/index.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
+import { JWT_CONFIG } from "../constants/index.js";
 
 export const getUserByUuid = async (uuid) => {
   try {
-    const result = await query(
+    const result = await dbService.query(
       "SELECT id, uuid, name, email, is_active, is_admin FROM users WHERE uuid = ? AND is_active = 1",
       [uuid]
     );
@@ -18,7 +19,7 @@ export const getUserByUuid = async (uuid) => {
 
 export const getUserByUuidWithoutActiveFilter = async (uuid) => {
   try {
-    const result = await query(
+    const result = await dbService.query(
       "SELECT id, uuid, name, email, is_active, is_admin FROM users WHERE uuid = ?",
       [uuid]
     );
@@ -31,7 +32,7 @@ export const getUserByUuidWithoutActiveFilter = async (uuid) => {
 export const getUserByEmail = async (body) => {
   try {
     const { email } = body;
-    const result = await query(
+    const result = await dbService.query(
       "SELECT * FROM users WHERE email = ? AND is_active = 1",
       [email]
     );
@@ -49,13 +50,13 @@ export const generateVerificationToken = async (userId) => {
     const tokenUuid = uuidv4();
 
     // First, expire any existing verification tokens for this user
-    await query(
+    await dbService.query(
       "UPDATE user_tokens SET is_expired = 1 WHERE user_id = ? AND verification_token IS NOT NULL",
       [userId]
     );
 
     // Create a new verification token
-    const result = await query(
+    const result = await dbService.query(
       "INSERT INTO user_tokens (uuid, user_id, expires_at, is_expired, verification_token, verification_token_expires) VALUES (?, ?, ?, 0, ?, ?)",
       [tokenUuid, userId, expires, token, expires]
     );
@@ -72,7 +73,7 @@ export const generateVerificationToken = async (userId) => {
 export const verifyEmail = async (token) => {
   try {
     // Find the token in user_tokens table
-    const tokenData = await query(
+    const tokenData = await dbService.query(
       "SELECT ut.user_id, u.uuid FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE ut.verification_token = ? AND ut.verification_token_expires > NOW() AND ut.is_expired = 0",
       [token]
     );
@@ -80,12 +81,12 @@ export const verifyEmail = async (token) => {
     if (!tokenData?.length) throw new Error("Invalid or expired token");
 
     // Mark the user as verified
-    await query("UPDATE users SET email_verified = 1 WHERE id = ?", [
+    await dbService.query("UPDATE users SET email_verified = 1 WHERE id = ?", [
       tokenData[0].user_id,
     ]);
 
     // Mark the verification token as expired
-    await query(
+    await dbService.query(
       "UPDATE user_tokens SET is_expired = 1 WHERE user_id = ? AND verification_token IS NOT NULL",
       [tokenData[0].user_id]
     );
@@ -108,7 +109,7 @@ export const createUser = async (body) => {
     // Convert is_admin to 0 or 1 (default to 0 if not provided)
     const adminStatus = is_admin === 1 || is_admin === true ? 1 : 0;
 
-    const result = await query(
+    const result = await dbService.query(
       "INSERT INTO users (uuid, name, email, password, is_active, is_admin, email_verified) VALUES (?, ?, ?, ?, 1, ?, 0)",
       [uuid, name, email, hashedPassword, adminStatus]
     );
@@ -118,7 +119,10 @@ export const createUser = async (body) => {
     }
 
     // Generate verification token
-    const userData = await query("SELECT id FROM users WHERE uuid = ?", [uuid]);
+    const userData = await dbService.query(
+      "SELECT id FROM users WHERE uuid = ?",
+      [uuid]
+    );
     if (userData?.length) {
       await generateVerificationToken(userData[0].id);
     }
@@ -138,7 +142,7 @@ export const createUser = async (body) => {
 export const updateUserByUuid = async (uuid, userData) => {
   try {
     const { name, email } = userData;
-    const result = await query(
+    const result = await dbService.query(
       "UPDATE users SET name = ?, email = ? WHERE uuid = ? AND is_active = 1",
       [name, email, uuid]
     );
@@ -155,7 +159,7 @@ export const updateUserByUuid = async (uuid, userData) => {
 // Create JWT with configurable expiration
 export const generateToken = async (userUuid) => {
   try {
-    const users = await query(
+    const users = await dbService.query(
       "SELECT id FROM users WHERE uuid = ? AND is_active = 1",
       [userUuid]
     );
@@ -164,18 +168,15 @@ export const generateToken = async (userUuid) => {
 
     const userId = users[0].id;
 
-    // Get token expiration from environment variable (default to 1 minute if not set)
-    const tokenExpiresInMinutes =
-      parseInt(process.env.TOKEN_EXPIRES_IN_MINUTES) || 1;
+    // Get token expiration from constants
+    const tokenExpiresInMinutes = JWT_CONFIG.EXPIRES_IN_MINUTES;
 
     // Current timestamp
     const now = new Date();
 
-    const token = jwt.sign(
-      { id: userId, uuid: userUuid },
-      process.env.JWT_SECRET,
-      { expiresIn: `${tokenExpiresInMinutes}m` }
-    );
+    const token = jwt.sign({ id: userId, uuid: userUuid }, JWT_CONFIG.SECRET, {
+      expiresIn: `${tokenExpiresInMinutes}m`,
+    });
 
     // Calculate exact expiration time
     const expiresAt = new Date(
@@ -187,14 +188,14 @@ export const generateToken = async (userUuid) => {
 
     // Create token in user_tokens table
     // First, expire any existing tokens for this user
-    await query(
+    await dbService.query(
       "UPDATE user_tokens SET is_expired = 1 WHERE user_id = ? AND is_expired = 0",
       [userId]
     );
 
     // Then create a new token
     const tokenUuid = uuidv4();
-    const result = await query(
+    const result = await dbService.query(
       "INSERT INTO user_tokens (uuid, user_id, token, expires_at, is_expired, last_login_date, refresh_cycles) VALUES (?, ?, ?, ?, 0, ?, ?)",
       [tokenUuid, userId, token, expiresAt, now, initialRefreshCycles]
     );
@@ -202,9 +203,10 @@ export const generateToken = async (userUuid) => {
     if (!result?.affectedRows) throw new Error("Token creation failed");
 
     // Get the new created token ID
-    const tokenData = await query("SELECT id FROM user_tokens WHERE uuid = ?", [
-      tokenUuid,
-    ]);
+    const tokenData = await dbService.query(
+      "SELECT id FROM user_tokens WHERE uuid = ?",
+      [tokenUuid]
+    );
 
     if (!tokenData?.length) throw new Error("Failed to retrieve token ID");
 
@@ -235,10 +237,12 @@ export const updateUserStatus = async (uuid, status) => {
       throw new Error("Invalid status value, must be 0 or 1");
     }
 
-    const user = await query("SELECT id FROM users WHERE uuid = ?", [uuid]);
+    const user = await dbService.query("SELECT id FROM users WHERE uuid = ?", [
+      uuid,
+    ]);
     if (!user?.length) throw new Error("User not found");
 
-    const result = await query(
+    const result = await dbService.query(
       "UPDATE users SET is_active = ? WHERE uuid = ?",
       [status, uuid]
     );
@@ -247,7 +251,7 @@ export const updateUserStatus = async (uuid, status) => {
 
     // If deactivating user, expire all tokens
     if (status === 0) {
-      await query(
+      await dbService.query(
         "UPDATE user_tokens SET is_expired = 1 WHERE user_id = ? AND is_expired = 0",
         [user[0].id]
       );
@@ -262,7 +266,7 @@ export const updateUserStatus = async (uuid, status) => {
 export const invalidateToken = async (tokenId) => {
   try {
     // Mark token as expired
-    const result = await query(
+    const result = await dbService.query(
       "UPDATE user_tokens SET is_expired = 1 WHERE id = ?",
       [tokenId]
     );
@@ -281,7 +285,7 @@ export const invalidateToken = async (tokenId) => {
 export const refreshToken = async (tokenId) => {
   try {
     // First verify if the token is even eligible for refresh
-    const validateToken = await query(
+    const validateToken = await dbService.query(
       "SELECT refresh_cycles FROM user_tokens WHERE id = ?",
       [tokenId]
     );
@@ -290,15 +294,16 @@ export const refreshToken = async (tokenId) => {
     if (!validateToken?.length || validateToken[0].refresh_cycles <= 1) {
       // Mark the token as expired before throwing error
       if (validateToken?.length) {
-        await query("UPDATE user_tokens SET is_expired = 1 WHERE id = ?", [
-          tokenId,
-        ]);
+        await dbService.query(
+          "UPDATE user_tokens SET is_expired = 1 WHERE id = ?",
+          [tokenId]
+        );
       }
       throw new Error("max token refresh reached");
     }
 
     // Find the token details
-    const tokenData = await query(
+    const tokenData = await dbService.query(
       "SELECT ut.*, u.uuid as user_uuid FROM user_tokens ut " +
         "JOIN users u ON ut.user_id = u.id " +
         "WHERE ut.id = ? AND u.is_active = 1",
@@ -309,14 +314,13 @@ export const refreshToken = async (tokenId) => {
 
     const token = tokenData[0];
 
-    // Get token expiration from environment variable (default to 1 minute if not set)
-    const tokenExpiresInMinutes =
-      parseInt(process.env.TOKEN_EXPIRES_IN_MINUTES) || 1;
+    // Get token expiration from constants
+    const tokenExpiresInMinutes = JWT_CONFIG.EXPIRES_IN_MINUTES;
 
     // Generate a new token
     const newToken = jwt.sign(
       { id: token.user_id, uuid: token.user_uuid },
-      process.env.JWT_SECRET,
+      JWT_CONFIG.SECRET,
       { expiresIn: `${tokenExpiresInMinutes}m` }
     );
 
@@ -330,13 +334,14 @@ export const refreshToken = async (tokenId) => {
     const newRefreshCycles = token.refresh_cycles - 1;
 
     // Mark the current token as expired
-    await query("UPDATE user_tokens SET is_expired = 1 WHERE id = ?", [
-      tokenId,
-    ]);
+    await dbService.query(
+      "UPDATE user_tokens SET is_expired = 1 WHERE id = ?",
+      [tokenId]
+    );
 
     // Create a new token with decremented refresh cycles
     const newTokenUuid = uuidv4();
-    const result = await query(
+    const result = await dbService.query(
       "INSERT INTO user_tokens (uuid, user_id, token, expires_at, is_expired, last_login_date, refresh_cycles) VALUES (?, ?, ?, ?, 0, ?, ?)",
       [
         newTokenUuid,
@@ -351,7 +356,7 @@ export const refreshToken = async (tokenId) => {
     if (!result?.affectedRows) throw new Error("Token refresh failed");
 
     // Get the new token ID
-    const newTokenData = await query(
+    const newTokenData = await dbService.query(
       "SELECT id FROM user_tokens WHERE uuid = ?",
       [newTokenUuid]
     );
@@ -373,7 +378,7 @@ export const refreshToken = async (tokenId) => {
 export const resendVerificationEmail = async (email) => {
   try {
     // Check if user exists and is active
-    const users = await query(
+    const users = await dbService.query(
       "SELECT id, uuid, name, email_verified FROM users WHERE email = ? AND is_active = 1",
       [email]
     );
@@ -402,7 +407,7 @@ export const getAllUsers = async (page = 1, limit = 10) => {
   try {
     const offset = (page - 1) * limit;
 
-    const users = await query(
+    const users = await dbService.query(
       `SELECT uuid, name, email, is_active FROM users WHERE is_active = 1 AND is_admin = 0 ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`
     );
 

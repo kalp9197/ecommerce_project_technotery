@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import AdmZip from "adm-zip";
 import csv from "csv-parser";
 import { bulkSaveProducts } from "../models/fileUploadModel.js";
+import { HTTP_STATUS } from "../constants/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -142,9 +143,9 @@ export const uploadFiles = async (req, res) => {
     const newProducts = savedProducts.filter((p) => !p.isExisting);
     const updatedProducts = savedProducts.filter((p) => p.isExisting);
 
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Files uploaded and processed successfully",
+      message: "Resource created successfully",
       stats: {
         total: savedProducts.length,
         created: newProducts.length,
@@ -153,9 +154,9 @@ export const uploadFiles = async (req, res) => {
       products: savedProducts,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Error uploading files",
+      message: "Internal server error",
       error: error.message,
     });
   }

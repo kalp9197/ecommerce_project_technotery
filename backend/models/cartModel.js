@@ -1,18 +1,12 @@
-import {
-  query,
-  beginTransaction,
-  queryWithConnection,
-  commit,
-  rollback,
-} from "../utils/db.js";
+import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
 // Get active cart for user
 const getCart = async (userId, connection = null) => {
   try {
     const queryFn = connection
-      ? queryWithConnection.bind(null, connection)
-      : query;
+      ? dbService.queryWithConnection.bind(null, connection)
+      : dbService.query;
 
     let [cart] = await queryFn(
       "SELECT id, uuid, total_items, total_price FROM cart WHERE user_id = ? AND is_active = 1 LIMIT 1",
@@ -31,8 +25,8 @@ export const getCartItems = async (userId) => {
     const cart = await getCart(userId);
     if (!cart) return { items: [], total_items: 0, total_price: 0 };
 
-    const items = await query(
-      `SELECT 
+    const items = await dbService.query(
+      `SELECT
          ci.id, ci.uuid as item_uuid, ci.quantity, ci.price, ci.is_active,
          p.uuid AS product_uuid, p.name, p.price AS current_price,
          pc.name AS category_name,
@@ -40,7 +34,7 @@ export const getCartItems = async (userId) => {
        FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
        LEFT JOIN product_categories pc ON p.p_cat_id = pc.id
-       LEFT JOIN product_images pi 
+       LEFT JOIN product_images pi
          ON p.id = pi.p_id AND pi.is_featured = 1 AND pi.is_active = 1
        WHERE ci.cart_id = ? AND ci.is_active = 1
        ORDER BY ci.id ASC`,
@@ -65,15 +59,15 @@ export const getCartItems = async (userId) => {
 const updateCartTotals = async (cartUuid, connection = null) => {
   try {
     const queryFn = connection
-      ? queryWithConnection.bind(null, connection)
-      : query;
+      ? dbService.queryWithConnection.bind(null, connection)
+      : dbService.query;
 
     const [totals] = await queryFn(
-      `SELECT 
-        COUNT(*) AS total_items, 
-        COALESCE(SUM(quantity * price), 0) AS total_price 
-       FROM cart_items ci 
-       JOIN cart c ON ci.cart_id = c.id 
+      `SELECT
+        COUNT(*) AS total_items,
+        COALESCE(SUM(quantity * price), 0) AS total_price
+       FROM cart_items ci
+       JOIN cart c ON ci.cart_id = c.id
        WHERE c.uuid = ? AND ci.is_active = 1`,
       [cartUuid]
     );
@@ -93,25 +87,25 @@ const updateCartTotals = async (cartUuid, connection = null) => {
 export const addToCart = async (userId, productUuid, quantity = 1) => {
   let connection;
   try {
-    connection = await beginTransaction();
+    connection = await dbService.beginTransaction();
 
     let cart = await getCart(userId, connection);
     // Create new cart if none exists
     if (!cart) {
       const uuid = uuidv4();
-      const result = await queryWithConnection(
+      const result = await dbService.queryWithConnection(
         connection,
         "INSERT INTO cart (uuid, user_id, total_items, total_price, is_active) VALUES (?, ?, 0, 0, 1)",
         [uuid, userId]
       );
-      [cart] = await queryWithConnection(
+      [cart] = await dbService.queryWithConnection(
         connection,
         "SELECT id, uuid, total_items, total_price FROM cart WHERE id = ?",
         [result.insertId]
       );
     }
 
-    const [product] = await queryWithConnection(
+    const [product] = await dbService.queryWithConnection(
       connection,
       `SELECT p.id, p.price, p.quantity, p.name
        FROM products p
@@ -128,7 +122,7 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
       );
     }
 
-    const [existing] = await queryWithConnection(
+    const [existing] = await dbService.queryWithConnection(
       connection,
       `SELECT ci.id, ci.quantity, ci.is_active
        FROM cart_items ci
@@ -143,25 +137,25 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
         ? existing.quantity + quantity
         : quantity;
 
-      await queryWithConnection(
+      await dbService.queryWithConnection(
         connection,
-        `UPDATE cart_items 
-         SET quantity = ?, price = ?, is_active = 1 
+        `UPDATE cart_items
+         SET quantity = ?, price = ?, is_active = 1
          WHERE id = ?`,
         [newQty, product.price, existing.id]
       );
     } else {
-      await queryWithConnection(
+      await dbService.queryWithConnection(
         connection,
-        `INSERT INTO cart_items 
-         (uuid, cart_id, product_id, quantity, price, is_active) 
+        `INSERT INTO cart_items
+         (uuid, cart_id, product_id, quantity, price, is_active)
          VALUES (?, ?, ?, ?, ?, 1)`,
         [uuidv4(), cart.id, product.id, quantity, product.price]
       );
     }
 
     // Update product quantity in inventory
-    await queryWithConnection(
+    await dbService.queryWithConnection(
       connection,
       `UPDATE products SET quantity = quantity - ? WHERE id = ?`,
       [quantity, product.id]
@@ -170,12 +164,12 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
     // Update cart totals using the helper function
     await updateCartTotals(cart.uuid, connection);
 
-    await commit(connection);
+    await dbService.commit(connection);
 
     return { product_id: product.id, quantity, price: product.price };
   } catch (error) {
     if (connection) {
-      await rollback(connection);
+      await dbService.rollback(connection);
     }
     throw new Error(`Error adding to cart: ${error.message}`);
   }
@@ -185,13 +179,13 @@ export const addToCart = async (userId, productUuid, quantity = 1) => {
 export const updateCartItem = async (userId, itemUuid, quantity) => {
   let connection;
   try {
-    connection = await beginTransaction();
+    connection = await dbService.beginTransaction();
 
     const cart = await getCart(userId, connection);
 
-    const [item] = await queryWithConnection(
+    const [item] = await dbService.queryWithConnection(
       connection,
-      `SELECT ci.id, ci.uuid, ci.quantity, ci.product_id, p.uuid as product_uuid, p.price, p.quantity as available_quantity, p.name 
+      `SELECT ci.id, ci.uuid, ci.quantity, ci.product_id, p.uuid as product_uuid, p.price, p.quantity as available_quantity, p.name
        FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
        WHERE ci.uuid = ? AND ci.cart_id = ? AND ci.is_active = 1 AND p.is_active = 1
@@ -209,14 +203,14 @@ export const updateCartItem = async (userId, itemUuid, quantity) => {
       );
     }
 
-    await queryWithConnection(
+    await dbService.queryWithConnection(
       connection,
       "UPDATE cart_items SET quantity = ? WHERE uuid = ?",
       [quantity, item.uuid]
     );
 
     if (quantityDiff !== 0) {
-      await queryWithConnection(
+      await dbService.queryWithConnection(
         connection,
         `UPDATE products SET quantity = quantity - ? WHERE id = ?`,
         [quantityDiff, item.product_id]
@@ -226,7 +220,7 @@ export const updateCartItem = async (userId, itemUuid, quantity) => {
     // Update cart totals using the helper function
     await updateCartTotals(cart.uuid, connection);
 
-    await commit(connection);
+    await dbService.commit(connection);
 
     return {
       item_uuid: item.uuid,
@@ -236,7 +230,7 @@ export const updateCartItem = async (userId, itemUuid, quantity) => {
     };
   } catch (error) {
     if (connection) {
-      await rollback(connection);
+      await dbService.rollback(connection);
     }
     throw new Error(`Error updating cart item: ${error.message}`);
   }
@@ -246,11 +240,11 @@ export const updateCartItem = async (userId, itemUuid, quantity) => {
 export const deactivateCartItem = async (userId, itemUuid) => {
   let connection;
   try {
-    connection = await beginTransaction();
+    connection = await dbService.beginTransaction();
 
     const cart = await getCart(userId);
 
-    const [item] = await queryWithConnection(
+    const [item] = await dbService.queryWithConnection(
       connection,
       `SELECT ci.id, ci.uuid, ci.quantity, ci.product_id, p.uuid as product_uuid
        FROM cart_items ci
@@ -262,13 +256,13 @@ export const deactivateCartItem = async (userId, itemUuid) => {
 
     if (!item) throw new Error("Item not found or already inactive");
 
-    await queryWithConnection(
+    await dbService.queryWithConnection(
       connection,
       "UPDATE products SET quantity = quantity + ? WHERE id = ?",
       [item.quantity, item.product_id]
     );
 
-    await queryWithConnection(
+    await dbService.queryWithConnection(
       connection,
       "UPDATE cart_items SET is_active = 0 WHERE uuid = ?",
       [item.uuid]
@@ -277,12 +271,12 @@ export const deactivateCartItem = async (userId, itemUuid) => {
     // Update cart totals using the helper function
     await updateCartTotals(cart.uuid, connection);
 
-    await commit(connection);
+    await dbService.commit(connection);
 
     return { success: true };
   } catch (error) {
     if (connection) {
-      await rollback(connection);
+      await dbService.rollback(connection);
     }
     throw new Error(`Error deactivating cart item: ${error.message}`);
   }
@@ -292,12 +286,12 @@ export const deactivateCartItem = async (userId, itemUuid) => {
 export const deactivateAllCartItems = async (userId) => {
   let connection;
   try {
-    connection = await beginTransaction();
+    connection = await dbService.beginTransaction();
 
     const cart = await getCart(userId);
 
     // Get all active cart items to return quantities to inventory
-    const cartItems = await queryWithConnection(
+    const cartItems = await dbService.queryWithConnection(
       connection,
       "SELECT product_id, quantity FROM cart_items WHERE cart_id = ? AND is_active = 1 FOR UPDATE",
       [cart.id]
@@ -305,14 +299,14 @@ export const deactivateAllCartItems = async (userId) => {
 
     // Return quantities to inventory for each item
     for (const item of cartItems) {
-      await queryWithConnection(
+      await dbService.queryWithConnection(
         connection,
         "UPDATE products SET quantity = quantity + ? WHERE id = ?",
         [item.quantity, item.product_id]
       );
     }
 
-    await queryWithConnection(
+    await dbService.queryWithConnection(
       connection,
       "UPDATE cart_items SET is_active = 0 WHERE cart_id = ? AND is_active = 1",
       [cart.id]
@@ -321,12 +315,12 @@ export const deactivateAllCartItems = async (userId) => {
     // Update cart totals using the helper function
     await updateCartTotals(cart.uuid, connection);
 
-    await commit(connection);
+    await dbService.commit(connection);
 
     return { success: true };
   } catch (error) {
     if (connection) {
-      await rollback(connection);
+      await dbService.rollback(connection);
     }
     throw new Error(`Error deactivating all cart items: ${error.message}`);
   }
@@ -370,7 +364,7 @@ export const batchUpdateCartItems = async (userId, items) => {
 export const completeOrder = async (userId) => {
   let connection;
   try {
-    connection = await beginTransaction();
+    connection = await dbService.beginTransaction();
 
     const cart = await getCart(userId);
     if (!cart) {
@@ -378,17 +372,17 @@ export const completeOrder = async (userId) => {
     }
 
     // Deactivate the cart within the transaction
-    await queryWithConnection(
+    await dbService.queryWithConnection(
       connection,
       "UPDATE cart SET is_active = 0, updated_at = NOW() WHERE id = ?",
       [cart.id]
     );
 
-    await commit(connection);
+    await dbService.commit(connection);
     return { success: true };
   } catch (error) {
     if (connection) {
-      await rollback(connection);
+      await dbService.rollback(connection);
     }
     throw new Error(`Error completing order: ${error.message}`);
   }

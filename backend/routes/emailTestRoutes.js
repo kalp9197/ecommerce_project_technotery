@@ -1,34 +1,39 @@
 import express from "express";
-import { sendEmail } from "../utils/emailService.js";
-import { validate, emailTestSchema } from "../validations/index.js";
+import { emailService } from "../services/index.js";
+import * as validation from "../validations/index.js";
+import { HTTP_STATUS } from "../constants/index.js";
 
 const router = express.Router();
 
 // Send a test email
-router.post("/send", validate(emailTestSchema), async (req, res) => {
-  try {
-    const { to, subject, text, html } = req.body;
+router.post(
+  "/send",
+  validation.validate(validation.emailTestSchema),
+  async (req, res) => {
+    try {
+      const { to, subject, text, html } = req.body;
 
-    // Send test email
-    const result = await sendEmail({
-      to,
-      subject,
-      text,
-      html,
-    });
+      // Send test email
+      const result = await emailService.sendEmail({
+        to,
+        subject,
+        text,
+        html,
+      });
 
-    return res.status(200).json({
-      success: true,
-      message: "Test email sent successfully",
-      data: result,
-    });
-  } catch (error) {
-    console.error("Error sending test email:", error);
-    return res.status(500).json({
-      success: false,
-      message: `Failed to send test email: ${error.message}`,
-    });
+      return res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: "Email sent successfully",
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: `Failed to send email: ${error.message}`,
+      });
+    }
   }
-});
+);
 
 export default router;

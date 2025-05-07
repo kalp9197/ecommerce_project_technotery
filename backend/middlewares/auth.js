@@ -1,44 +1,52 @@
 import jwt from "jsonwebtoken";
-import { query, updateExpiredTokens } from "../utils/db.js";
+import { dbService } from "../services/index.js";
+import { appConfig } from "../config/app.config.js";
+import { HTTP_STATUS } from "../constants/index.js";
 
 const verifyToken = async (req) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return { error: "Access denied. No token provided", status: 401 };
+    return {
+      error: "Authentication required",
+      status: HTTP_STATUS.UNAUTHORIZED,
+    };
   }
 
   const token = authHeader.split(" ")[1];
 
   try {
     // Extract user UUID and verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, appConfig.jwtSecret);
     req.decodedToken = decoded;
 
     if (!decoded || !decoded.uuid) {
-      return res.status(401).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message: "Invalid token format",
+        message: "Invalid or expired token",
       });
     }
 
     const userUuid = decoded.uuid;
 
     // Check if user exists and is active
-    const userData = await query(
+    const userData = await dbService.query(
       "SELECT * FROM users WHERE uuid = ? AND is_active = 1",
       [userUuid]
     );
 
     if (!userData || !userData.length) {
-      return { error: "User not found or inactive", status: 404 };
+      return {
+        error: "User not found",
+        status: HTTP_STATUS.NOT_FOUND,
+      };
     }
 
     // Add user ID to decoded object
     req.decodedToken.id = userData[0].id;
 
     // Get user's active token
-    const tokens = await query(
+    const tokens = await dbService.query(
       "SELECT ut.* FROM user_tokens ut " +
         "JOIN users u ON ut.user_id = u.id " +
         "WHERE u.uuid = ? AND ut.is_expired = 0 ORDER BY ut.id DESC LIMIT 1",
@@ -48,8 +56,8 @@ const verifyToken = async (req) => {
     if (!tokens || !tokens.length) {
       // Don't suggest token refreshing, force login instead
       return {
-        error: "Token expired. Please log in again.",
-        status: 401,
+        error: "Token has expired. Please login again.",
+        status: HTTP_STATUS.UNAUTHORIZED,
         requiresLogin: true,
         is_expired: 1,
       };
@@ -62,14 +70,15 @@ const verifyToken = async (req) => {
     const now = new Date();
 
     if (expiresAt <= now) {
-      await query("UPDATE user_tokens SET is_expired = 1 WHERE id = ?", [
-        userToken.id,
-      ]);
+      await dbService.query(
+        "UPDATE user_tokens SET is_expired = 1 WHERE id = ?",
+        [userToken.id]
+      );
 
       // Don't suggest token refreshing, force login instead
       return {
-        error: "Token expired. Please log in again.",
-        status: 401,
+        error: "Token has expired. Please login again.",
+        status: HTTP_STATUS.UNAUTHORIZED,
         requiresLogin: true,
         is_expired: 1,
       };
@@ -89,20 +98,23 @@ const verifyToken = async (req) => {
     if (error.name === "TokenExpiredError") {
       // Don't suggest token refreshing, force login instead
       return {
-        error: "Token has expired. Please log in again.",
-        status: 401,
+        error: "Token has expired. Please login again.",
+        status: HTTP_STATUS.UNAUTHORIZED,
         requiresLogin: true,
         is_expired: 1,
       };
     }
-    return { error: "Authentication error", status: 500 };
+    return {
+      error: "Authentication required",
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    };
   }
 };
 
 export const authenticate = async (req, res, next) => {
   try {
     // Update any expired tokens in the database
-    await updateExpiredTokens();
+    await dbService.updateExpiredTokens();
 
     // No special handling for refresh-token endpoint
     // Let the controller handle all token validation and refreshing
@@ -112,10 +124,9 @@ export const authenticate = async (req, res, next) => {
     if (result.error) {
       // Tell client to log in again if token is expired
       if (result.requiresLogin) {
-        return res.status(401).json({
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
           success: false,
-          message:
-            "Token expired. Please log in again to generate a new token.",
+          message: "Token has expired. Please login again.",
           requiresLogin: true,
           is_expired: 1,
         });
@@ -135,9 +146,9 @@ export const authenticate = async (req, res, next) => {
 
     next();
   } catch (error) {
-    return res.status(500).json({
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Authentication error",
+      message: "Authentication required",
       error: error.message,
       is_expired: 1,
     });

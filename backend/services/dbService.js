@@ -1,49 +1,33 @@
-import mysql from "mysql2/promise";
-import dotenv from "dotenv";
+import { pool, createDbPool } from "../config/db.config.js";
+import { DB_CONFIG } from "../constants/index.js";
 
-dotenv.config();
-
-const createDbPool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  waitForConnections: true,
-  connectionLimit: 2,
-  queueLimit: 0,
-});
-
+// Initialize database if it doesn't exist
 const initializeDatabase = async () => {
   try {
     await createDbPool.query(
-      `CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`
+      `CREATE DATABASE IF NOT EXISTS ${DB_CONFIG.DATABASE}`
     );
+    return true;
   } catch (error) {
     throw new Error(`Failed to create database: ${error.message}`);
   }
 };
 
-// Main connection pool with database
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
-
+// Test database connection
 const testConnection = async () => {
   try {
     await initializeDatabase();
     const connection = await pool.getConnection();
+    console.log("Database connection successful");
     connection.release();
     return true;
   } catch (error) {
+    console.error("Database connection error:", error.message);
     return false;
   }
 };
 
+// Execute a query
 const query = async (sql, params) => {
   try {
     // If params are not provided, use query() instead of execute()
@@ -109,9 +93,9 @@ const updateExpiredTokens = async () => {
 };
 
 export {
-  pool,
-  query,
+  initializeDatabase,
   testConnection,
+  query,
   beginTransaction,
   queryWithConnection,
   commit,

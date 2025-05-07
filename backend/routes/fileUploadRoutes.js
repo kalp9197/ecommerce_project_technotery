@@ -1,7 +1,7 @@
 import express from "express";
 import { uploadFiles } from "../controllers/fileUploadController.js";
 import fileUpload from "express-fileupload";
-import { validate, fileUploadSchema } from "../validations/index.js";
+import * as validation from "../validations/index.js";
 
 const router = express.Router();
 
@@ -19,6 +19,10 @@ router.use(
 );
 
 // Route for uploading files
-router.post("/upload", validate(fileUploadSchema), uploadFiles);
+router.post(
+  "/upload",
+  validation.validate(validation.fileUploadSchema),
+  uploadFiles
+);
 
 export default router;

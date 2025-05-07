@@ -4,25 +4,21 @@ import {
   createCheckoutSession,
 } from "../controllers/paymentController.js";
 import { authenticate } from "../middlewares/auth.js";
-import {
-  validate,
-  checkoutSessionSchema,
-  webhookSchema,
-} from "../validations/index.js";
+import * as validation from "../validations/index.js";
 
 const router = express.Router();
 
 router.post(
   "/create-checkout-session",
   authenticate,
-  validate(checkoutSessionSchema),
+  validation.validate(validation.checkoutSessionSchema),
   createCheckoutSession
 );
 
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  validate(webhookSchema),
+  validation.validate(validation.webhookSchema),
   handleWebhook
 );
 
