@@ -6,6 +6,7 @@ import { isAdmin } from "../middlewares/adminAuth.js";
 
 const router = express.Router();
 
+// Public routes - authentication
 router.post(
   "/register",
   validation.validate(validation.registerSchema),
@@ -26,9 +27,9 @@ router.post(
   validation.validate(validation.resendVerificationEmailSchema),
   userController.resendVerificationEmail
 );
-// No validation to make it more flexible
 router.post("/refresh-token", userController.refreshToken);
 
+// Protected routes - user account management
 router.post(
   "/activateDeactivate",
   authenticate,
@@ -36,6 +37,7 @@ router.post(
   userController.activateDeactivate
 );
 
+// Admin-only routes
 router.get(
   "/all",
   authenticate,

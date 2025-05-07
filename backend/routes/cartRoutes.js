@@ -6,13 +6,10 @@ import { isNotAdmin } from "../middlewares/adminAuth.js";
 
 const router = express.Router();
 
-// All cart routes require authentication
 router.use(authenticate);
 
-// Get user's cart
 router.get("/", isNotAdmin, cartController.getUserCart);
 
-// Add item to cart
 router.post(
   "/items",
   validation.validate(validation.addToCartSchema),
@@ -20,7 +17,6 @@ router.post(
   cartController.addItemToCart
 );
 
-// Batch update cart items
 router.put(
   "/items/batch",
   validation.validate(validation.batchUpdateCartItemsSchema),
@@ -28,7 +24,6 @@ router.put(
   cartController.batchUpdateCartItems
 );
 
-// Update cart item quantity
 router.put(
   "/items/:uuid",
   validation.validate(validation.updateCartItemSchema),
@@ -36,7 +31,6 @@ router.put(
   cartController.updateCartItem
 );
 
-// Remove item from cart
 router.delete(
   "/items/deactivate/:uuid",
   validation.validate(validation.deactivateCartItemSchema),
@@ -44,7 +38,6 @@ router.delete(
   cartController.deactivateCartItem
 );
 
-// Clear cart (deactivate all items)
 router.delete(
   "/items/deactivateAll",
   validation.validate(validation.deactivateAllCartItemsSchema),
@@ -52,7 +45,6 @@ router.delete(
   cartController.deactivateAllCartItems
 );
 
-// Complete order and deactivate cart
 router.post(
   "/complete-order",
   validation.validate(validation.completeOrderSchema),

@@ -9,17 +9,13 @@ import { HTTP_STATUS } from "../constants/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-//Upload and process CSV and ZIP files
 export const uploadFiles = async (req, res) => {
   try {
-    // Prepare files for processing
-    // If files were not provided with the correct keys, find them in the request
     if (!req.files.csv || !req.files.zip) {
       const fileKeys = Object.keys(req.files);
       let csvFile = null;
@@ -44,7 +40,6 @@ export const uploadFiles = async (req, res) => {
         }
       }
 
-      // Set the files for processing
       if (csvFile && zipFile) {
         req.files.csv = csvFile;
         req.files.zip = zipFile;
@@ -53,8 +48,6 @@ export const uploadFiles = async (req, res) => {
 
     const csvFile = req.files.csv;
     const zipFile = req.files.zip;
-    const csvBaseName = path.parse(csvFile.name).name;
-    const zipBaseName = path.parse(zipFile.name).name;
 
     const timestamp = Date.now();
     const csvPath = path.join(uploadsDir, `${timestamp}_${csvFile.name}`);
@@ -90,10 +83,7 @@ export const uploadFiles = async (req, res) => {
 
             for (const product of products) {
               const productSku = product.sku;
-
-              if (!productSku) {
-                continue;
-              }
+              if (!productSku) continue;
 
               const productImages = zipEntries
                 .filter(
@@ -138,8 +128,6 @@ export const uploadFiles = async (req, res) => {
     await processCSV;
 
     const savedProducts = await bulkSaveProducts(processedData);
-
-    // Group products by new vs updated
     const newProducts = savedProducts.filter((p) => !p.isExisting);
     const updatedProducts = savedProducts.filter((p) => p.isExisting);
 

@@ -1,7 +1,7 @@
 import { pool, createDbPool } from "../config/db.config.js";
 import { DB_CONFIG } from "../constants/index.js";
 
-// Initialize database if it doesn't exist
+// Create database if it doesn't exist
 const initializeDatabase = async () => {
   try {
     await createDbPool.query(
@@ -13,7 +13,7 @@ const initializeDatabase = async () => {
   }
 };
 
-// Test database connection
+// Verify database connectivity
 const testConnection = async () => {
   try {
     await initializeDatabase();
@@ -27,10 +27,9 @@ const testConnection = async () => {
   }
 };
 
-// Execute a query
+// Execute SQL query with optional parameters
 const query = async (sql, params) => {
   try {
-    // If params are not provided, use query() instead of execute()
     if (!params || params.length === 0) {
       const [results] = await pool.query(sql);
       return results;
@@ -43,14 +42,14 @@ const query = async (sql, params) => {
   }
 };
 
-// Start a transaction
+// Start a database transaction
 const beginTransaction = async () => {
   const connection = await pool.getConnection();
   await connection.beginTransaction();
   return connection;
 };
 
-// Execute a query within a transaction
+// Execute SQL with an active connection
 const queryWithConnection = async (connection, sql, params) => {
   try {
     const [results] = await connection.execute(sql, params);
@@ -60,7 +59,7 @@ const queryWithConnection = async (connection, sql, params) => {
   }
 };
 
-// Commit a transaction
+// Commit database transaction
 const commit = async (connection) => {
   try {
     await connection.commit();
@@ -69,7 +68,7 @@ const commit = async (connection) => {
   }
 };
 
-// Rollback a transaction
+// Rollback database transaction
 const rollback = async (connection) => {
   try {
     await connection.rollback();
@@ -78,7 +77,7 @@ const rollback = async (connection) => {
   }
 };
 
-// Update expired tokens in the database
+// Mark expired auth tokens as invalid
 const updateExpiredTokens = async () => {
   const now = new Date().toISOString();
   try {

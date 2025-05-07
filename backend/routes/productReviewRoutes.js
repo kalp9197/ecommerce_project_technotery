@@ -5,7 +5,6 @@ import * as validation from "../validations/index.js";
 
 const router = express.Router();
 
-// Public routes (no authentication required)
 router.get(
   "/product/:productUuid",
   validation.validate([
@@ -21,7 +20,6 @@ router.get(
   productReviewController.getReviewByUuid
 );
 
-// Protected routes (authentication required)
 router.use(authenticate);
 
 router.post(

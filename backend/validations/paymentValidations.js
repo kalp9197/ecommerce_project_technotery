@@ -1,6 +1,5 @@
 import { body } from "express-validator";
 
-// Checkout session validation schema
 export const checkoutSessionSchema = [
   body("cartItems")
     .isArray()
@@ -57,7 +56,6 @@ export const checkoutSessionSchema = [
     .withMessage("Description must be a string if provided"),
 ];
 
-// Webhook validation schema
 export const webhookSchema = [
   body().custom((value, { req }) => {
     const signature = req.headers["stripe-signature"];

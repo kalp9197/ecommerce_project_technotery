@@ -1,10 +1,6 @@
-// Export the validation middleware
+// Validation exports - central access point for all request validation schemas
 export { validate } from "./validateMiddleware.js";
-
-// Export common validations
 export * from "./commonValidations.js";
-
-// Export all validations by category
 export * from "./userValidations.js";
 export * from "./productValidations.js";
 export * from "./categoryValidations.js";

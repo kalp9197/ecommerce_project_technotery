@@ -1,6 +1,5 @@
 import { body } from "express-validator";
 
-// Email test validation schema
 export const emailTestSchema = [
   body("to")
     .trim()

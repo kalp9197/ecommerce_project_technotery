@@ -7,7 +7,7 @@ import * as validation from "../validations/index.js";
 
 const router = express.Router();
 
-// Public product routes (no authentication required)
+// Public product routes
 router.get(
   "/",
   validation.validate(validation.paginationSchema),
@@ -24,11 +24,10 @@ router.get(
   productController.getProductByUUID
 );
 
-// Protected routes (authentication required)
-// Apply authentication middleware to all routes below this point
+// Require authentication for all routes below
 router.use(authenticate);
 
-// Product modification routes - Admin only
+// Admin-only product management routes
 router.post(
   "/",
   isAdmin,
@@ -51,7 +50,7 @@ router.delete(
   productController.removeProductByUUID
 );
 
-// Product image routes - Admin only for adding
+// Product image routes
 router.get(
   "/images/:productUuid",
   validation.validate(validation.productUuidParamForImage),
@@ -67,7 +66,7 @@ router.post(
   imageController.addProductImage
 );
 
-// Image routes - Admin only
+// Single image operations
 const imageRouter = express.Router();
 imageRouter.put(
   "/:uuid",
@@ -85,7 +84,6 @@ imageRouter.delete(
   imageController.deleteProductImageByUuid
 );
 
-// Mount the image router
 router.use("/images", imageRouter);
 
 export default router;

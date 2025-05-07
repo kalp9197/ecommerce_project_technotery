@@ -1,6 +1,5 @@
 import { body, param, query } from "express-validator";
 
-// Product validation schema
 export const productSchema = [
   body("p_cat_uuid")
     .notEmpty()
@@ -35,12 +34,10 @@ export const productSchema = [
     .toInt(),
 ];
 
-// Product UUID parameter validation
 export const productUuidParam = [
   param("uuid").isUUID(4).withMessage("Product UUID must be a valid UUID v4"),
 ];
 
-// Product search validation schema
 export const searchProductsSchema = [
   query("search")
     .optional()
@@ -67,7 +64,6 @@ export const searchProductsSchema = [
     .withMessage("Order direction must be either asc or desc"),
 ];
 
-// Product image validation schemas
 export const productImageSchema = [
   body("image_path")
     .trim()

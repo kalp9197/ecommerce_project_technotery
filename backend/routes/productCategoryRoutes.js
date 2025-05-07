@@ -6,7 +6,6 @@ import * as validation from "../validations/index.js";
 
 const router = express.Router();
 
-// Public category routes (no authentication required)
 router.get(
   "/",
   validation.validate(validation.paginationSchema),
@@ -18,21 +17,16 @@ router.get(
   categoryController.getCategoryByUuid
 );
 
-// Protected routes (authentication required)
-// Apply authentication middleware to all routes below this point
 router.use(authenticate);
 
-// Admin-only routes for category modifications
 router.post(
   "/",
-  authenticate,
   isAdmin,
   validation.validate(validation.categorySchema),
   categoryController.createCategory
 );
 router.put(
   "/:uuid",
-  authenticate,
   isAdmin,
   validation.validate([
     ...validation.categoryUuidParam,
@@ -42,7 +36,6 @@ router.put(
 );
 router.delete(
   "/:uuid",
-  authenticate,
   isAdmin,
   validation.validate(validation.categoryUuidParam),
   categoryController.deleteCategoryByUuid

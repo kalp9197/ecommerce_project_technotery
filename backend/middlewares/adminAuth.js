@@ -1,9 +1,10 @@
 import { dbService } from "../services/index.js";
 import { HTTP_STATUS } from "../constants/index.js";
 
+// Middleware to check for admin privileges
 export const isAdmin = async (req, res, next) => {
   try {
-    if (!req.user || !req.user.uuid) {
+    if (!req.user?.uuid) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required",
@@ -22,7 +23,6 @@ export const isAdmin = async (req, res, next) => {
       });
     }
 
-    // User is an admin, proceed
     next();
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -33,9 +33,10 @@ export const isAdmin = async (req, res, next) => {
   }
 };
 
+// Middleware to restrict admin access
 export const isNotAdmin = async (req, res, next) => {
   try {
-    if (!req.user || !req.user.uuid) {
+    if (!req.user?.uuid) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required",
@@ -54,7 +55,6 @@ export const isNotAdmin = async (req, res, next) => {
       });
     }
 
-    // User is not an admin, proceed
     next();
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({

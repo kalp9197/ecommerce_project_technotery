@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import { EMAIL_CONFIG } from "../constants/index.js";
 
-// Email configuration for development
+// Create test email transport for development environment
 const createDevTransporter = async () => {
   const testAccount = await nodemailer.createTestAccount();
   return {
@@ -18,7 +18,7 @@ const createDevTransporter = async () => {
   };
 };
 
-// Email configuration for production
+// Create production email transport using configured settings
 const createProdTransporter = () => {
   return {
     transporter: nodemailer.createTransport({
@@ -33,7 +33,7 @@ const createProdTransporter = () => {
   };
 };
 
-// Default email sender
+// Default sender email address format
 const defaultSender = `"${EMAIL_CONFIG.FROM_NAME}" <${EMAIL_CONFIG.FROM_EMAIL}>`;
 
 export { createDevTransporter, createProdTransporter, defaultSender };

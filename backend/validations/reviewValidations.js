@@ -1,6 +1,5 @@
 import { body, param } from "express-validator";
 
-// Product review validation schema
 export const productReviewSchema = [
   body("product_uuid")
     .notEmpty()
@@ -17,19 +16,16 @@ export const productReviewSchema = [
   body("review").optional().isString().withMessage("Review must be a string"),
 ];
 
-// Review UUID parameter validation
 export const reviewUuidParam = [
   param("uuid").isUUID(4).withMessage("Review UUID must be a valid UUID v4"),
 ];
 
-// Product UUID parameter for reviews validation
 export const productUuidParamForReviews = [
   param("productUuid")
     .isUUID(4)
     .withMessage("Product UUID must be a valid UUID v4"),
 ];
 
-// Update review validation schema
 export const updateReviewSchema = [
   body("rating")
     .optional()

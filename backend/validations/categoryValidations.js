@@ -1,6 +1,5 @@
 import { body, param } from "express-validator";
 
-// Product category validation schema
 export const categorySchema = [
   body("name")
     .trim()
@@ -15,7 +14,6 @@ export const categorySchema = [
     .withMessage("is_active must be a boolean value"),
 ];
 
-// Category UUID parameter validation
 export const categoryUuidParam = [
   param("uuid").isUUID(4).withMessage("Category UUID must be a valid UUID v4"),
 ];

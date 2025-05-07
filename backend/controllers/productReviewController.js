@@ -1,14 +1,14 @@
 import * as productReviewModel from "../models/productReviewModel.js";
 import { HTTP_STATUS } from "../constants/index.js";
 
-// Get all reviews for a product
 export const getReviewsByProductUuid = async (req, res) => {
   try {
     const productUuid = req.params.productUuid;
     const reviews = await productReviewModel.getReviewsByProductUuid(
       productUuid
     );
-    if (!reviews || reviews.length === 0) {
+
+    if (!reviews?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "No reviews found for this product",
@@ -26,7 +26,7 @@ export const getReviewsByProductUuid = async (req, res) => {
       success: true,
       message: "Product reviews retrieved successfully",
       data: {
-        reviews: reviews,
+        reviews,
         averageRating: parseFloat(averageRating.toFixed(1)),
         totalReviews: reviews.length,
       },
@@ -39,18 +39,19 @@ export const getReviewsByProductUuid = async (req, res) => {
   }
 };
 
-// Get a specific review by UUID
 export const getReviewByUuid = async (req, res) => {
   try {
     const uuid = req.params.uuid;
     const productUuid = req.params.productUuid;
     const review = await productReviewModel.getReviewByUuid(uuid, productUuid);
+
     if (!review) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Review not found",
       });
     }
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Review retrieved successfully",
@@ -71,7 +72,6 @@ export const getReviewByUuid = async (req, res) => {
   }
 };
 
-// Create a new review
 export const createReview = async (req, res) => {
   try {
     const { product_uuid, rating, review } = req.body;
@@ -118,19 +118,14 @@ export const createReview = async (req, res) => {
   }
 };
 
-// Update an existing review
 export const updateReview = async (req, res) => {
   try {
     const uuid = req.params.uuid;
     const { rating, review } = req.body;
     const userId = req.user.id;
 
-    const updatedReview = await productReviewModel.updateReview(
-      uuid,
-      userId,
-      rating,
-      review
-    );
+    await productReviewModel.updateReview(uuid, userId, rating, review);
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Review updated successfully",
@@ -153,7 +148,6 @@ export const updateReview = async (req, res) => {
   }
 };
 
-// Delete a review
 export const deleteReview = async (req, res) => {
   try {
     const uuid = req.params.uuid;

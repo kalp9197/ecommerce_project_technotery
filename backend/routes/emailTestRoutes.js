@@ -5,7 +5,6 @@ import { HTTP_STATUS } from "../constants/index.js";
 
 const router = express.Router();
 
-// Send a test email
 router.post(
   "/send",
   validation.validate(validation.emailTestSchema),
@@ -13,7 +12,6 @@ router.post(
     try {
       const { to, subject, text, html } = req.body;
 
-      // Send test email
       const result = await emailService.sendEmail({
         to,
         subject,

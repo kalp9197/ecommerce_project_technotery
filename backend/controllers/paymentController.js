@@ -1,18 +1,18 @@
 import { paymentService } from "../services/index.js";
 import { HTTP_STATUS } from "../constants/index.js";
 
-// Create a Checkout Session for Stripe Checkout
+// Create Stripe checkout session for cart
 export const createCheckoutSession = async (req, res) => {
   try {
     const { cartItems } = req.body;
 
     if (!cartItems?.length) {
-      return res
-        .status(HTTP_STATUS.BAD_REQUEST)
-        .json({ success: false, message: "Cart items required" });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: "Cart items required",
+      });
     }
 
-    // Use the payment service to create a checkout session
     const session = await paymentService.createStripeCheckoutSession(
       cartItems,
       req.user?.id
@@ -31,17 +31,17 @@ export const createCheckoutSession = async (req, res) => {
   }
 };
 
-// Handle successful payment webhook
+// Process Stripe webhook events
 export const handleWebhook = async (req, res) => {
   const signature = req.headers["stripe-signature"];
   if (!signature) {
-    return res
-      .status(HTTP_STATUS.BAD_REQUEST)
-      .json({ success: false, message: "Signature missing" });
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      message: "Signature missing",
+    });
   }
 
   try {
-    // Use the payment service to verify the webhook signature
     const event = paymentService.verifyStripeWebhookSignature(
       req.body,
       signature

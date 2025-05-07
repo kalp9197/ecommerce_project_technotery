@@ -1,10 +1,9 @@
-import { stripe, stripeConfig } from '../config/payment.config.js';
-import { appConfig } from '../config/app.config.js';
+import { stripe, stripeConfig } from "../config/payment.config.js";
+import { appConfig } from "../config/app.config.js";
 
-// Create a checkout session
+// Create Stripe checkout session from cart items
 export const createStripeCheckoutSession = async (cartItems, userId) => {
   try {
-    // Helper function to validate URL
     const isValidHttpUrl = (string) => {
       try {
         if (!string) return false;
@@ -15,15 +14,12 @@ export const createStripeCheckoutSession = async (cartItems, userId) => {
       }
     };
 
-    // Format line items for Stripe
     const lineItems = cartItems.map((item) => {
-      // Only include images if they're valid URLs
       const images = [];
       if (item.image && isValidHttpUrl(item.image)) {
         images.push(item.image);
       }
 
-      // Ensure price is a valid number
       let price = 0;
       try {
         price = parseFloat(item.price) || 0;
@@ -60,7 +56,7 @@ export const createStripeCheckoutSession = async (cartItems, userId) => {
     return {
       success: true,
       url: session.url,
-      sessionId: session.id
+      sessionId: session.id,
     };
   } catch (error) {
     throw new Error(`Failed to create checkout session: ${error.message}`);

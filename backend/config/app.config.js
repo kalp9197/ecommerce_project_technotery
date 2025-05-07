@@ -7,7 +7,7 @@ import {
   RATE_LIMIT_CONFIG,
 } from "../constants/index.js";
 
-// Application configuration
+// Core app configuration settings
 const appConfig = {
   port: SERVER_CONFIG.PORT,
   corsOrigin: CORS_CONFIG.ORIGIN,
@@ -17,7 +17,7 @@ const appConfig = {
   maxRefreshCount: JWT_CONFIG.MAX_REFRESH_COUNT,
 };
 
-// Rate limiting configuration
+// API rate limiter to prevent abuse
 const rateLimiter = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.WINDOW_MS,
   max: RATE_LIMIT_CONFIG.MAX_REQUESTS,

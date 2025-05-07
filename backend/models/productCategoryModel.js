@@ -1,24 +1,40 @@
 import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
+// Get paginated list of active product categories
 export const getAllCategories = async (page, limit) => {
   try {
     const offset = (page - 1) * limit;
     const result = await dbService.query(
-      `SELECT * FROM product_categories WHERE is_active = 1 ORDER BY id ASC LIMIT ${limit} OFFSET ${offset}`
+      `SELECT
+          *
+        FROM
+          product_categories
+        WHERE
+          is_active = 1
+        ORDER BY
+          id ASC
+        LIMIT
+          ${limit}
+        OFFSET
+          ${offset}`
     );
-
-    // Return an empty array instead of null if no categories are found
     return result || [];
   } catch (error) {
     throw new Error(`Error fetching categories: ${error.message}`);
   }
 };
 
+// Get a single category by UUID
 export const getCategoryByUuid = async (uuid) => {
   try {
     const result = await dbService.query(
-      "SELECT * FROM product_categories WHERE uuid = ? AND is_active = 1",
+      `SELECT
+          *
+        FROM
+          product_categories
+        WHERE
+          uuid = ? AND is_active = 1`,
       [uuid]
     );
     return result;
@@ -27,25 +43,32 @@ export const getCategoryByUuid = async (uuid) => {
   }
 };
 
+// Create a new product category
 export const createCategory = async (categoryData, userId) => {
   try {
     const { name } = categoryData;
     const uuid = uuidv4();
 
-    // Check for duplicate
+    // Check for duplicate category names (case-insensitive)
     const existingCategory = await dbService.query(
-      `SELECT id FROM product_categories WHERE LOWER(name) = LOWER(?) AND is_active = 1`,
+      `SELECT
+          id
+        FROM
+          product_categories
+        WHERE
+          LOWER(name) = LOWER(?) AND is_active = 1`,
       [name]
     );
 
-    if (existingCategory && existingCategory.length > 0) {
+    if (existingCategory?.length > 0) {
       throw new Error("Category with this name already exists");
     }
 
-    // Create category with user ID (passing null if userId is undefined)
     const result = await dbService.query(
-      `INSERT INTO product_categories (uuid, name, is_active, created_by, updated_by)
-       VALUES (?, ?, 1, ?, ?)`,
+      `INSERT INTO
+          product_categories (uuid, name, is_active, created_by, updated_by)
+        VALUES
+          (?, ?, 1, ?, ?)`,
       [uuid, name, userId || null, userId || null]
     );
 
@@ -59,38 +82,51 @@ export const createCategory = async (categoryData, userId) => {
   }
 };
 
+// Update existing product category
 export const updateCategoryByUuid = async (uuid, categoryData, userId) => {
   try {
     const { name } = categoryData;
 
-    // First, check if the category exists
+    // Verify category exists and is active
     const existingCategory = await dbService.query(
-      `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
+      `SELECT
+          id
+        FROM
+          product_categories
+        WHERE
+          uuid = ? AND is_active = 1`,
       [uuid]
     );
 
-    if (!existingCategory || existingCategory.length === 0) {
+    if (!existingCategory?.length) {
       throw new Error("Category not found or inactive");
     }
 
-    // Check for duplicate name (excluding the current category)
+    // Check for name conflicts with other categories (case-insensitive)
     const duplicateCheck = await dbService.query(
-      `SELECT id FROM product_categories 
-       WHERE LOWER(name) = LOWER(?) 
-       AND uuid != ? 
-       AND is_active = 1`,
+      `SELECT
+          id
+        FROM
+          product_categories
+        WHERE
+          LOWER(name) = LOWER(?)
+          AND uuid != ?
+          AND is_active = 1`,
       [name, uuid]
     );
 
-    if (duplicateCheck && duplicateCheck.length > 0) {
+    if (duplicateCheck?.length > 0) {
       throw new Error("Category with this name already exists");
     }
 
-    // Update the category (passing null if userId is undefined)
     const result = await dbService.query(
-      `UPDATE product_categories 
-       SET name = ?, updated_by = ?
-       WHERE uuid = ? AND is_active = 1`,
+      `UPDATE
+          product_categories
+        SET
+          name = ?,
+          updated_by = ?
+        WHERE
+          uuid = ? AND is_active = 1`,
       [name, userId || null, uuid]
     );
 
@@ -104,32 +140,39 @@ export const updateCategoryByUuid = async (uuid, categoryData, userId) => {
   }
 };
 
+// Soft-delete a product category (if no active products)
 export const deleteCategoryByUuid = async (uuid) => {
   try {
-    // First find the category and check for associated products
+    // Count active products in the category
     const categoryCheck = await dbService.query(
-      `SELECT 
-        c.id, 
+      `SELECT
+        c.id,
         (SELECT COUNT(*) FROM products p WHERE p.p_cat_id = c.id AND p.is_active = 1) as product_count
-       FROM product_categories c 
-       WHERE c.uuid = ? AND c.is_active = 1`,
+       FROM
+         product_categories c
+       WHERE
+         c.uuid = ? AND c.is_active = 1`,
       [uuid]
     );
 
-    if (!categoryCheck || categoryCheck.length === 0) {
+    if (!categoryCheck?.length) {
       throw new Error("Category not found or already inactive");
     }
 
-    // Check if there are active products in this category
+    // Prevent deletion if category contains active products
     if (categoryCheck[0].product_count > 0) {
       throw new Error(
         `Cannot delete category with active products. Please deactivate all ${categoryCheck[0].product_count} product(s) in this category first.`
       );
     }
 
-    // Now deactivate the category since it has no active products
     const result = await dbService.query(
-      "UPDATE product_categories SET is_active = 0 WHERE id = ?",
+      `UPDATE
+          product_categories
+        SET
+          is_active = 0
+        WHERE
+          id = ?`,
       [categoryCheck[0].id]
     );
 

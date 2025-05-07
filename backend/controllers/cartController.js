@@ -1,11 +1,10 @@
 import * as cartModel from "../models/cartModel.js";
 import { HTTP_STATUS } from "../constants/index.js";
 
-// Get user's active cart with all items
+// Retrieve user's cart contents
 export const getUserCart = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const cartData = await cartModel.getCartItems(userId);
 
     res.status(HTTP_STATUS.OK).json({
@@ -21,7 +20,7 @@ export const getUserCart = async (req, res) => {
   }
 };
 
-// Add product to cart (creates cart if needed)
+// Add product to cart
 export const addItemToCart = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -34,7 +33,6 @@ export const addItemToCart = async (req, res) => {
       message: "Resource created successfully",
     });
   } catch (error) {
-    // Check for insufficient stock error
     if (error.message.includes("Insufficient stock")) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
@@ -48,7 +46,7 @@ export const addItemToCart = async (req, res) => {
   }
 };
 
-// Update cart item quantity
+// Modify quantity of cart item
 export const updateCartItem = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -57,12 +55,12 @@ export const updateCartItem = async (req, res) => {
 
     const item = await cartModel.updateCartItem(userId, productUuid, quantity);
     if (!item) throw new Error("Item not found or inactive");
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Resource updated successfully",
     });
   } catch (error) {
-    // Check for specific error types
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
@@ -81,7 +79,7 @@ export const updateCartItem = async (req, res) => {
   }
 };
 
-// Remove item from cart (soft delete)
+// Remove item from cart
 export const deactivateCartItem = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -106,11 +104,10 @@ export const deactivateCartItem = async (req, res) => {
   }
 };
 
-// Empty cart by removing all items
+// Clear entire cart
 export const deactivateAllCartItems = async (req, res) => {
   try {
     const userId = req.user.id;
-
     await cartModel.deactivateAllCartItems(userId);
 
     res.status(HTTP_STATUS.OK).json({
@@ -130,7 +127,7 @@ export const deactivateAllCartItems = async (req, res) => {
   }
 };
 
-// Batch update cart items
+// Update multiple cart items at once
 export const batchUpdateCartItems = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -143,6 +140,7 @@ export const batchUpdateCartItems = async (req, res) => {
         message: "Internal server error",
       });
     }
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Resource updated successfully",
@@ -159,7 +157,7 @@ export const batchUpdateCartItems = async (req, res) => {
   }
 };
 
-// Complete order and deactivate current cart
+// Mark order as completed after checkout
 export const completeOrder = async (req, res) => {
   try {
     const userId = req.user.id;

@@ -1,4 +1,3 @@
-// Export all controllers from this file
 import * as cartController from "./cartController.js";
 import * as fileUploadController from "./fileUploadController.js";
 import * as paymentController from "./paymentController.js";

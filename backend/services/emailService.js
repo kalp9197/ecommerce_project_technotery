@@ -1,10 +1,10 @@
 import nodemailer from "nodemailer";
 import { createDevTransporter, defaultSender } from "../config/email.config.js";
 
-// Send email
+// Send email with provided options
 export const sendEmail = async (options) => {
   try {
-    const { transporter, testAccount } = await createDevTransporter();
+    const { transporter } = await createDevTransporter();
     const from = options.from || defaultSender;
 
     const info = await transporter.sendMail({
@@ -23,12 +23,11 @@ export const sendEmail = async (options) => {
       previewUrl: nodemailer.getTestMessageUrl(info),
     };
   } catch (error) {
-    console.error("Email sending failed:", error);
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };
 
-// Email verification template
+// Generate email verification template
 export const getVerificationEmailTemplate = (name, verificationUrl) => {
   return {
     subject: "Verify Your Email Address",

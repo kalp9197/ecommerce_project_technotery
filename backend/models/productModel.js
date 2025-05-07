@@ -1,37 +1,41 @@
 import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
+// Get paginated list of active products
 export const getAllProducts = async (limit, offset) => {
   try {
     limit = Number(limit);
     offset = Number(offset);
 
-    // Get paginated products with category info
     const products = await dbService.query(
-      `
-      SELECT 
-        p.*, 
-        pc.name as category_name,
-        (SELECT pi.image_path 
-         FROM product_images pi 
-         WHERE pi.p_id = p.id AND pi.is_featured = 1 AND pi.is_active = 1 
-         LIMIT 1) as featured_image
-      FROM products p 
-      JOIN product_categories pc ON p.p_cat_id = pc.id
-      WHERE p.is_active = 1 AND pc.is_active = 1 
-      ORDER BY p.id ASC
-      LIMIT ${limit} OFFSET ${offset}
-    `
+      `SELECT
+          p.*,
+          pc.name as category_name,
+          (SELECT pi.image_path
+            FROM product_images pi
+            WHERE pi.p_id = p.id AND pi.is_featured = 1 AND pi.is_active = 1
+            LIMIT 1) as featured_image
+        FROM
+          products p
+        JOIN
+          product_categories pc ON p.p_cat_id = pc.id
+        WHERE
+          p.is_active = 1 AND pc.is_active = 1
+        ORDER BY
+          p.id ASC
+        LIMIT
+          ${limit}
+        OFFSET
+          ${offset}`
     );
 
-    return {
-      products,
-    };
+    return { products };
   } catch (error) {
     throw new Error(`Error fetching products: ${error.message}`);
   }
 };
 
+// Search products with filtering options
 export const searchProducts = async (params) => {
   try {
     const {
@@ -44,13 +48,14 @@ export const searchProducts = async (params) => {
       limit = 10,
     } = params;
 
+    // Normalize and sanitize input values
     const pageNum = Math.max(Number(page) || 1, 1);
     const limitNum = Math.max(Number(limit) || 10, 1);
     const offset = (pageNum - 1) * limitNum;
 
-    // Start WHERE clause
     let where = `p.is_active = 1`;
 
+    // Build dynamic WHERE clause based on search parameters
     if (search.trim()) {
       where += ` AND (p.name LIKE '%${search.trim()}%' )`;
     }
@@ -61,19 +66,26 @@ export const searchProducts = async (params) => {
       where += ` AND p.price <= ${Number(maxPrice)}`;
     }
 
-    // Validate orderBy and orderDir
+    // Prevent SQL injection in ORDER BY clause
     const allowedFields = ["name", "price", "created_at"];
     const orderField = allowedFields.includes(orderBy) ? orderBy : "name";
     const orderDirection = orderDir === "desc" ? "desc" : "asc";
 
     const sql = `
-      SELECT p.*, pc.name AS category_name
-      FROM products p
-      JOIN product_categories pc ON p.p_cat_id = pc.id
-      WHERE ${where} AND pc.is_active = 1
-      ORDER BY p.${orderField} ${orderDirection}
-      LIMIT ${limitNum} OFFSET ${offset}
-    `;
+      SELECT
+          p.*, pc.name AS category_name
+        FROM
+          products p
+        JOIN
+          product_categories pc ON p.p_cat_id = pc.id
+        WHERE
+          ${where} AND pc.is_active = 1
+        ORDER BY
+          p.${orderField} ${orderDirection}
+        LIMIT
+          ${limitNum}
+        OFFSET
+          ${offset}`;
 
     const products = await dbService.query(sql);
 
@@ -86,24 +98,28 @@ export const searchProducts = async (params) => {
   }
 };
 
+// Get single product by UUID
 export const getProductByUuid = async (uuid) => {
   try {
     const rows = await dbService.query(
-      `
-      SELECT 
-        p.id AS product_id,
-        p.uuid,
-        p.name,
-        p.description,
-        p.price,
-        pc.name AS category_name,
-        pi.id AS image_id
-      FROM products p
-      JOIN product_categories pc ON p.p_cat_id = pc.id
-      LEFT JOIN product_images pi ON pi.p_id = p.id AND pi.is_active = 1
-      WHERE p.uuid = ? AND p.is_active = 1 AND pc.is_active = 1
-      LIMIT 1
-      `,
+      `SELECT
+          p.id AS product_id,
+          p.uuid,
+          p.name,
+          p.description,
+          p.price,
+          pc.name AS category_name,
+          pi.id AS image_id
+        FROM
+          products p
+        JOIN
+          product_categories pc ON p.p_cat_id = pc.id
+        LEFT JOIN
+          product_images pi ON pi.p_id = p.id AND pi.is_active = 1
+        WHERE
+          p.uuid = ? AND p.is_active = 1 AND pc.is_active = 1
+        LIMIT
+          1`,
       [uuid]
     );
 
@@ -123,11 +139,15 @@ export const getProductByUuid = async (uuid) => {
   }
 };
 
+// Create new product record
 export const createProduct = async (productData) => {
   const { sku, name, category, price, quantity, images } = productData;
 
   const result = await dbService.query(
-    "INSERT INTO products (sku, name, category, price, quantity, images) VALUES (?, ?, ?, ?, ?, ?)",
+    `INSERT INTO
+        products (sku, name, category, price, quantity, images)
+      VALUES
+        (?, ?, ?, ?, ?, ?)`,
     [sku, name, category, price, quantity, JSON.stringify(images)]
   );
 
@@ -142,45 +162,58 @@ export const createProduct = async (productData) => {
   };
 };
 
+// Update existing product data
 export const updateProductByUuid = async (uuid, body) => {
   try {
     const { p_cat_uuid, name, description, price } = body;
 
     let p_cat_id = null;
+    // Get category ID from UUID if provided
     if (p_cat_uuid) {
-      // Get category ID if provided
       const categoryResult = await dbService.query(
-        `SELECT id FROM product_categories WHERE uuid = ? AND is_active = 1`,
+        `SELECT
+            id
+          FROM
+            product_categories
+          WHERE
+            uuid = ? AND is_active = 1`,
         [p_cat_uuid]
       );
 
-      if (!categoryResult || !categoryResult.length || !categoryResult[0].id) {
+      if (!categoryResult?.length || !categoryResult[0].id) {
         throw new Error("Invalid or inactive product category");
       }
 
       p_cat_id = categoryResult[0].id;
     }
 
-    // Execute the update query with all fields
+    // Update only fields that were provided using COALESCE
     const result = await dbService.query(
-      `UPDATE products 
-       SET updated_at = NOW(),
-           p_cat_id = COALESCE(?, p_cat_id),
-           name = COALESCE(?, name),
-           description = COALESCE(?, description),
-           price = COALESCE(?, price)
-       WHERE uuid = ? AND is_active = 1`,
+      `UPDATE
+          products
+        SET
+          updated_at = NOW(),
+          p_cat_id = COALESCE(?, p_cat_id),
+          name = COALESCE(?, name),
+          description = COALESCE(?, description),
+          price = COALESCE(?, price)
+        WHERE
+          uuid = ? AND is_active = 1`,
       [p_cat_id, name, description, price, uuid]
     );
 
     if (result.affectedRows === 0) {
-      // Check if the product exists
       const exists = await dbService.query(
-        "SELECT id FROM products WHERE uuid = ?",
+        `SELECT
+            id
+          FROM
+            products
+          WHERE
+            uuid = ?`,
         [uuid]
       );
 
-      if (!exists || !exists.length) {
+      if (!exists?.length) {
         throw new Error("Product not found");
       } else {
         throw new Error(
@@ -189,7 +222,6 @@ export const updateProductByUuid = async (uuid, body) => {
       }
     }
 
-    // Get updated product data
     const updatedProduct = await getProductByUuid(uuid);
     return {
       affectedRows: result.affectedRows,
@@ -200,14 +232,17 @@ export const updateProductByUuid = async (uuid, body) => {
   }
 };
 
-// Soft delete product by UUID (mark as inactive)
+// Soft-delete product (set inactive)
 export const deleteProductByUuid = async (uuid) => {
   try {
     const result = await dbService.query(
-      `UPDATE products p
-       SET p.is_active = 0
-       WHERE p.uuid = ? 
-       AND p.is_active = 1`,
+      `UPDATE
+          products p
+        SET
+          p.is_active = 0
+        WHERE
+          p.uuid = ?
+          AND p.is_active = 1`,
       [uuid]
     );
 
@@ -221,18 +256,24 @@ export const deleteProductByUuid = async (uuid) => {
   }
 };
 
+// Get product by SKU (used for inventory lookup)
 export const getProductBySKU = async (sku) => {
   try {
     const results = await dbService.query(
-      "SELECT * FROM products WHERE sku = ?",
+      `SELECT
+          *
+        FROM
+          products
+        WHERE
+          sku = ?`,
       [sku]
     );
     if (results.length === 0) {
       return null;
     }
 
-    const product = results[0];
     // Parse images JSON string to array
+    const product = results[0];
     product.images = JSON.parse(product.images || "[]");
 
     return product;
@@ -241,6 +282,7 @@ export const getProductBySKU = async (sku) => {
   }
 };
 
+// Create multiple product records in succession
 export const bulkCreateProducts = async (productsData) => {
   try {
     const createdProducts = [];
@@ -256,6 +298,7 @@ export const bulkCreateProducts = async (productsData) => {
   }
 };
 
+// Initialize products table if not exists
 export const ensureProductsTable = async () => {
   try {
     await dbService.query(`
@@ -269,8 +312,7 @@ export const ensureProductsTable = async () => {
       images TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-  `);
+    )`);
   } catch (error) {
     throw new Error(`Error creating products table: ${error.message}`);
   }

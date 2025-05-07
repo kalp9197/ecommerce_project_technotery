@@ -1,4 +1,4 @@
-// Export all models from this file
+// Model exports for application - central access point for all data model modules
 import * as cartModel from "./cartModel.js";
 import * as fileUploadModel from "./fileUploadModel.js";
 import * as productCategoryModel from "./productCategoryModel.js";

@@ -1,6 +1,6 @@
 import { query, param } from "express-validator";
 
-// Common pagination validation schema
+// Pagination parameters validation (used across multiple endpoints)
 export const paginationSchema = [
   query("page")
     .optional()
@@ -14,7 +14,7 @@ export const paginationSchema = [
     .toInt(),
 ];
 
-// Common UUID parameter validation
+// UUID parameter validation (reusable for any entity)
 export const uuidParam = (paramName = "uuid") => [
   param(paramName)
     .isUUID(4)

@@ -3,6 +3,7 @@ import { dbService } from "../services/index.js";
 import { appConfig } from "../config/app.config.js";
 import { HTTP_STATUS } from "../constants/index.js";
 
+// Validate and process JWT token
 const verifyToken = async (req) => {
   const authHeader = req.headers.authorization;
 
@@ -16,45 +17,40 @@ const verifyToken = async (req) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    // Extract user UUID and verify token
+    // Decode JWT and verify signature
     const decoded = jwt.verify(token, appConfig.jwtSecret);
     req.decodedToken = decoded;
 
     if (!decoded || !decoded.uuid) {
-      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        success: false,
-        message: "Invalid or expired token",
-      });
+      return {
+        error: "Invalid or expired token",
+        status: HTTP_STATUS.UNAUTHORIZED,
+      };
     }
 
-    const userUuid = decoded.uuid;
-
     // Check if user exists and is active
+    const userUuid = decoded.uuid;
     const userData = await dbService.query(
       "SELECT * FROM users WHERE uuid = ? AND is_active = 1",
       [userUuid]
     );
 
-    if (!userData || !userData.length) {
+    if (!userData?.length) {
       return {
         error: "User not found",
         status: HTTP_STATUS.NOT_FOUND,
       };
     }
 
-    // Add user ID to decoded object
     req.decodedToken.id = userData[0].id;
 
-    // Get user's active token
+    // Verify token hasn't been revoked
     const tokens = await dbService.query(
-      "SELECT ut.* FROM user_tokens ut " +
-        "JOIN users u ON ut.user_id = u.id " +
-        "WHERE u.uuid = ? AND ut.is_expired = 0 ORDER BY ut.id DESC LIMIT 1",
+      "SELECT ut.* FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE u.uuid = ? AND ut.is_expired = 0 ORDER BY ut.id DESC LIMIT 1",
       [userUuid]
     );
 
-    if (!tokens || !tokens.length) {
-      // Don't suggest token refreshing, force login instead
+    if (!tokens?.length) {
       return {
         error: "Token has expired. Please login again.",
         status: HTTP_STATUS.UNAUTHORIZED,
@@ -63,9 +59,8 @@ const verifyToken = async (req) => {
       };
     }
 
+    // Check token expiration
     const userToken = tokens[0];
-
-    // Check if token has expired
     const expiresAt = new Date(userToken.expires_at);
     const now = new Date();
 
@@ -75,7 +70,6 @@ const verifyToken = async (req) => {
         [userToken.id]
       );
 
-      // Don't suggest token refreshing, force login instead
       return {
         error: "Token has expired. Please login again.",
         status: HTTP_STATUS.UNAUTHORIZED,
@@ -84,7 +78,6 @@ const verifyToken = async (req) => {
       };
     }
 
-    // Store token info
     req.tokenId = userToken.id;
     req.refreshCycles = userToken.refresh_cycles;
     req.isExpired = 0;
@@ -96,7 +89,6 @@ const verifyToken = async (req) => {
     };
   } catch (error) {
     if (error.name === "TokenExpiredError") {
-      // Don't suggest token refreshing, force login instead
       return {
         error: "Token has expired. Please login again.",
         status: HTTP_STATUS.UNAUTHORIZED,
@@ -111,18 +103,14 @@ const verifyToken = async (req) => {
   }
 };
 
+// Authentication middleware for protected routes
 export const authenticate = async (req, res, next) => {
   try {
-    // Update any expired tokens in the database
+    // Clean up expired tokens
     await dbService.updateExpiredTokens();
 
-    // No special handling for refresh-token endpoint
-    // Let the controller handle all token validation and refreshing
-
-    // Standard auth
     const result = await verifyToken(req);
     if (result.error) {
-      // Tell client to log in again if token is expired
       if (result.requiresLogin) {
         return res.status(HTTP_STATUS.UNAUTHORIZED).json({
           success: false,
@@ -139,7 +127,7 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    // Auth successful, set user data for route handlers
+    // Add user and token data to request object
     req.user = result.decoded;
     req.tokenId = result.tokenId;
     req.is_expired = result.is_expired || 0;

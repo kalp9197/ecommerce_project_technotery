@@ -5,10 +5,9 @@ import * as validation from "../validations/index.js";
 
 const router = express.Router();
 
-// Middleware for handling file uploads
 router.use(
   fileUpload({
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
+    limits: { fileSize: 50 * 1024 * 1024 },
     createParentPath: true,
     useTempFiles: true,
     tempFileDir: "/tmp/",
@@ -18,7 +17,6 @@ router.use(
   })
 );
 
-// Route for uploading files
 router.post(
   "/upload",
   validation.validate(validation.fileUploadSchema),

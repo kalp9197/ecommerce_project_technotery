@@ -1,6 +1,5 @@
 import { body, param } from "express-validator";
 
-// Add to cart validation schema
 export const addToCartSchema = [
   body("product_uuid")
     .notEmpty()
@@ -15,7 +14,6 @@ export const addToCartSchema = [
     .toInt(),
 ];
 
-// Update cart item validation schema
 export const updateCartItemSchema = [
   param("uuid")
     .notEmpty()
@@ -31,7 +29,6 @@ export const updateCartItemSchema = [
     .toInt(),
 ];
 
-// Batch update cart items validation schema
 export const batchUpdateCartItemsSchema = [
   body()
     .isArray()
@@ -53,7 +50,6 @@ export const batchUpdateCartItemsSchema = [
     .toInt(),
 ];
 
-// Deactivate cart item validation schema
 export const deactivateCartItemSchema = [
   param("uuid")
     .notEmpty()
@@ -62,10 +58,8 @@ export const deactivateCartItemSchema = [
     .withMessage("Product UUID must be a valid UUID v4"),
 ];
 
-// Deactivate all cart items validation schema (empty array as it doesn't require validation)
 export const deactivateAllCartItemsSchema = [];
 
-// Complete order validation schema
 export const completeOrderSchema = [
   body("order_completed")
     .notEmpty()

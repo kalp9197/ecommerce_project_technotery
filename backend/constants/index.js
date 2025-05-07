@@ -1,4 +1,4 @@
-// Export all constants from this file
+// Constants exports - central access point for all application constants
 import { HTTP_STATUS } from "./statusCodes.js";
 import { VALIDATION_RULES } from "./validationRules.js";
 import {
@@ -14,11 +14,8 @@ import {
 } from "./env.js";
 
 export {
-  // Status codes and messages
   HTTP_STATUS,
   VALIDATION_RULES,
-
-  // Environment variables
   DB_CONFIG,
   SERVER_CONFIG,
   CORS_CONFIG,

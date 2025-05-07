@@ -1,5 +1,6 @@
 import { HTTP_STATUS } from "../constants/index.js";
 import * as categoryModel from "../models/productCategoryModel.js";
+
 export const getAllCategories = async (req, res) => {
   try {
     let { page = 1, limit = 10 } = req.query;
@@ -20,6 +21,7 @@ export const getAllCategories = async (req, res) => {
         message: "No categories found",
       });
     }
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       data: categories,
@@ -37,12 +39,13 @@ export const getCategoryByUuid = async (req, res) => {
     const { uuid } = req.params;
     const categories = await categoryModel.getCategoryByUuid(uuid);
 
-    if (!categories || categories.length === 0) {
+    if (!categories?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Category not found",
       });
     }
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       data: categories[0],
@@ -60,7 +63,6 @@ export const createCategory = async (req, res) => {
     const { name } = req.body;
     const userId = req.user.id;
 
-    // Create and fetch the new category
     const categoryUuid = await categoryModel.createCategory({ name }, userId);
 
     if (!categoryUuid) {
@@ -75,7 +77,6 @@ export const createCategory = async (req, res) => {
       msg: "Category created successfully",
     });
   } catch (error) {
-    // Check for specific error cases
     if (error.message.includes("already exists")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
@@ -96,9 +97,8 @@ export const updateCategoryByUuid = async (req, res) => {
     const { name, is_active } = req.body;
     const userId = req.user.id;
 
-    // Verify category exists
     const categoriesCheck = await categoryModel.getCategoryByUuid(uuid);
-    if (!categoriesCheck || categoriesCheck.length === 0) {
+    if (!categoriesCheck?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Category not found",
@@ -110,12 +110,14 @@ export const updateCategoryByUuid = async (req, res) => {
       { name, is_active },
       userId
     );
-    if (!updatedCategories || updatedCategories.length === 0) {
+
+    if (!updatedCategories?.length) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Failed to update category",
       });
     }
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       msg: "Category updated successfully",
@@ -132,9 +134,8 @@ export const deleteCategoryByUuid = async (req, res) => {
   try {
     const { uuid } = req.params;
 
-    // Verify category exists
     const categories = await categoryModel.getCategoryByUuid(uuid);
-    if (!categories || categories.length === 0) {
+    if (!categories?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Category not found",
@@ -148,12 +149,12 @@ export const deleteCategoryByUuid = async (req, res) => {
         message: "Failed to delete category",
       });
     }
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Category deleted successfully",
     });
   } catch (error) {
-    // Special handling for categories with products
     if (error.message.includes("deactivate all")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,

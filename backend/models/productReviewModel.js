@@ -1,28 +1,26 @@
 import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
-// Get all reviews for a product
+// Get all reviews for a specific product
 export const getReviewsByProductUuid = async (productUuid) => {
   try {
     const reviews = await dbService.query(
-      `
-      SELECT 
+      `SELECT
         pr.uuid,
         pr.rating,
         pr.review,
         u.name as user_name,
         pr.created_at
-      FROM 
+      FROM
         product_reviews pr
-      JOIN 
+      JOIN
         products p ON pr.product_id = p.id
-      JOIN 
+      JOIN
         users u ON pr.user_id = u.id
-      WHERE 
+      WHERE
         p.uuid = ?
-      ORDER BY 
-        pr.created_at DESC
-      `,
+      ORDER BY
+        pr.created_at DESC`,
       [productUuid]
     );
 
@@ -32,12 +30,11 @@ export const getReviewsByProductUuid = async (productUuid) => {
   }
 };
 
-// Get a single review by UUID
+// Get a single review by its ID
 export const getReviewByUuid = async (uuid) => {
   try {
     const reviews = await dbService.query(
-      `
-      SELECT 
+      `SELECT
         pr.uuid,
         pr.product_id,
         pr.user_id,
@@ -45,12 +42,11 @@ export const getReviewByUuid = async (uuid) => {
         pr.review,
         pr.created_at,
         pr.updated_at
-      FROM 
+      FROM
         product_reviews pr
-      WHERE 
+      WHERE
         pr.uuid = ?
-      LIMIT 1
-      `,
+      LIMIT 1`,
       [uuid]
     );
 
@@ -64,46 +60,51 @@ export const getReviewByUuid = async (uuid) => {
   }
 };
 
-// Create a new review
+// Add a new product review
 export const createReview = async (productUuid, userId, rating, review) => {
   try {
-    // Convert rating to float between 0 and 5
     rating = parseFloat(rating);
     if (isNaN(rating) || rating < 0 || rating > 5) {
       throw new Error("Rating must be a number between 0 and 5");
     }
 
-    // Get product ID from UUID
     const productResult = await dbService.query(
-      `SELECT id FROM products WHERE uuid = ? AND is_active = 1`,
+      `SELECT
+          id
+        FROM
+          products
+        WHERE
+          uuid = ? AND is_active = 1`,
       [productUuid]
     );
 
-    if (!productResult || !productResult.length) {
+    if (!productResult?.length) {
       throw new Error("Product not found or inactive");
     }
 
     const productId = productResult[0].id;
 
-    // Check if user has already reviewed this product
     const existingReview = await dbService.query(
-      `SELECT id FROM product_reviews WHERE product_id = ? AND user_id = ?`,
+      `SELECT
+          id
+        FROM
+          product_reviews
+        WHERE
+          product_id = ? AND user_id = ?`,
       [productId, userId]
     );
 
-    if (existingReview && existingReview.length > 0) {
+    if (existingReview?.length > 0) {
       throw new Error("You have already reviewed this product");
     }
 
     const uuid = uuidv4();
 
-    // Insert the review
     const result = await dbService.query(
-      `
-      INSERT INTO product_reviews 
-        (uuid, product_id, user_id, rating, review) 
-      VALUES (?, ?, ?, ?, ?)
-      `,
+      `INSERT INTO
+          product_reviews (uuid, product_id, user_id, rating, review)
+        VALUES
+          (?, ?, ?, ?, ?)`,
       [uuid, productId, userId, rating, review || null]
     );
 
@@ -117,10 +118,9 @@ export const createReview = async (productUuid, userId, rating, review) => {
   }
 };
 
-// Update an existing review
+// Modify an existing review
 export const updateReview = async (uuid, userId, rating, review) => {
   try {
-    // Convert rating to float between 0 and 5
     if (rating !== undefined) {
       rating = parseFloat(rating);
       if (isNaN(rating) || rating < 0 || rating > 5) {
@@ -128,32 +128,34 @@ export const updateReview = async (uuid, userId, rating, review) => {
       }
     }
 
-    // Check if review exists and belongs to the user
     const reviewResult = await dbService.query(
-      `SELECT id FROM product_reviews WHERE uuid = ? AND user_id = ?`,
+      `SELECT
+          id
+        FROM
+          product_reviews
+        WHERE
+          uuid = ? AND user_id = ?`,
       [uuid, userId]
     );
 
-    if (!reviewResult || !reviewResult.length) {
+    if (!reviewResult?.length) {
       throw new Error(
         "Review not found or you don't have permission to update it"
       );
     }
 
-    // Map undefined inputs to null so COALESCE works
     const safeRating = typeof rating !== "undefined" ? rating : null;
     const safeReview = typeof review !== "undefined" ? review : null;
 
-    // Perform update using COALESCE to skip nulls
     const result = await dbService.query(
-      `
-      UPDATE product_reviews
-      SET
-        rating = COALESCE(?, rating),
-        review = COALESCE(?, review),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE uuid = ?
-      `,
+      `UPDATE
+          product_reviews
+        SET
+          rating = COALESCE(?, rating),
+          review = COALESCE(?, review),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE
+          uuid = ?`,
       [safeRating, safeReview, uuid]
     );
 
@@ -161,48 +163,50 @@ export const updateReview = async (uuid, userId, rating, review) => {
       throw new Error("No changes made to the review");
     }
 
-    // Return the updated review
     return await getReviewByUuid(uuid);
   } catch (error) {
     throw new Error(`Error updating review: ${error.message}`);
   }
 };
 
-// Delete a review
+// Remove a review (user's own or admin)
 export const deleteReview = async (uuid, userId) => {
   try {
-    // Check if review exists and belongs to the user or user is admin
     const reviewCheck = await dbService.query(
-      `
-      SELECT pr.id 
-      FROM product_reviews pr
-      WHERE pr.uuid = ? 
-      `,
+      `SELECT
+          pr.id
+        FROM
+          product_reviews pr
+        WHERE
+          pr.uuid = ?`,
       [uuid]
     );
 
-    if (!reviewCheck || !reviewCheck.length) {
+    if (!reviewCheck?.length) {
       throw new Error("Review not found");
     }
 
-    // Check if user owns the review or is admin
     const userCheck = await dbService.query(
-      `
-      SELECT 1
-      FROM product_reviews pr
-      JOIN users u ON pr.user_id = u.id
-      WHERE pr.uuid = ? AND (pr.user_id = ? OR u.is_admin = 1)
-      `,
+      `SELECT
+          1
+        FROM
+          product_reviews pr
+        JOIN
+          users u ON pr.user_id = u.id
+        WHERE
+          pr.uuid = ? AND (pr.user_id = ? OR u.is_admin = 1)`,
       [uuid, userId]
     );
 
-    if (!userCheck || !userCheck.length) {
+    if (!userCheck?.length) {
       throw new Error("You don't have permission to delete this review");
     }
 
-    // Delete the review
     const result = await dbService.query(
-      `DELETE FROM product_reviews WHERE uuid = ?`,
+      `DELETE FROM
+          product_reviews
+        WHERE
+          uuid = ?`,
       [uuid]
     );
 

@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from "../constants/index.js";
 import * as productModel from "../models/productModel.js";
 
+// Get paginated product list
 export const getProducts = async (req, res) => {
   try {
     let { page = 1, limit = 10 } = req.query;
@@ -17,7 +18,7 @@ export const getProducts = async (req, res) => {
     const offset = (page - 1) * limit;
     const result = await productModel.getAllProducts(limit, offset);
 
-    if (!result.products || result.products.length === 0) {
+    if (!result.products?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "No products found",
@@ -37,11 +38,12 @@ export const getProducts = async (req, res) => {
   }
 };
 
+// Search products with filters
 export const searchProducts = async (req, res) => {
   try {
     const result = await productModel.searchProducts(req.query);
 
-    if (!result.products || result.products.length === 0) {
+    if (!result.products?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "No products found matching your criteria",
@@ -63,6 +65,7 @@ export const searchProducts = async (req, res) => {
   }
 };
 
+// Get product by ID
 export const getProductByUUID = async (req, res) => {
   try {
     const product = await productModel.getProductByUuid(req.params.uuid);
@@ -83,6 +86,7 @@ export const getProductByUUID = async (req, res) => {
   }
 };
 
+// Create new product
 export const addProduct = async (req, res) => {
   try {
     const productUuid = await productModel.createProduct(
@@ -117,6 +121,7 @@ export const addProduct = async (req, res) => {
   }
 };
 
+// Update existing product
 export const updateProductByUUID = async (req, res) => {
   try {
     const updatedProduct = await productModel.updateProductByUuid(
@@ -136,7 +141,6 @@ export const updateProductByUUID = async (req, res) => {
       message: "Product updated successfully",
     });
   } catch (error) {
-    // Check for specific error cases to return appropriate status codes
     if (error.message.includes("already exists")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
@@ -151,6 +155,7 @@ export const updateProductByUUID = async (req, res) => {
   }
 };
 
+// Delete product
 export const removeProductByUUID = async (req, res) => {
   try {
     const deletedProduct = await productModel.deleteProductByUuid(
@@ -169,7 +174,6 @@ export const removeProductByUUID = async (req, res) => {
       message: "Product deleted successfully",
     });
   } catch (error) {
-    // Check for specific error messages related to images
     if (error.message.includes("active images")) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,

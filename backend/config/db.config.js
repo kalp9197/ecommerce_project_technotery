@@ -1,7 +1,7 @@
 import mysql from "mysql2/promise";
 import { DB_CONFIG } from "../constants/index.js";
 
-// Database configuration
+// Database connection parameters
 const dbConfig = {
   host: DB_CONFIG.HOST,
   user: DB_CONFIG.USER,
@@ -12,7 +12,7 @@ const dbConfig = {
   queueLimit: 0,
 };
 
-// Initial database pool without database selection (for creating database if needed)
+// For initial database creation
 const createDbPool = mysql.createPool({
   host: dbConfig.host,
   user: dbConfig.user,
@@ -22,7 +22,7 @@ const createDbPool = mysql.createPool({
   queueLimit: 0,
 });
 
-// Main connection pool with database
+// Main connection pool
 const pool = mysql.createPool(dbConfig);
 
 export { dbConfig, createDbPool, pool };

@@ -2,12 +2,9 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-
-// Import configurations
 import { appConfig, rateLimiter } from "./config/app.config.js";
 import { dbService } from "./services/index.js";
 import { HTTP_STATUS } from "./constants/index.js";
-
 import {
   userRoutes,
   productCategoryRoutes as categoryRoutes,
@@ -19,41 +16,27 @@ import {
   emailTestRoutes,
 } from "./routes/index.js";
 
-// Get dirname for ES Modules
+// Setup dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Initialize Express app
 const app = express();
 
-// CORS configuration
-app.use(
-  cors({
-    origin: appConfig.corsOrigin,
-    credentials: true,
-  })
-);
+// Configure CORS
+app.use(cors({ origin: appConfig.corsOrigin, credentials: true }));
 
-// Parse JSON for all routes EXCEPT /api/payments/webhook
+// Parse JSON for all routes except webhook
 app.use((req, res, next) => {
-  if (req.originalUrl === "/api/payments/webhook") {
-    next();
-  } else {
-    express.json()(req, res, next);
-  }
+  if (req.originalUrl === "/api/payments/webhook") next();
+  else express.json()(req, res, next);
 });
 
+// Request parsers and static file setup
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files from public directory
 app.use(express.static(path.join(__dirname, "../public")));
-// Serve static files from backend/uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Test database connection
+// DB connection and rate limiting
 dbService.testConnection();
-
-// Apply rate limiting middleware
 app.use(rateLimiter);
 
 // API routes

@@ -1,6 +1,6 @@
 import { validationResult } from "express-validator";
 
-// Validation middleware
+// Middleware to run express-validator validations and handle errors
 export const validate = (validations) => {
   return async (req, res, next) => {
     for (let validation of validations) {

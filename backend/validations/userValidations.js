@@ -1,6 +1,6 @@
 import { body, param } from "express-validator";
 
-// User registration validation schema
+// User registration validation rules
 export const registerSchema = [
   body("name")
     .trim()
@@ -37,7 +37,7 @@ export const registerSchema = [
     .toInt(),
 ];
 
-// User login validation schema
+// Login credentials validation
 export const loginSchema = [
   body("email")
     .trim()
@@ -50,7 +50,7 @@ export const loginSchema = [
   body("password").trim().notEmpty().withMessage("Password is required"),
 ];
 
-// Refresh token validation schema
+// Token refresh validation
 export const refreshTokenSchema = [
   body("refresh_token")
     .optional()
@@ -60,12 +60,12 @@ export const refreshTokenSchema = [
   body("token").optional().isString().withMessage("Token must be a string"),
 ];
 
-// User UUID parameter validation
+// User ID parameter validation
 export const userUuidParam = [
   param("uuid").isUUID(4).withMessage("User UUID must be a valid UUID v4"),
 ];
 
-// User activation/deactivation validation schema
+// Account activation/deactivation validation
 export const activateDeactivateSchema = [
   body("status").isBoolean().withMessage("Status must be a boolean value"),
   body("reason")
@@ -76,7 +76,7 @@ export const activateDeactivateSchema = [
     .withMessage("Reason cannot exceed 500 characters"),
 ];
 
-// Email verification validation schema
+// Email verification token validation
 export const verifyEmailSchema = [
   param("token")
     .trim()
@@ -86,7 +86,7 @@ export const verifyEmailSchema = [
     .withMessage("Invalid verification token format"),
 ];
 
-// Resend verification email validation schema
+// Email resend verification validation
 export const resendVerificationEmailSchema = [
   body("email")
     .trim()
