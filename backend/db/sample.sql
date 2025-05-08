@@ -205,4 +205,4 @@ INSERT INTO product_reviews (uuid, product_id, user_id, rating, review, created_
   ('1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d', 8, 2, 5.0, 'Comprehensive Python book! I went from beginner to writing my own applications.', '2023-04-21 17:45:00'),
   ('9f8e7d6c-5b4a-3c2d-1e0f-9a8b7c6d5e4f', 9, 1, 3.0, 'Works well but a bit noisy during operation.', '2023-04-22 08:00:00'),
   ('6d5e4f3a-2b1c-0d9e-8f7g-6h5j4k3l2m1n', 10, 2, 4.5, 'Great air fryer! Makes crispy food with minimal oil.', '2023-04-23 11:20:00'),
-  ('3g4h5j6k-7l8m-9n0p-1q2r-3s4t5u6v7w8x', 12, 1, 4.0, 'Good sound quality for the price. Battery lasts all day.', '2023-04-24 19:15:00');
+  ('3g4h5j6k-7l8m-9n0p-1q2r-3s4t5u6v7w8x', 12, 1, 4.0, 'Good sound quality for the price. Battery lasts all day.', '2023-04-24 19:15:00'); 

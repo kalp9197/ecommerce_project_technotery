@@ -2,7 +2,7 @@ import { pool, createDbPool } from "../config/db.config.js";
 import { DB_CONFIG } from "../constants/index.js";
 
 // Create database if it doesn't exist
-const initializeDatabase = async () => {
+export const initializeDatabase = async () => {
   try {
     await createDbPool.query(
       `CREATE DATABASE IF NOT EXISTS ${DB_CONFIG.DATABASE}`
@@ -14,7 +14,7 @@ const initializeDatabase = async () => {
 };
 
 // Verify database connectivity
-const testConnection = async () => {
+export const testConnection = async () => {
   try {
     await initializeDatabase();
     const connection = await pool.getConnection();
@@ -28,7 +28,7 @@ const testConnection = async () => {
 };
 
 // Execute SQL query with optional parameters
-const query = async (sql, params) => {
+export const query = async (sql, params) => {
   try {
     if (!params || params.length === 0) {
       const [results] = await pool.query(sql);
@@ -43,14 +43,14 @@ const query = async (sql, params) => {
 };
 
 // Start a database transaction
-const beginTransaction = async () => {
+export const beginTransaction = async () => {
   const connection = await pool.getConnection();
   await connection.beginTransaction();
   return connection;
 };
 
 // Execute SQL with an active connection
-const queryWithConnection = async (connection, sql, params) => {
+export const queryWithConnection = async (connection, sql, params) => {
   try {
     const [results] = await connection.execute(sql, params);
     return results;
@@ -60,7 +60,7 @@ const queryWithConnection = async (connection, sql, params) => {
 };
 
 // Commit database transaction
-const commit = async (connection) => {
+export const commit = async (connection) => {
   try {
     await connection.commit();
   } finally {
@@ -69,7 +69,7 @@ const commit = async (connection) => {
 };
 
 // Rollback database transaction
-const rollback = async (connection) => {
+export const rollback = async (connection) => {
   try {
     await connection.rollback();
   } finally {
@@ -78,7 +78,7 @@ const rollback = async (connection) => {
 };
 
 // Mark expired auth tokens as invalid
-const updateExpiredTokens = async () => {
+export const updateExpiredTokens = async () => {
   const now = new Date().toISOString();
   try {
     const result = await query(
@@ -89,15 +89,4 @@ const updateExpiredTokens = async () => {
   } catch (error) {
     return 0;
   }
-};
-
-export {
-  initializeDatabase,
-  testConnection,
-  query,
-  beginTransaction,
-  queryWithConnection,
-  commit,
-  rollback,
-  updateExpiredTokens,
 };

@@ -117,7 +117,7 @@ export const saveProductWithImages = async (data, images = [], conn = null) => {
       FROM
         products
       WHERE
-        id = ?`, 
+        id = ?`,
     [id]
   );
   const imgRows = await run(

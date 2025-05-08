@@ -14,6 +14,7 @@ import {
   productReviewRoutes as reviewRoutes,
   fileUploadRoutes,
   emailTestRoutes,
+  wishlistRoutes,
 } from "./routes/index.js";
 
 // Setup dirname for ES modules
@@ -48,6 +49,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/files", fileUploadRoutes);
 app.use("/api/email-test", emailTestRoutes);
+app.use("/api/wishlist", wishlistRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {

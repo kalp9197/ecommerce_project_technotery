@@ -7,3 +7,4 @@ export { default as productCategoryRoutes } from "./productCategoryRoutes.js";
 export { default as productReviewRoutes } from "./productReviewRoutes.js";
 export { default as productRoutes } from "./productRoutes.js";
 export { default as userRoutes } from "./userRoutes.js";
+export { default as wishlistRoutes } from "./wishlistRoutes.js";

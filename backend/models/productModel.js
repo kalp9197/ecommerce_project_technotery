@@ -1,5 +1,4 @@
 import { dbService } from "../services/index.js";
-import { v4 as uuidv4 } from "uuid";
 
 // Get paginated list of active products
 export const getAllProducts = async (limit, offset) => {

@@ -133,7 +133,7 @@ export const verifyEmail = async (token) => {
         SET
           email_verified = 1
         WHERE
-          id = ?`, 
+          id = ?`,
       [tokenData[0].user_id]
     );
 
@@ -326,7 +326,7 @@ export const updateUserStatus = async (uuid, status) => {
         FROM
           users
         WHERE
-          uuid = ?`, 
+          uuid = ?`,
       [uuid]
     );
     if (!user?.length) throw new Error("User not found");

@@ -80,7 +80,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
         const extension = type.split("/")[1] || "jpg";
         const imageUuid = uuidv4();
         const filename = `${imageUuid}.${extension}`;
-        
+
         // Ensure upload directory exists
         const uploadDir = path.join(__dirname, "../uploads");
         const filePath = path.join(uploadDir, filename);
@@ -88,7 +88,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
-        
+
         // Save image to filesystem
         fs.writeFileSync(filePath, buffer);
         finalImagePath = `/uploads/${filename}`;
@@ -169,7 +169,7 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
         const extension = type.split("/")[1] || "jpg";
         const imageUuid = uuidv4();
         const filename = `${imageUuid}.${extension}`;
-        
+
         // Ensure upload directory exists
         const uploadDir = path.join(__dirname, "../uploads");
         const filePath = path.join(uploadDir, filename);
@@ -177,7 +177,7 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
-        
+
         // Save new image to filesystem
         fs.writeFileSync(filePath, buffer);
         finalImagePath = `/uploads/${filename}`;
