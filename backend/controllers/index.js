@@ -1,19 +1,8 @@
-import * as cartController from "./cartController.js";
-import * as fileUploadController from "./fileUploadController.js";
-import * as paymentController from "./paymentController.js";
-import * as productCategoryController from "./productCategoryController.js";
-import * as productController from "./productController.js";
-import * as productImageController from "./productImageController.js";
-import * as productReviewController from "./productReviewController.js";
-import * as userController from "./userController.js";
-
-export {
-  cartController,
-  fileUploadController,
-  paymentController,
-  productCategoryController,
-  productController,
-  productImageController,
-  productReviewController,
-  userController,
-};
+export * as cartController from "./cartController.js";
+export * as fileUploadController from "./fileUploadController.js";
+export * as paymentController from "./paymentController.js";
+export * as productCategoryController from "./productCategoryController.js";
+export * as productController from "./productController.js";
+export * as productImageController from "./productImageController.js";
+export * as productReviewController from "./productReviewController.js";
+export * as userController from "./userController.js";

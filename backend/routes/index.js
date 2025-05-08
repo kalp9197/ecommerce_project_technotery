@@ -1,20 +1,9 @@
 // Route exports for application - central import point for all route modules
-import cartRoutes from "./cartRoutes.js";
-import emailTestRoutes from "./emailTestRoutes.js";
-import fileUploadRoutes from "./fileUploadRoutes.js";
-import paymentRoutes from "./paymentRoutes.js";
-import productCategoryRoutes from "./productCategoryRoutes.js";
-import productReviewRoutes from "./productReviewRoutes.js";
-import productRoutes from "./productRoutes.js";
-import userRoutes from "./userRoutes.js";
-
-export {
-  cartRoutes,
-  emailTestRoutes,
-  fileUploadRoutes,
-  paymentRoutes,
-  productCategoryRoutes,
-  productReviewRoutes,
-  productRoutes,
-  userRoutes,
-};
+export { default as cartRoutes } from "./cartRoutes.js";
+export { default as emailTestRoutes } from "./emailTestRoutes.js";
+export { default as fileUploadRoutes } from "./fileUploadRoutes.js";
+export { default as paymentRoutes } from "./paymentRoutes.js";
+export { default as productCategoryRoutes } from "./productCategoryRoutes.js";
+export { default as productReviewRoutes } from "./productReviewRoutes.js";
+export { default as productRoutes } from "./productRoutes.js";
+export { default as userRoutes } from "./userRoutes.js";
