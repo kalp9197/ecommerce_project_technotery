@@ -13,13 +13,25 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
-import { ShoppingCart, CheckCircle, XCircle } from "lucide-react";
+import {
+  ShoppingCart,
+  CheckCircle,
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: 8,
+    hasMore: false,
+  });
 
   const [activeTab, setActiveTab] = useState("all");
   const [cartMessage, setCartMessage] = useState(null);
@@ -62,41 +74,66 @@ const Products = () => {
   }, [searchParams, clearCart, hasHandledPayment, navigate, refreshCart]);
 
   // Fetch products and categories
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productsResponse, categoriesResponse] = await Promise.all([
-          getProducts(),
-          getCategories(),
-        ]);
+  const fetchProducts = async (page = 1) => {
+    try {
+      setLoading(true);
+      const productsResponse = await getProducts(page, pagination.limit);
 
-        if (productsResponse.success) {
-          setProducts(productsResponse.data);
-        } else if (productsResponse.data && productsResponse.data.length > 0) {
-          setProducts(productsResponse.data);
-        } else {
-          setError("Failed to load products");
-        }
-
-        if (categoriesResponse.success) {
-          setCategories(categoriesResponse.data);
-        } else if (
-          categoriesResponse.data &&
-          categoriesResponse.data.length > 0
-        ) {
-          setCategories(categoriesResponse.data);
-        }
-
-        setLoading(false);
-      } catch (err) {
-        setError(err.message || "An error occurred while fetching data");
-        setLoading(false);
+      if (productsResponse.success) {
+        setProducts(productsResponse.data);
+        setPagination({
+          currentPage: productsResponse.pagination.currentPage,
+          limit: productsResponse.pagination.limit,
+          hasMore: productsResponse.pagination.hasMore,
+        });
+      } else if (productsResponse.data && productsResponse.data.length > 0) {
+        setProducts(productsResponse.data);
+        setPagination(productsResponse.pagination);
+      } else {
+        setError("Failed to load products");
       }
+
+      setLoading(false);
+    } catch (err) {
+      setError(err.message || "An error occurred while fetching products");
+      setLoading(false);
+    }
+  };
+
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const categoriesResponse = await getCategories();
+
+      if (categoriesResponse.success) {
+        setCategories(categoriesResponse.data);
+      } else if (
+        categoriesResponse.data &&
+        categoriesResponse.data.length > 0
+      ) {
+        setCategories(categoriesResponse.data);
+      }
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      await Promise.all([fetchProducts(1), fetchCategories()]);
+      setLoading(false);
     };
 
-    fetchData();
+    loadInitialData();
   }, []);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage < 1) return;
+    fetchProducts(newPage);
+  };
 
   // Filter products by category
   const filteredProducts =
@@ -123,15 +160,16 @@ const Products = () => {
     } catch (error) {
       // Check if the error is related to out-of-stock products
       const errorMessage = error.message || "";
-      const isOutOfStock = errorMessage.toLowerCase().includes("out of stock") || 
-                          errorMessage.toLowerCase().includes("no products left") ||
-                          error.status === 400;
-      
+      const isOutOfStock =
+        errorMessage.toLowerCase().includes("out of stock") ||
+        errorMessage.toLowerCase().includes("no products left") ||
+        error.status === 400;
+
       setCartMessage({
         type: "error",
-        text: isOutOfStock 
-          ? "This product is out of stock. No products left." 
-          : (errorMessage || "Failed to add item to cart."),
+        text: isOutOfStock
+          ? "This product is out of stock. No products left."
+          : errorMessage || "Failed to add item to cart.",
       });
     } finally {
       // Always set a timeout to clear error messages after 10 seconds
@@ -168,7 +206,7 @@ const Products = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 flex flex-col min-h-[calc(100vh-4rem)]">
       <h1 className="text-3xl font-bold mb-6">Our Products</h1>
 
       {!isAuthenticated && (
@@ -214,7 +252,11 @@ const Products = () => {
         </div>
       )}
 
-      <Tabs defaultValue="all" className="mb-8" onValueChange={setActiveTab}>
+      <Tabs
+        defaultValue="all"
+        className="flex-grow flex flex-col"
+        onValueChange={setActiveTab}
+      >
         <TabsList className="mb-4 flex flex-wrap">
           <TabsTrigger value="all">All Products</TabsTrigger>
           {categories.map((category) => (
@@ -224,7 +266,7 @@ const Products = () => {
           ))}
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-0">
+        <TabsContent value={activeTab} className="mt-0 flex-grow">
           {filteredProducts.length === 0 ? (
             <div className="text-center py-10">
               <p className="text-muted-foreground">
@@ -233,52 +275,106 @@ const Products = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <Card key={product.uuid} className="overflow-hidden">
-                  <CardHeader className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-xl">
-                          {product.name}
-                        </CardTitle>
-                        <div className="mt-1">
-                          <Badge variant="outline">
-                            {product.category_name}
-                          </Badge>
+              {filteredProducts.map((product, index) => (
+                <motion.div
+                  key={product.uuid}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: index * 0.05,
+                    ease: "easeOut",
+                  }}
+                  whileHover={{
+                    y: -5,
+                    transition: { duration: 0.2 },
+                  }}
+                >
+                  <Card className="overflow-hidden h-full">
+                    <CardHeader className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-xl">
+                            {product.name}
+                          </CardTitle>
+                          <div className="mt-1">
+                            <Badge variant="outline">
+                              {product.category_name}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-lg font-semibold">
+                          ₹{parseFloat(product.price).toFixed(2)}
                         </div>
                       </div>
-                      <div className="text-lg font-semibold">
-                        ₹{parseFloat(product.price).toFixed(2)}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {product.description}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0 flex justify-between">
-                    <Button asChild size="sm" variant="outline">
-                      <Link to={`/products/${product.uuid}`}>View Details</Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleAddToCart(product)}
-                      disabled={!isAuthenticated || isItemPending(product.uuid)}
-                    >
-                      {!isAuthenticated
-                        ? "Sign in to Buy"
-                        : isItemPending(product.uuid)
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {product.description}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0 flex justify-between mt-auto">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="scale-on-hover"
+                      >
+                        <Link to={`/products/${product.uuid}`}>
+                          View Details
+                        </Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddToCart(product)}
+                        disabled={
+                          !isAuthenticated || isItemPending(product.uuid)
+                        }
+                        className="btn-hover-effect"
+                      >
+                        {!isAuthenticated
+                          ? "Sign in to Buy"
+                          : isItemPending(product.uuid)
                           ? "Adding..."
                           : "Add to Cart"}
-                    </Button>
-                  </CardFooter>
-                </Card>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Pagination Controls - Fixed at bottom */}
+      <div className="mt-auto pt-8 pb-4 border-t">
+        <div className="flex justify-center items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(pagination.currentPage - 1)}
+            disabled={pagination.currentPage <= 1 || loading}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+
+          <span className="text-sm text-muted-foreground px-2">
+            Page {pagination.currentPage}
+          </span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(pagination.currentPage + 1)}
+            disabled={!pagination.hasMore || loading}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

@@ -28,13 +28,13 @@ api.interceptors.response.use(
           delete api.defaults.headers.common["Authorization"];
         }
 
-        // Could redirect to login here if needed
-        // window.location.href = '/login';
+        // Force redirect to login page
+        window.location.href = "/login";
       }
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;

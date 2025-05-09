@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
 import { ShoppingCart, CheckCircle, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
 const ProductDetail = () => {
   const { uuid } = useParams();
@@ -30,7 +31,7 @@ const ProductDetail = () => {
         }
       } catch (err) {
         setError(
-          err.message || "An error occurred while fetching product details",
+          err.message || "An error occurred while fetching product details"
         );
       } finally {
         setLoading(false);
@@ -62,15 +63,16 @@ const ProductDetail = () => {
     } catch (error) {
       // Check if the error is related to out-of-stock products
       const errorMessage = error.message || "";
-      const isOutOfStock = errorMessage.toLowerCase().includes("out of stock") || 
-                          errorMessage.toLowerCase().includes("no products left") ||
-                          error.status === 400;
-      
+      const isOutOfStock =
+        errorMessage.toLowerCase().includes("out of stock") ||
+        errorMessage.toLowerCase().includes("no products left") ||
+        error.status === 400;
+
       setCartMessage({
         type: "error",
-        text: isOutOfStock 
-          ? "This product is out of stock. No products left." 
-          : (errorMessage || "Failed to add item to cart."),
+        text: isOutOfStock
+          ? "This product is out of stock. No products left."
+          : errorMessage || "Failed to add item to cart.",
       });
     } finally {
       // Only clear error messages after 8 seconds
@@ -178,20 +180,43 @@ const ProductDetail = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-muted rounded-lg flex items-center justify-center p-8">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-muted rounded-lg flex items-center justify-center p-8"
+        >
           {product.image ? (
-            <img
+            <motion.img
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
               src={product.image}
               alt={product.name}
               className="max-w-full h-auto rounded-lg"
             />
           ) : (
-            <ShoppingCart className="h-32 w-32 text-muted-foreground" />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ShoppingCart className="h-32 w-32 text-muted-foreground" />
+            </motion.div>
           )}
-        </div>
+        </motion.div>
 
-        <div>
-          <div className="mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <motion.div
+            className="mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
             <Badge variant="outline" className="mb-2">
               {product.category_name}
             </Badge>
@@ -199,25 +224,36 @@ const ProductDetail = () => {
             <div className="text-2xl font-semibold mt-2">
               ₹{parseFloat(product.price).toFixed(2)}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="prose prose-sm max-w-none mb-6">
-            <p>{product.description}</p>
-          </div>
-
-          <Button
-            className="w-full sm:w-auto"
-            size="lg"
-            onClick={handleAddToCart}
-            disabled={!isAuthenticated || isItemPending(product.uuid)}
+          <motion.div
+            className="prose prose-sm max-w-none mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
           >
-            {!isAuthenticated
-              ? "Sign in to Buy"
-              : isItemPending(product.uuid)
+            <p>{product.description}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.5 }}
+          >
+            <Button
+              className="w-full sm:w-auto btn-hover-effect"
+              size="lg"
+              onClick={handleAddToCart}
+              disabled={!isAuthenticated || isItemPending(product.uuid)}
+            >
+              {!isAuthenticated
+                ? "Sign in to Buy"
+                : isItemPending(product.uuid)
                 ? "Adding to Cart..."
                 : "Add to Cart"}
-          </Button>
-        </div>
+            </Button>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

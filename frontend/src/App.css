@@ -1,0 +1,50 @@
+/* Animation utility classes */
+
+/* Hover animations */
+.scale-on-hover {
+  transition: transform 0.2s ease;
+}
+.scale-on-hover:hover {
+  transform: scale(1.05);
+}
+
+.btn-hover-effect {
+  transition: all 0.2s ease;
+}
+.btn-hover-effect:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Bounce animation */
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.bounce {
+  animation: bounce 0.5s ease;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Staggered entrance for lists */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(10px);
+}

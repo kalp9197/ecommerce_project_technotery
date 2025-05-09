@@ -10,16 +10,26 @@ export const getFullImageUrl = (imagePath) => {
 };
 
 // Product API services
-export const getProducts = async () => {
+export const getProducts = async (page = 1, limit = 10) => {
   try {
-    const response = await api.get("/products");
-    return response.data;
+    const response = await api.get("/products", {
+      params: { page, limit },
+    });
+    return {
+      ...response.data,
+      pagination: {
+        currentPage: page,
+        limit,
+        hasMore: response.data.data && response.data.data.length === limit,
+      },
+    };
   } catch (error) {
     console.error("Error fetching products:", error);
     return {
       success: false,
       message: error.response?.data?.message || "Failed to fetch products",
       data: [],
+      pagination: { currentPage: page, limit, hasMore: false },
     };
   }
 };

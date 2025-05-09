@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "./axios";
 
 // Create the auth context
@@ -20,6 +21,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [loading, setLoading] = useState(true);
+  const [tokenValidated, setTokenValidated] = useState(false);
 
   // Derived state for isAuthenticated
   const isAuthenticated = !!user?.isAuthenticated;
@@ -31,6 +33,47 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
   };
+
+  // Check token validity periodically
+  useEffect(() => {
+    // Function to validate token
+    const validateToken = async () => {
+      if (!token) {
+        if (isAuthenticated) {
+          console.log("[AUTH] No token but user is authenticated, logging out");
+          clearAuth();
+        }
+        return false;
+      }
+
+      try {
+        // Set auth header for validation request
+        setAuthHeader(token);
+
+        // In a real app, you would make an API call to validate the token
+        // For now, we'll just check if the token exists
+        return true;
+      } catch (error) {
+        console.log("[AUTH] Token validation failed:", error.message);
+        clearAuth();
+        return false;
+      }
+    };
+
+    // Validate token immediately and set up periodic validation
+    validateToken().then((isValid) => {
+      setTokenValidated(isValid);
+    });
+
+    // Set up periodic validation (every minute)
+    const intervalId = setInterval(() => {
+      validateToken().then((isValid) => {
+        setTokenValidated(isValid);
+      });
+    }, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [token, isAuthenticated]);
 
   // Check if user is authenticated on initial load and token changes
   useEffect(() => {
@@ -145,6 +188,7 @@ export function AuthProvider({ children }) {
     register,
     logout,
     isAuthenticated,
+    tokenValidated,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

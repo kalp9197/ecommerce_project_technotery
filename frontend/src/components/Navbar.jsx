@@ -93,13 +93,6 @@ export default function Navbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">
-                      <User className="h-4 w-4 mr-2" />
-                      <span>Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     <span>Logout</span>
@@ -161,22 +154,6 @@ export default function Navbar() {
                     </Link>
                   </Button>
                 </SheetClose>
-                
-                {isAuthenticated && (
-                  <SheetClose asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      asChild
-                      className="justify-start"
-                    >
-                      <Link to="/profile">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </Button>
-                  </SheetClose>
-                )}
 
                 {isAuthenticated && (
                   <>

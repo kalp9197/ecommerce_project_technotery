@@ -1,6 +1,7 @@
 import React from "react";
 import "./App.css";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Products from "./pages/Products";
@@ -9,12 +10,16 @@ import Cart from "./pages/Cart";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/utils/authContext";
 import { CartProvider } from "@/utils/cartContext";
-import { DockDemo } from "./components/DockDemo";
+
+import { PageTransition } from "./components/PageTransition";
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, token } = useAuth();
   const location = useLocation();
+
+  // Check if token exists
+  const hasToken = !!token;
 
   if (loading) {
     return (
@@ -27,7 +32,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !hasToken) {
     // Redirect to login but save the location they were trying to access
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -36,36 +41,69 @@ const ProtectedRoute = ({ children }) => {
 };
 
 export default function App() {
+  const location = useLocation();
+
   return (
     <CartProvider>
       <div className="flex min-h-screen flex-col">
         <Navbar />
         <main className="flex-1">
-          <Routes>
-            {/* Products page as default route */}
-            <Route path="/" element={<Products />} />
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              {/* Products page as default route */}
+              <Route
+                path="/"
+                element={
+                  <PageTransition>
+                    <Products />
+                  </PageTransition>
+                }
+              />
 
-            {/* Add redirect from /products to / */}
-            <Route path="/products" element={<Navigate to="/" replace />} />
+              {/* Add redirect from /products to / */}
+              <Route path="/products" element={<Navigate to="/" replace />} />
 
-            <Route path="/products/:uuid" element={<ProductDetail />} />
+              <Route
+                path="/products/:uuid"
+                element={
+                  <PageTransition>
+                    <ProductDetail />
+                  </PageTransition>
+                }
+              />
 
-            {/* Protected routes */}
-            <Route
-              path="/cart"
-              element={
-                <ProtectedRoute>
-                  <Cart />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected routes */}
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <Cart />
+                    </PageTransition>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Auth routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-          </Routes>
+              {/* Auth routes */}
+              <Route
+                path="/login"
+                element={
+                  <PageTransition>
+                    <Login />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PageTransition>
+                    <Register />
+                  </PageTransition>
+                }
+              />
+            </Routes>
+          </AnimatePresence>
         </main>
-        <DockDemo className="fixed bottom-0 left-0 right-0" />
       </div>
     </CartProvider>
   );
