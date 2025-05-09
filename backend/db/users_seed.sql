@@ -63,7 +63,7 @@ VALUES
 INSERT INTO user_tokens (uuid, user_id, token, expires_at, is_expired, refresh_cycles)
 VALUES
 (
-  'g5eebc99-9c0b-4ef8-bb6d-6bb9bd380a77',
+  'a5eebc99-9c0b-4ef8-bb6d-6bb9bd380a77',
   1,
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiYTBlZWJjOTktOWMwYi00ZWY4LWJiNmQtNmJiOWJkMzgwYTExIiwiaWF0IjoxNjE1MjQ5MDIyLCJleHAiOjE2MTUyNTI2MjJ9.3Thp81rDFrKXr3WrY1MyMnNK8kKoZBX9lg',
   DATE_ADD(NOW(), INTERVAL 1 DAY),
@@ -71,7 +71,7 @@ VALUES
   5
 ),
 (
-  'h6eebc99-9c0b-4ef8-bb6d-6bb9bd380a88',
+  'b6eebc99-9c0b-4ef8-bb6d-6bb9bd380a88',
   2,
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiYjBlZWJjOTktOWMwYi00ZWY4LWJiNmQtNmJiOWJkMzgwYTIyIiwiaWF0IjoxNjE1MjQ5MDIyLCJleHAiOjE2MTUyNTI2MjJ9.4Thp81rDFrKXr3WrY1MyMnNK8kKoZBX9lg',
   DATE_ADD(NOW(), INTERVAL 1 DAY),
@@ -79,7 +79,7 @@ VALUES
   5
 ),
 (
-  'i7eebc99-9c0b-4ef8-bb6d-6bb9bd380a99',
+  'c7eebc99-9c0b-4ef8-bb6d-6bb9bd380a99',
   3,
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiYzFlZWJjOTktOWMwYi00ZWY4LWJiNmQtNmJiOWJkMzgwYTMzIiwiaWF0IjoxNjE1MjQ5MDIyLCJleHAiOjE2MTUyNTI2MjJ9.5Thp81rDFrKXr3WrY1MyMnNK8kKoZBX9lg',
   DATE_ADD(NOW(), INTERVAL 1 DAY),
@@ -87,7 +87,7 @@ VALUES
   5
 ),
 (
-  'j8eebc99-9c0b-4ef8-bb6d-6bb9bd380aaa',
+  'd8eebc99-9c0b-4ef8-bb6d-6bb9bd380aaa',
   6,
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiZjRlZWJjOTktOWMwYi00ZWY4LWJiNmQtNmJiOWJkMzgwYTY2IiwiaWF0IjoxNjE1MjQ5MDIyLCJleHAiOjE2MTUyNTI2MjJ9.6Thp81rDFrKXr3WrY1MyMnNK8kKoZBX9lg',
   DATE_ADD(NOW(), INTERVAL 1 DAY),
