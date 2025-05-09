@@ -1,6 +1,29 @@
 import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
+// Initialize product_categories table if not exists
+export const ensureProductCategoriesTable = async () => {
+  try {
+    await dbService.query(`
+    CREATE TABLE IF NOT EXISTS product_categories (
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      uuid        VARCHAR(36) NOT NULL UNIQUE,
+      name        VARCHAR(100) NOT NULL,
+      is_active   BOOLEAN     NOT NULL DEFAULT TRUE,
+      created_by  INT,
+      updated_by  INT,
+      created_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    )`);
+  } catch (error) {
+    throw new Error(
+      `Error creating product_categories table: ${error.message}`
+    );
+  }
+};
+
 // Get paginated list of active product categories
 export const getAllCategories = async (page, limit) => {
   try {

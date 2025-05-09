@@ -1,6 +1,43 @@
 import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
 
+// Initialize wishlist table if not exists
+export const ensureWishlistTable = async () => {
+  try {
+    await dbService.query(`
+    CREATE TABLE IF NOT EXISTS wishlist (
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      uuid        VARCHAR(36) NOT NULL UNIQUE,
+      user_id     INT         NOT NULL,
+      is_active   BOOLEAN     NOT NULL DEFAULT TRUE,
+      created_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`);
+  } catch (error) {
+    throw new Error(`Error creating wishlist table: ${error.message}`);
+  }
+};
+
+// Initialize wishlist_items table if not exists
+export const ensureWishlistItemsTable = async () => {
+  try {
+    await dbService.query(`
+    CREATE TABLE IF NOT EXISTS wishlist_items (
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      uuid        VARCHAR(36) NOT NULL UNIQUE,
+      wishlist_id INT         NOT NULL,
+      product_id  INT         NOT NULL,
+      is_active   BOOLEAN     NOT NULL DEFAULT TRUE,
+      added_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (wishlist_id) REFERENCES wishlist(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id)  REFERENCES products(id) ON DELETE CASCADE
+    )`);
+  } catch (error) {
+    throw new Error(`Error creating wishlist_items table: ${error.message}`);
+  }
+};
+
 // Get active wishlist for user
 const getWishlist = async (userId, connection = null) => {
   try {

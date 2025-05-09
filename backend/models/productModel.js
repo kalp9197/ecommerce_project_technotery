@@ -1,4 +1,5 @@
 import { dbService } from "../services/index.js";
+import { v4 as uuidv4 } from "uuid";
 
 // Get paginated list of active products
 export const getAllProducts = async (limit, offset) => {
@@ -139,26 +140,45 @@ export const getProductByUuid = async (uuid) => {
 };
 
 // Create new product record
-export const createProduct = async (productData) => {
-  const { sku, name, category, price, quantity, images } = productData;
+export const createProduct = async (productData, userId) => {
+  try {
+    const { p_cat_uuid, name, description, price, quantity = 0 } = productData;
+    const uuid = uuidv4();
 
-  const result = await dbService.query(
-    `INSERT INTO
-        products (sku, name, category, price, quantity, images)
-      VALUES
-        (?, ?, ?, ?, ?, ?)`,
-    [sku, name, category, price, quantity, JSON.stringify(images)]
-  );
+    // Get category ID from UUID
+    const categoryResult = await dbService.query(
+      `SELECT
+          id
+        FROM
+          product_categories
+        WHERE
+          uuid = ? AND is_active = 1`,
+      [p_cat_uuid]
+    );
 
-  return {
-    id: result.insertId,
-    sku,
-    name,
-    category,
-    price,
-    quantity,
-    images,
-  };
+    if (!categoryResult?.length || !categoryResult[0].id) {
+      throw new Error("Invalid or inactive product category");
+    }
+
+    const p_cat_id = categoryResult[0].id;
+
+    // Insert new product
+    const result = await dbService.query(
+      `INSERT INTO
+          products (uuid, p_cat_id, name, description, price, quantity, is_active, created_by, updated_by)
+        VALUES
+          (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+      [uuid, p_cat_id, name, description || "", price, quantity, userId, userId]
+    );
+
+    if (!result?.insertId) {
+      throw new Error("Failed to create product");
+    }
+
+    return uuid;
+  } catch (error) {
+    throw new Error(`Error creating product: ${error.message}`);
+  }
 };
 
 // Update existing product data
@@ -255,43 +275,43 @@ export const deleteProductByUuid = async (uuid) => {
   }
 };
 
-// Get product by SKU (used for inventory lookup)
-export const getProductBySKU = async (sku) => {
+// Get product by name (used for inventory lookup)
+export const getProductByName = async (name) => {
   try {
     const results = await dbService.query(
       `SELECT
-          *
+          p.*,
+          pc.name as category_name
         FROM
-          products
+          products p
+        JOIN
+          product_categories pc ON p.p_cat_id = pc.id
         WHERE
-          sku = ?`,
-      [sku]
+          p.name = ? AND p.is_active = 1`,
+      [name]
     );
+
     if (results.length === 0) {
       return null;
     }
 
-    // Parse images JSON string to array
-    const product = results[0];
-    product.images = JSON.parse(product.images || "[]");
-
-    return product;
+    return results[0];
   } catch (error) {
-    throw new Error(`Error fetching product by SKU: ${error.message}`);
+    throw new Error(`Error fetching product by name: ${error.message}`);
   }
 };
 
 // Create multiple product records in succession
-export const bulkCreateProducts = async (productsData) => {
+export const bulkCreateProducts = async (productsData, userId) => {
   try {
-    const createdProducts = [];
+    const createdProductUuids = [];
 
     for (const productData of productsData) {
-      const result = await createProduct(productData);
-      createdProducts.push(result);
+      const uuid = await createProduct(productData, userId);
+      createdProductUuids.push(uuid);
     }
 
-    return createdProducts;
+    return createdProductUuids;
   } catch (error) {
     throw new Error(`Error creating products: ${error.message}`);
   }
@@ -302,15 +322,19 @@ export const ensureProductsTable = async () => {
   try {
     await dbService.query(`
     CREATE TABLE IF NOT EXISTS products (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      sku VARCHAR(255) NOT NULL UNIQUE,
-      name VARCHAR(255) NOT NULL,
-      category VARCHAR(255) NOT NULL,
-      price DECIMAL(10, 2) NOT NULL,
-      quantity INT NOT NULL,
-      images TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      uuid        VARCHAR(36) NOT NULL UNIQUE,
+      p_cat_id    INT         NOT NULL,
+      name        VARCHAR(100) NOT NULL,
+      description VARCHAR(255),
+      price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      quantity    INT           NOT NULL DEFAULT 0,
+      is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
+      created_by  INT,
+      updated_by  INT,
+      created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (p_cat_id)   REFERENCES product_categories(id) ON DELETE CASCADE
     )`);
   } catch (error) {
     throw new Error(`Error creating products table: ${error.message}`);

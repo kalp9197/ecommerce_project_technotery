@@ -13,13 +13,67 @@ export const initializeDatabase = async () => {
   }
 };
 
-// Verify database connectivity
+// Initialize all database tables
+export const initializeTables = async () => {
+  try {
+    // Import all model initialization functions
+    const { ensureUsersTable, ensureUserTokensTable } = await import(
+      "../models/userModel.js"
+    );
+
+    const { ensureProductCategoriesTable } = await import(
+      "../models/productCategoryModel.js"
+    );
+
+    const { ensureProductsTable } = await import("../models/productModel.js");
+
+    const { ensureProductImagesTable } = await import(
+      "../models/productImageModel.js"
+    );
+
+    const { ensureCartTable, ensureCartItemsTable } = await import(
+      "../models/cartModel.js"
+    );
+
+    const { ensureProductReviewsTable } = await import(
+      "../models/productReviewModel.js"
+    );
+
+    const { ensureWishlistTable, ensureWishlistItemsTable } = await import(
+      "../models/wishlistModel.js"
+    );
+
+    // Create tables in the correct order (respecting foreign key constraints)
+    await ensureUsersTable();
+    await ensureUserTokensTable();
+    await ensureProductCategoriesTable();
+    await ensureProductsTable();
+    await ensureProductImagesTable();
+    await ensureCartTable();
+    await ensureCartItemsTable();
+    await ensureProductReviewsTable();
+    await ensureWishlistTable();
+    await ensureWishlistItemsTable();
+
+    console.log("All database tables initialized successfully");
+    return true;
+  } catch (error) {
+    console.error("Error initializing database tables:", error.message);
+    return false;
+  }
+};
+
+// Verify database connectivity and initialize tables
 export const testConnection = async () => {
   try {
     await initializeDatabase();
     const connection = await pool.getConnection();
     console.log("Database connection successful");
     connection.release();
+
+    // Initialize tables after successful connection
+    await initializeTables();
+
     return true;
   } catch (error) {
     console.error("Database connection error:", error.message);

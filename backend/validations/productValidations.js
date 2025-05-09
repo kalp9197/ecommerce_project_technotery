@@ -25,8 +25,7 @@ export const productSchema = [
     .withMessage("Price cannot be negative"),
 
   body("quantity")
-    .notEmpty()
-    .withMessage("Quantity is required")
+    .optional()
     .isInt()
     .withMessage("Quantity must be an integer")
     .custom((value) => value >= 0)

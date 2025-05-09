@@ -9,6 +9,30 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Initialize product_images table if not exists
+export const ensureProductImagesTable = async () => {
+  try {
+    await dbService.query(`
+    CREATE TABLE IF NOT EXISTS product_images (
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      uuid        VARCHAR(36) NOT NULL UNIQUE,
+      p_id        INT         NOT NULL,
+      image_path  VARCHAR(255) NOT NULL,
+      is_featured BOOLEAN     NOT NULL DEFAULT FALSE,
+      is_active   BOOLEAN     NOT NULL DEFAULT TRUE,
+      created_by  INT,
+      updated_by  INT,
+      created_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (p_id)        REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (created_by)  REFERENCES users(id)    ON DELETE SET NULL,
+      FOREIGN KEY (updated_by)  REFERENCES users(id)    ON DELETE SET NULL
+    )`);
+  } catch (error) {
+    throw new Error(`Error creating product_images table: ${error.message}`);
+  }
+};
+
 // Retrieve all images for a specific product
 export const getImagesByProductUuid = async (productUuid) => {
   try {
