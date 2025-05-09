@@ -1,8 +1,4 @@
-export * as cartController from "./cartController.js";
-export * as fileUploadController from "./fileUploadController.js";
-export * as paymentController from "./paymentController.js";
-export * as productCategoryController from "./productCategoryController.js";
-export * as productController from "./productController.js";
-export * as productImageController from "./productImageController.js";
-export * as productReviewController from "./productReviewController.js";
-export * as userController from "./userController.js";
+// Main controllers index - exports all controller modules from user, admin, and public
+export * from "./user/index.js";
+export * from "./admin/index.js";
+export * from "./public/index.js";

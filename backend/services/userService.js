@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { appConfig } from "../config/app.config.js";
 import { query } from "./dbService.js";
-import * as userModel from "../models/userModel.js";
+import { authModel as userModel } from "../models/user/index.js";
 import { sendEmail, getVerificationEmailTemplate } from "./emailService.js";
 
 export const generateJwtToken = (payload) => {
@@ -20,7 +20,7 @@ export const verifyJwtToken = (token) => {
 
 export const sendVerificationEmail = async (user, token) => {
   try {
-    const verificationUrl = `${appConfig.frontendUrl}/verify-email?token=${token}`;
+    const verificationUrl = `${appConfig.frontendUrl}/verify-email/${token}`;
     const emailTemplate = getVerificationEmailTemplate(
       user.name,
       verificationUrl
@@ -51,7 +51,7 @@ export const registerUser = async (userData) => {
 
     const newUser = await userModel.getUserByUuid(userUuid);
     const tokenData = await query(
-      "SELECT ut.verification_token FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE u.uuid = ? AND ut.verification_token IS NOT NULL AND ut.is_expired = 0",
+      "SELECT ut.verification_token FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE u.uuid = ? AND ut.verification_token IS NOT NULL AND ut.is_expired = 0 AND ut.verification_token_expires > NOW()",
       [userUuid]
     );
 

@@ -18,29 +18,31 @@ export const initializeTables = async () => {
   try {
     // Import all model initialization functions
     const { ensureUsersTable, ensureUserTokensTable } = await import(
-      "../models/userModel.js"
+      "../models/user/authModel.js"
     );
 
     const { ensureProductCategoriesTable } = await import(
-      "../models/productCategoryModel.js"
+      "../models/public/categoryModel.js"
     );
 
-    const { ensureProductsTable } = await import("../models/productModel.js");
+    const { ensureProductsTable } = await import(
+      "../models/public/productModel.js"
+    );
 
     const { ensureProductImagesTable } = await import(
-      "../models/productImageModel.js"
+      "../models/admin/imageModel.js"
     );
 
     const { ensureCartTable, ensureCartItemsTable } = await import(
-      "../models/cartModel.js"
+      "../models/user/cartModel.js"
     );
 
     const { ensureProductReviewsTable } = await import(
-      "../models/productReviewModel.js"
+      "../models/user/reviewModel.js"
     );
 
     const { ensureWishlistTable, ensureWishlistItemsTable } = await import(
-      "../models/wishlistModel.js"
+      "../models/user/wishlistModel.js"
     );
 
     // Create tables in the correct order (respecting foreign key constraints)

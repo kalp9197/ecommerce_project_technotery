@@ -1,7 +1,7 @@
 import { body, param } from "express-validator";
 
 export const addToWishlistSchema = [
-  body("product_uuid")
+  body("productUuid")
     .notEmpty()
     .withMessage("Product UUID is required")
     .isUUID(4)
@@ -17,7 +17,7 @@ export const wishlistItemUuidParam = [
 ];
 
 export const wishlistProductUuidParam = [
-  param("product_uuid")
+  param("productUuid")
     .notEmpty()
     .withMessage("Product UUID is required")
     .isUUID(4)

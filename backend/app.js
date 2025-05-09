@@ -6,15 +6,21 @@ import { appConfig, rateLimiter } from "./config/app.config.js";
 import { dbService } from "./services/index.js";
 import { HTTP_STATUS } from "./constants/index.js";
 import {
-  userRoutes,
-  productCategoryRoutes as categoryRoutes,
-  productRoutes,
+  // User routes
+  authRoutes,
   cartRoutes,
-  paymentRoutes,
-  productReviewRoutes as reviewRoutes,
-  fileUploadRoutes,
-  emailTestRoutes,
   wishlistRoutes,
+  reviewRoutes,
+  // Admin routes
+  userRoutes as adminUserRoutes,
+  adminProductRoutes,
+  adminCategoryRoutes,
+  fileUploadRoutes,
+  paymentRoutes as adminPaymentRoutes,
+  // Public routes
+  productRoutes,
+  categoryRoutes,
+  emailTestRoutes,
 } from "./routes/index.js";
 
 // Setup dirname for ES modules
@@ -41,15 +47,23 @@ dbService.testConnection();
 app.use(rateLimiter);
 
 // API routes
-app.use("/api/users", userRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/products", productRoutes);
+// User routes
+app.use("/api/users", authRoutes);
 app.use("/api/cart", cartRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/files", fileUploadRoutes);
-app.use("/api/email-test", emailTestRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/reviews", reviewRoutes);
+
+// Admin routes
+app.use("/api/admin/users", adminUserRoutes);
+app.use("/api/admin/products", adminProductRoutes);
+app.use("/api/admin/categories", adminCategoryRoutes);
+app.use("/api/admin/files", fileUploadRoutes);
+app.use("/api/admin/payments", adminPaymentRoutes);
+
+// Public routes
+app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/email-test", emailTestRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {
