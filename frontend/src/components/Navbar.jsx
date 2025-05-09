@@ -11,10 +11,13 @@ import {
   ShoppingBag,
   Package,
   ChevronDown,
+  Heart,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
+import { useWishlist } from "@/utils/wishlistContext";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
   DropdownMenu,
@@ -36,6 +39,7 @@ import { Badge } from "@/components/ui/badge";
 export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
   const { cartCount, cartTotal } = useCart();
+  const { wishlistCount } = useWishlist();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -75,6 +79,20 @@ export default function Navbar() {
                 </Link>
               </Button>
 
+              <Button variant="ghost" size="sm" className="relative" asChild>
+                <Link to="/wishlist">
+                  <Heart className="h-5 w-5 mr-1" />
+                  <span>Wishlist</span>
+                  {wishlistCount > 0 && (
+                    <div className="flex flex-col items-center absolute -top-3 -right-3">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-medium">
+                        {wishlistCount}
+                      </span>
+                    </div>
+                  )}
+                </Link>
+              </Button>
+
               {cartCount > 0 && (
                 <span className="text-sm text-muted-foreground">
                   ₹
@@ -93,6 +111,13 @@ export default function Navbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/token-test">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <span>Token Test</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     <span>Logout</span>
@@ -116,17 +141,31 @@ export default function Navbar() {
         {/* Mobile Navigation */}
         <div className="flex items-center gap-3 md:hidden">
           {isAuthenticated && (
-            <Button variant="ghost" size="icon" asChild className="relative">
-              <Link to="/cart">
-                <ShoppingCart className="h-5 w-5" />
-                <span className="sr-only">Cart</span>
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 font-semibold">
-                    {cartCount}
-                  </Badge>
-                )}
-              </Link>
-            </Button>
+            <>
+              <Button variant="ghost" size="icon" asChild className="relative">
+                <Link to="/cart">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="sr-only">Cart</span>
+                  {cartCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 font-semibold">
+                      {cartCount}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
+
+              <Button variant="ghost" size="icon" asChild className="relative">
+                <Link to="/wishlist">
+                  <Heart className="h-5 w-5" />
+                  <span className="sr-only">Wishlist</span>
+                  {wishlistCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 font-semibold">
+                      {wishlistCount}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
+            </>
           )}
           <ModeToggle />
           <Sheet>
@@ -167,6 +206,34 @@ export default function Navbar() {
                         <Link to="/cart">
                           <ShoppingCart className="mr-2 h-4 w-4" />
                           Cart {cartCount > 0 && `(${cartCount})`}
+                        </Link>
+                      </Button>
+                    </SheetClose>
+
+                    <SheetClose asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="justify-start"
+                      >
+                        <Link to="/wishlist">
+                          <Heart className="mr-2 h-4 w-4" />
+                          Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
+                        </Link>
+                      </Button>
+                    </SheetClose>
+
+                    <SheetClose asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="justify-start"
+                      >
+                        <Link to="/token-test">
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Token Test
                         </Link>
                       </Button>
                     </SheetClose>

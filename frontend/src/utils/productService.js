@@ -82,9 +82,23 @@ export const getCategoryByUuid = async (uuid) => {
 // Function to get auth header for protected requests
 export const getAuthHeader = () => {
   const token = localStorage.getItem("token");
+  const tokenExpiry = localStorage.getItem("tokenExpiry");
 
   // Ensure the token is valid before returning the header
   if (token) {
+    // Check if token is expired based on local expiry time
+    if (tokenExpiry) {
+      const expiryTime = new Date(tokenExpiry);
+      const now = new Date();
+
+      // If token is expired, don't use it
+      // The axios interceptor will handle refresh automatically
+      if (now >= expiryTime) {
+        console.log("[API] Token expired in getAuthHeader");
+        return {};
+      }
+    }
+
     // Also set it on the axios instance to ensure consistency
     if (api.defaults && api.defaults.headers) {
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;

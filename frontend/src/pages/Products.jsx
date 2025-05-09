@@ -13,12 +13,15 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
+import { useWishlist } from "@/utils/wishlistContext";
+import WishlistButton from "@/components/WishlistButton";
 import {
   ShoppingCart,
   CheckCircle,
   XCircle,
   ChevronLeft,
   ChevronRight,
+  Heart,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -37,6 +40,7 @@ const Products = () => {
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
   const { addItem, isItemPending, clearCart, refreshCart } = useCart();
+  const { isInWishlist, isItemPending: isWishlistItemPending } = useWishlist();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [hasHandledPayment, setHasHandledPayment] = useState(false);
@@ -303,8 +307,20 @@ const Products = () => {
                             </Badge>
                           </div>
                         </div>
-                        <div className="text-lg font-semibold">
-                          ₹{parseFloat(product.price).toFixed(2)}
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-lg font-semibold">
+                            ₹{parseFloat(product.price).toFixed(2)}
+                          </div>
+                          <WishlistButton
+                            productUuid={product.uuid}
+                            productDetails={{
+                              name: product.name,
+                              price: product.price,
+                              category_name: product.category_name,
+                              image: product.image || null,
+                              description: product.description,
+                            }}
+                          />
                         </div>
                       </div>
                     </CardHeader>

@@ -7,9 +7,12 @@ import Register from "./pages/Register";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
+import Wishlist from "./pages/Wishlist";
 import Navbar from "@/components/Navbar";
+import TokenTest from "@/components/TokenTest";
 import { useAuth } from "@/utils/authContext";
 import { CartProvider } from "@/utils/cartContext";
+import { WishlistProvider } from "@/utils/wishlistContext";
 
 import { PageTransition } from "./components/PageTransition";
 
@@ -45,66 +48,91 @@ export default function App() {
 
   return (
     <CartProvider>
-      <div className="flex min-h-screen flex-col">
-        <Navbar />
-        <main className="flex-1">
-          <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
-              {/* Products page as default route */}
-              <Route
-                path="/"
-                element={
-                  <PageTransition>
-                    <Products />
-                  </PageTransition>
-                }
-              />
-
-              {/* Add redirect from /products to / */}
-              <Route path="/products" element={<Navigate to="/" replace />} />
-
-              <Route
-                path="/products/:uuid"
-                element={
-                  <PageTransition>
-                    <ProductDetail />
-                  </PageTransition>
-                }
-              />
-
-              {/* Protected routes */}
-              <Route
-                path="/cart"
-                element={
-                  <ProtectedRoute>
+      <WishlistProvider>
+        <div className="flex min-h-screen flex-col">
+          <Navbar />
+          <main className="flex-1">
+            <AnimatePresence mode="wait">
+              <Routes location={location} key={location.pathname}>
+                {/* Products page as default route */}
+                <Route
+                  path="/"
+                  element={
                     <PageTransition>
-                      <Cart />
+                      <Products />
                     </PageTransition>
-                  </ProtectedRoute>
-                }
-              />
+                  }
+                />
 
-              {/* Auth routes */}
-              <Route
-                path="/login"
-                element={
-                  <PageTransition>
-                    <Login />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <PageTransition>
-                    <Register />
-                  </PageTransition>
-                }
-              />
-            </Routes>
-          </AnimatePresence>
-        </main>
-      </div>
+                {/* Add redirect from /products to / */}
+                <Route path="/products" element={<Navigate to="/" replace />} />
+
+                <Route
+                  path="/products/:uuid"
+                  element={
+                    <PageTransition>
+                      <ProductDetail />
+                    </PageTransition>
+                  }
+                />
+
+                {/* Protected routes */}
+                <Route
+                  path="/cart"
+                  element={
+                    <ProtectedRoute>
+                      <PageTransition>
+                        <Cart />
+                      </PageTransition>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/wishlist"
+                  element={
+                    <ProtectedRoute>
+                      <PageTransition>
+                        <Wishlist />
+                      </PageTransition>
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Auth routes */}
+                <Route
+                  path="/login"
+                  element={
+                    <PageTransition>
+                      <Login />
+                    </PageTransition>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <PageTransition>
+                      <Register />
+                    </PageTransition>
+                  }
+                />
+
+                {/* Token test route */}
+                <Route
+                  path="/token-test"
+                  element={
+                    <ProtectedRoute>
+                      <PageTransition>
+                        <TokenTest />
+                      </PageTransition>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </AnimatePresence>
+          </main>
+        </div>
+      </WishlistProvider>
     </CartProvider>
   );
 }

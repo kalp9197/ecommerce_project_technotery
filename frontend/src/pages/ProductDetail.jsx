@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
-import { ShoppingCart, CheckCircle, XCircle } from "lucide-react";
+import { useWishlist } from "@/utils/wishlistContext";
+import WishlistButton from "@/components/WishlistButton";
+import { ShoppingCart, CheckCircle, XCircle, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ProductDetail = () => {
@@ -16,6 +18,7 @@ const ProductDetail = () => {
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
   const { addItem, isItemPending } = useCart();
+  const { isInWishlist, isItemPending: isWishlistItemPending } = useWishlist();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -221,8 +224,23 @@ const ProductDetail = () => {
               {product.category_name}
             </Badge>
             <h1 className="text-4xl font-bold">{product.name}</h1>
-            <div className="text-2xl font-semibold mt-2">
-              ₹{parseFloat(product.price).toFixed(2)}
+            <div className="flex items-center justify-between mt-2">
+              <div className="text-2xl font-semibold">
+                ₹{parseFloat(product.price).toFixed(2)}
+              </div>
+              <WishlistButton
+                productUuid={product.uuid}
+                productDetails={{
+                  name: product.name,
+                  price: product.price,
+                  category_name: product.category_name,
+                  image: product.image || null,
+                  description: product.description,
+                }}
+                variant="outline"
+                size="default"
+                showText={true}
+              />
             </div>
           </motion.div>
 
