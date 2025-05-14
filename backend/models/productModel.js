@@ -22,6 +22,7 @@ export const getAllProducts = async (limit, offset) => {
         WHERE
           p.is_active = 1 AND pc.is_active = 1
         ORDER BY
+          p.is_featured DESC,
           p.id ASC
         LIMIT
           ${limit}
@@ -29,7 +30,13 @@ export const getAllProducts = async (limit, offset) => {
           ${offset}`
     );
 
-    return { products };
+    // Convert is_featured from 0/1 to boolean
+    const formattedProducts = products.map((product) => ({
+      ...product,
+      is_featured: !!product.is_featured,
+    }));
+
+    return { products: formattedProducts };
   } catch (error) {
     throw new Error(`Error fetching products: ${error.message}`);
   }
@@ -81,6 +88,7 @@ export const searchProducts = async (params) => {
         WHERE
           ${where} AND pc.is_active = 1
         ORDER BY
+          p.is_featured DESC,
           p.${orderField} ${orderDirection}
         LIMIT
           ${limitNum}
@@ -89,8 +97,14 @@ export const searchProducts = async (params) => {
 
     const products = await dbService.query(sql);
 
+    // Convert is_featured from 0/1 to boolean
+    const formattedProducts = products.map((product) => ({
+      ...product,
+      is_featured: !!product.is_featured,
+    }));
+
     return {
-      products,
+      products: formattedProducts,
       pagination: { page: pageNum, limit: limitNum },
     };
   } catch (err) {
@@ -108,6 +122,7 @@ export const getProductByUuid = async (uuid) => {
           p.name,
           p.description,
           p.price,
+          p.is_featured,
           pc.name AS category_name,
           pi.id AS image_id
         FROM
@@ -132,6 +147,7 @@ export const getProductByUuid = async (uuid) => {
       name: row.name,
       description: row.description,
       price: row.price,
+      is_featured: !!row.is_featured,
       category_name: row.category_name,
     };
   } catch (error) {
@@ -142,7 +158,14 @@ export const getProductByUuid = async (uuid) => {
 // Create new product record
 export const createProduct = async (productData, userId) => {
   try {
-    const { p_cat_uuid, name, description, price, quantity = 0 } = productData;
+    const {
+      p_cat_uuid,
+      name,
+      description,
+      price,
+      quantity = 0,
+      is_featured = false,
+    } = productData;
     const uuid = uuidv4();
 
     // Get category ID from UUID
@@ -165,10 +188,20 @@ export const createProduct = async (productData, userId) => {
     // Insert new product
     const result = await dbService.query(
       `INSERT INTO
-          products (uuid, p_cat_id, name, description, price, quantity, is_active, created_by, updated_by)
+          products (uuid, p_cat_id, name, description, price, quantity, is_featured, is_active, created_by, updated_by)
         VALUES
-          (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-      [uuid, p_cat_id, name, description || "", price, quantity, userId, userId]
+          (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+      [
+        uuid,
+        p_cat_id,
+        name,
+        description || "",
+        price,
+        quantity,
+        is_featured ? 1 : 0,
+        userId,
+        userId,
+      ]
     );
 
     if (!result?.insertId) {
@@ -184,7 +217,7 @@ export const createProduct = async (productData, userId) => {
 // Update existing product data
 export const updateProductByUuid = async (uuid, body) => {
   try {
-    const { p_cat_uuid, name, description, price } = body;
+    const { p_cat_uuid, name, description, price, is_featured } = body;
 
     let p_cat_id = null;
     // Get category ID from UUID if provided
@@ -206,6 +239,12 @@ export const updateProductByUuid = async (uuid, body) => {
       p_cat_id = categoryResult[0].id;
     }
 
+    // Prepare is_featured value for SQL
+    let isFeaturedValue = null;
+    if (is_featured !== undefined) {
+      isFeaturedValue = is_featured ? 1 : 0;
+    }
+
     // Update only fields that were provided using COALESCE
     const result = await dbService.query(
       `UPDATE
@@ -215,10 +254,11 @@ export const updateProductByUuid = async (uuid, body) => {
           p_cat_id = COALESCE(?, p_cat_id),
           name = COALESCE(?, name),
           description = COALESCE(?, description),
-          price = COALESCE(?, price)
+          price = COALESCE(?, price),
+          is_featured = COALESCE(?, is_featured)
         WHERE
           uuid = ? AND is_active = 1`,
-      [p_cat_id, name, description, price, uuid]
+      [p_cat_id, name, description, price, isFeaturedValue, uuid]
     );
 
     if (result.affectedRows === 0) {
@@ -375,6 +415,7 @@ export const getRecommendedProducts = async (productUuid, limit = 4) => {
           OR (p.price BETWEEN ${minPrice} AND ${maxPrice})  -- Similar price range
         )
       ORDER BY
+        p.is_featured DESC,  -- Prioritize featured products
         CASE
           WHEN p.p_cat_id = ${p_cat_id} THEN 0  -- Prioritize same category
           ELSE 1
@@ -383,7 +424,13 @@ export const getRecommendedProducts = async (productUuid, limit = 4) => {
       LIMIT ${limit}
     `);
 
-    return { recommendedProducts };
+    // Convert is_featured from 0/1 to boolean
+    const formattedRecommendedProducts = recommendedProducts.map((product) => ({
+      ...product,
+      is_featured: !!product.is_featured,
+    }));
+
+    return { recommendedProducts: formattedRecommendedProducts };
   } catch (error) {
     throw new Error(`Error fetching recommended products: ${error.message}`);
   }
@@ -401,6 +448,7 @@ export const ensureProductsTable = async () => {
       description VARCHAR(255),
       price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       quantity    INT           NOT NULL DEFAULT 0,
+      is_featured BOOLEAN       NOT NULL DEFAULT FALSE,
       is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
       created_by  INT,
       updated_by  INT,
@@ -408,6 +456,19 @@ export const ensureProductsTable = async () => {
       updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (p_cat_id)   REFERENCES product_categories(id) ON DELETE CASCADE
     )`);
+
+    // Check if is_featured column exists, if not add it
+    const columns = await dbService.query(`
+      SHOW COLUMNS FROM products LIKE 'is_featured'
+    `);
+
+    if (columns.length === 0) {
+      await dbService.query(`
+        ALTER TABLE products
+        ADD COLUMN is_featured BOOLEAN NOT NULL DEFAULT FALSE
+        AFTER quantity
+      `);
+    }
   } catch (error) {
     throw new Error(`Error creating products table: ${error.message}`);
   }

@@ -31,6 +31,11 @@ export const productSchema = [
     .custom((value) => value >= 0)
     .withMessage("Quantity cannot be negative")
     .toInt(),
+
+  body("is_featured")
+    .optional()
+    .isBoolean()
+    .withMessage("is_featured must be a boolean value"),
 ];
 
 export const productUuidParam = [

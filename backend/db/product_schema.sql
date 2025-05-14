@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS products (
   description VARCHAR(255),
   price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   quantity    INT           NOT NULL DEFAULT 0,
+  is_featured BOOLEAN       NOT NULL DEFAULT FALSE,
   is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
   created_by  INT,
   updated_by  INT,

@@ -301,10 +301,18 @@ const Products = () => {
                           <CardTitle className="text-xl">
                             {product.name}
                           </CardTitle>
-                          <div className="mt-1">
+                          <div className="mt-1 flex gap-1 flex-wrap">
                             <Badge variant="outline">
                               {product.category_name}
                             </Badge>
+                            {product.is_featured && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-amber-100 text-amber-800 hover:bg-amber-200"
+                              >
+                                Featured
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">

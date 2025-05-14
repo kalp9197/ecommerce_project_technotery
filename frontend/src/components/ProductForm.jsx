@@ -45,6 +45,7 @@ const productSchema = z.object({
     .min(0, { message: "Discount must be at least 0%" })
     .max(100, { message: "Discount cannot exceed 100%" })
     .default(0),
+  is_featured: z.boolean().default(false),
   image_url: z
     .string()
     .url({ message: "Please enter a valid image URL" })
@@ -70,6 +71,7 @@ export default function ProductForm({
       stock: product?.stock || 0,
       category: product?.category || "",
       discount: product?.discount || 0,
+      is_featured: product?.is_featured || false,
       image_url: product?.image_url || "",
     },
   });
@@ -179,25 +181,50 @@ export default function ProductForm({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="discount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Discount (%)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      min="0"
-                      max="100"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="discount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Discount (%)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        min="0"
+                        max="100"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="is_featured"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-end space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="h-4 w-4"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Featured Product</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Featured products appear first on the homepage
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -246,8 +273,8 @@ export default function ProductForm({
                 {isSubmitting
                   ? "Saving..."
                   : isEditMode
-                    ? "Save Changes"
-                    : "Add Product"}
+                  ? "Save Changes"
+                  : "Add Product"}
               </Button>
             </DialogFooter>
           </form>

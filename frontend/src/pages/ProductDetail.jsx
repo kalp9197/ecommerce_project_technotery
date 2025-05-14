@@ -221,9 +221,17 @@ const ProductDetail = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.3 }}
           >
-            <Badge variant="outline" className="mb-2">
-              {product.category_name}
-            </Badge>
+            <div className="flex gap-2 mb-2">
+              <Badge variant="outline">{product.category_name}</Badge>
+              {product.is_featured && (
+                <Badge
+                  variant="secondary"
+                  className="bg-amber-100 text-amber-800 hover:bg-amber-200"
+                >
+                  Featured
+                </Badge>
+              )}
+            </div>
             <h1 className="text-4xl font-bold">{product.name}</h1>
             <div className="flex items-center justify-between mt-2">
               <div className="text-2xl font-semibold">
