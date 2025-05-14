@@ -79,7 +79,6 @@ const ProductDetail = () => {
         name: product.name,
         price: product.price,
         category_name: product.category_name,
-        image: product.image || null,
         description: product.description,
       });
 
@@ -206,33 +205,7 @@ const ProductDetail = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-muted rounded-lg flex items-center justify-center p-8"
-        >
-          {product.image ? (
-            <motion.img
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
-              src={product.image}
-              alt={product.name}
-              className="max-w-full h-auto rounded-lg"
-            />
-          ) : (
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0.5 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <ShoppingCart className="h-32 w-32 text-muted-foreground" />
-            </motion.div>
-          )}
-        </motion.div>
-
+      <div className="grid grid-cols-1 gap-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -266,7 +239,6 @@ const ProductDetail = () => {
                   name: product.name,
                   price: product.price,
                   category_name: product.category_name,
-                  image: product.image || null,
                   description: product.description,
                 }}
                 variant="outline"

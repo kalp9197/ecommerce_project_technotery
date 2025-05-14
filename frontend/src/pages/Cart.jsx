@@ -225,15 +225,7 @@ const Cart = () => {
                     {index + 1}
                   </div>
                   <div className="bg-muted rounded-md w-16 h-16 flex items-center justify-center shrink-0 overflow-hidden">
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <ShoppingBag className="h-8 w-8 text-muted-foreground" />
-                    )}
+                    <ShoppingBag className="h-8 w-8 text-muted-foreground" />
                   </div>
 
                   <div className="ml-4 flex-grow">

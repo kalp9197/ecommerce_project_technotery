@@ -5,12 +5,6 @@ export const createCheckoutSession = async (cartItems) => {
   try {
     // Make sure we only send valid data to the backend
     const preparedCartItems = cartItems.map((item) => {
-      // Ensure the image URL is absolute
-      let imageUrl = item.image || item.product_image;
-      if (imageUrl && !imageUrl.startsWith("http")) {
-        imageUrl = `${import.meta.env.VITE_API_URL}/${imageUrl}`;
-      }
-
       return {
         name: item.name || item.product_name || "Product",
         price:
@@ -22,7 +16,6 @@ export const createCheckoutSession = async (cartItems) => {
             ? item.quantity
             : parseInt(item.quantity) || 1,
         description: item.description || "",
-        image: imageUrl || "",
         cart_id: item.item_uuid || "",
         product_id: item.product_uuid || item.product_id || "",
       };

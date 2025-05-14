@@ -53,7 +53,6 @@ const Wishlist = () => {
         name: product.name,
         price: product.price,
         category_name: product.category_name,
-        image: product.image || null,
       });
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -120,42 +119,29 @@ const Wishlist = () => {
             className="group"
           >
             <div className="bg-card rounded-lg shadow-sm overflow-hidden border h-full flex flex-col">
-              <div className="relative">
+              <div className="p-3 flex justify-between items-center border-b">
                 <Link to={`/products/${item.product_uuid}`}>
-                  <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      />
-                    ) : (
-                      <ShoppingBag className="h-12 w-12 text-muted-foreground" />
-                    )}
-                  </div>
-                </Link>
-                <div className="absolute top-2 right-2">
-                  <WishlistButton
-                    productUuid={item.product_uuid}
-                    itemUuid={item.item_uuid}
-                  />
-                </div>
-              </div>
-
-              <div className="p-4 flex-1 flex flex-col">
-                <Link to={`/products/${item.product_uuid}`}>
-                  <h3 className="font-semibold text-lg mb-1 hover:text-primary transition-colors">
+                  <h3 className="font-semibold text-lg hover:text-primary transition-colors">
                     {item.name}
                   </h3>
                 </Link>
+                <WishlistButton
+                  productUuid={item.product_uuid}
+                  itemUuid={item.item_uuid}
+                />
+              </div>
+
+              <div className="px-4 pt-3 pb-4 flex-1 flex flex-col">
                 <div className="text-sm text-muted-foreground mb-2">
                   {item.category_name}
                 </div>
-                <p className="text-sm line-clamp-2 mb-4 flex-1">
+                <p className="text-sm line-clamp-3 mb-4 flex-1">
                   {item.description}
                 </p>
                 <div className="flex items-center justify-between mt-auto">
-                  <div className="font-bold">₹{parseFloat(item.price).toFixed(2)}</div>
+                  <div className="font-bold text-lg">
+                    ₹{parseFloat(item.price).toFixed(2)}
+                  </div>
                   <Button
                     size="sm"
                     onClick={() => handleAddToCart(item)}

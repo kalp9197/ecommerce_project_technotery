@@ -175,7 +175,6 @@ const Products = () => {
         name: product.name,
         price: product.price,
         category_name: product.category_name,
-        image: product.image || null,
       });
 
       // Success message removed as requested
@@ -343,7 +342,6 @@ const Products = () => {
                               name: product.name,
                               price: product.price,
                               category_name: product.category_name,
-                              image: product.image || null,
                               description: product.description,
                             }}
                           />

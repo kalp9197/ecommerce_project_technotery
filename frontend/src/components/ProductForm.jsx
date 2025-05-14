@@ -46,11 +46,6 @@ const productSchema = z.object({
     .max(100, { message: "Discount cannot exceed 100%" })
     .default(0),
   is_featured: z.boolean().default(false),
-  image_url: z
-    .string()
-    .url({ message: "Please enter a valid image URL" })
-    .optional()
-    .or(z.literal("")),
 });
 
 export default function ProductForm({
@@ -72,7 +67,6 @@ export default function ProductForm({
       category: product?.category || "",
       discount: product?.discount || 0,
       is_featured: product?.is_featured || false,
-      image_url: product?.image_url || "",
     },
   });
 
@@ -225,23 +219,6 @@ export default function ProductForm({
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image URL</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="https://example.com/image.jpg"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}
