@@ -23,6 +23,11 @@ router.get(
   validation.validate(validation.productUuidParam),
   productController.getProductByUUID
 );
+router.get(
+  "/recommendations/:uuid",
+  validation.validate(validation.productUuidParam),
+  productController.getRecommendedProducts
+);
 
 // Require authentication for all routes below
 router.use(authenticate);

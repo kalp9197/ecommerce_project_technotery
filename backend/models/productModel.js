@@ -317,6 +317,78 @@ export const bulkCreateProducts = async (productsData, userId) => {
   }
 };
 
+// Get recommended products based on category and price range
+export const getRecommendedProducts = async (productUuid, limit = 4) => {
+  try {
+    // First, get the current product's details to use for recommendations
+    const product = await getProductByUuid(productUuid);
+
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    // Get the product's category and price for recommendation criteria
+    const productDetails = await dbService.query(`
+      SELECT
+        p.id,
+        p.p_cat_id,
+        p.price,
+        pc.name as category_name
+      FROM
+        products p
+      JOIN
+        product_categories pc ON p.p_cat_id = pc.id
+      WHERE
+        p.uuid = '${productUuid}' AND p.is_active = 1
+    `);
+
+    if (!productDetails.length) {
+      throw new Error("Product details not found");
+    }
+
+    const { p_cat_id, price } = productDetails[0];
+
+    // Calculate price range (±20% of the current product's price)
+    const minPrice = parseFloat(price) * 0.8;
+    const maxPrice = parseFloat(price) * 1.2;
+
+    // Get similar products in the same category with similar price range
+    // Exclude the current product
+    const recommendedProducts = await dbService.query(`
+      SELECT
+        p.*,
+        pc.name as category_name,
+        (SELECT pi.image_path
+          FROM product_images pi
+          WHERE pi.p_id = p.id AND pi.is_featured = 1 AND pi.is_active = 1
+          LIMIT 1) as featured_image
+      FROM
+        products p
+      JOIN
+        product_categories pc ON p.p_cat_id = pc.id
+      WHERE
+        p.is_active = 1
+        AND pc.is_active = 1
+        AND p.uuid != '${productUuid}'
+        AND (
+          p.p_cat_id = ${p_cat_id}  -- Same category
+          OR (p.price BETWEEN ${minPrice} AND ${maxPrice})  -- Similar price range
+        )
+      ORDER BY
+        CASE
+          WHEN p.p_cat_id = ${p_cat_id} THEN 0  -- Prioritize same category
+          ELSE 1
+        END,
+        ABS(p.price - ${price})  -- Sort by price similarity
+      LIMIT ${limit}
+    `);
+
+    return { recommendedProducts };
+  } catch (error) {
+    throw new Error(`Error fetching recommended products: ${error.message}`);
+  }
+};
+
 // Initialize products table if not exists
 export const ensureProductsTable = async () => {
   try {

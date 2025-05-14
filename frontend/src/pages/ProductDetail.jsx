@@ -7,7 +7,7 @@ import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
 import { useWishlist } from "@/utils/wishlistContext";
 import WishlistButton from "@/components/WishlistButton";
-import { ShoppingCart, CheckCircle, XCircle, Heart } from "lucide-react";
+import { ShoppingCart, CheckCircle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ProductDetail = () => {
@@ -18,7 +18,7 @@ const ProductDetail = () => {
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
   const { addItem, isItemPending } = useCart();
-  const { isInWishlist, isItemPending: isWishlistItemPending } = useWishlist();
+  const {} = useWishlist();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,6 +60,7 @@ const ProductDetail = () => {
         price: product.price,
         category_name: product.category_name,
         image: product.image || null,
+        description: product.description,
       });
 
       // Success message removed as requested

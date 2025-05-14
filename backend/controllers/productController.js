@@ -187,3 +187,36 @@ export const removeProductByUUID = async (req, res) => {
     });
   }
 };
+
+// Get recommended products for a specific product
+export const getRecommendedProducts = async (req, res) => {
+  try {
+    const { uuid } = req.params;
+    const { limit = 4 } = req.query;
+
+    const result = await productModel.getRecommendedProducts(
+      uuid,
+      parseInt(limit)
+    );
+
+    if (!result.recommendedProducts?.length) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        success: false,
+        message: "No recommended products found",
+      });
+    }
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: "Recommended products fetched successfully",
+      data: result.recommendedProducts,
+    });
+  } catch (error) {
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message:
+        error.message ||
+        "An error occurred while fetching recommended products",
+    });
+  }
+};
