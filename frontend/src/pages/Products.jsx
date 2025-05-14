@@ -39,7 +39,8 @@ const Products = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
-  const { addItem, isItemPending, clearCart, refreshCart } = useCart();
+  const { addItem, isItemPending, clearCart, refreshCart, cartItems } =
+    useCart();
   const { isInWishlist, isItemPending: isWishlistItemPending } = useWishlist();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -145,10 +146,27 @@ const Products = () => {
       ? products
       : products.filter((product) => product.category_name === activeTab);
 
-  // Handle add to cart click
+  // Check if product is in cart
+  const isProductInCart = (productUuid) => {
+    return (
+      cartItems &&
+      cartItems.some(
+        (item) =>
+          item.product_id === productUuid || item.product_uuid === productUuid
+      )
+    );
+  };
+
+  // Handle add to cart click or view cart
   const handleAddToCart = async (product) => {
     if (!isAuthenticated) {
       navigate("/login", { state: { from: "/" } });
+      return;
+    }
+
+    // If product is already in cart, navigate to cart page
+    if (isProductInCart(product.uuid)) {
+      navigate("/cart");
       return;
     }
 
@@ -360,6 +378,8 @@ const Products = () => {
                           ? "Sign in to Buy"
                           : isItemPending(product.uuid)
                           ? "Adding..."
+                          : isProductInCart(product.uuid)
+                          ? "View Cart"
                           : "Add to Cart"}
                       </Button>
                     </CardFooter>

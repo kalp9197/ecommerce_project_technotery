@@ -17,8 +17,9 @@ const ProductDetail = () => {
   const [error, setError] = useState("");
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
-  const { addItem, isItemPending } = useCart();
+  const { addItem, isItemPending, cartItems } = useCart();
   const {} = useWishlist();
+  const [isInCart, setIsInCart] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,11 +47,30 @@ const ProductDetail = () => {
     }
   }, [uuid]);
 
-  // Handle add to cart click
+  // Check if product is already in cart
+  useEffect(() => {
+    if (cartItems && cartItems.length > 0 && product) {
+      const productInCart = cartItems.some(
+        (item) =>
+          item.product_id === product.uuid || item.product_uuid === product.uuid
+      );
+      setIsInCart(productInCart);
+    } else {
+      setIsInCart(false);
+    }
+  }, [cartItems, product]);
+
+  // Handle add to cart click or view cart
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
       // Redirect to login if not authenticated
       navigate("/login", { state: { from: `/products/${uuid}` } });
+      return;
+    }
+
+    // If product is already in cart, navigate to cart page
+    if (isInCart) {
+      navigate("/cart");
       return;
     }
 
@@ -62,6 +82,9 @@ const ProductDetail = () => {
         image: product.image || null,
         description: product.description,
       });
+
+      // Set isInCart to true after successfully adding to cart
+      setIsInCart(true);
 
       // Success message removed as requested
     } catch (error) {
@@ -277,6 +300,8 @@ const ProductDetail = () => {
                 ? "Sign in to Buy"
                 : isItemPending(product.uuid)
                 ? "Adding to Cart..."
+                : isInCart
+                ? "View Cart"
                 : "Add to Cart"}
             </Button>
           </motion.div>

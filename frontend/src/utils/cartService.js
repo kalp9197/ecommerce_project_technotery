@@ -168,3 +168,33 @@ export const clearCart = async () => {
     };
   }
 };
+
+// Batch update cart items
+export const batchUpdateCartItems = async (items) => {
+  if (!isUserAuthenticated()) {
+    return {
+      success: false,
+      message: "Authentication required",
+      requiresAuth: true,
+    };
+  }
+
+  try {
+    const response = await api.put("/cart/items/batch", items, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      return {
+        success: false,
+        message: "Authentication required",
+        requiresAuth: true,
+      };
+    }
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to update cart items",
+    };
+  }
+};

@@ -5,6 +5,7 @@ import {
   updateCartItem as updateCartItemService,
   removeFromCart,
   clearCart as clearCartService,
+  batchUpdateCartItems as batchUpdateCartItemsService,
 } from "./cartService";
 import { useAuth } from "./authContext";
 
@@ -258,6 +259,73 @@ export function CartProvider({ children }) {
     }
   };
 
+  // Batch update cart items
+  const batchUpdateItems = async (updatedItems) => {
+    if (!isAuthenticated || !updatedItems.length) return;
+
+    // Mark all items as pending
+    updatedItems.forEach((item) => addPendingItem(item.item_uuid));
+    setError(null);
+
+    // Store original state for potential rollback
+    const originalItems = [...cartItems];
+    const originalCount = cartCount;
+    const originalTotal = cartTotal;
+
+    // Calculate new quantities and totals
+    let newCount = 0;
+    let newTotal = 0;
+
+    // Create a map of updated items for quick lookup
+    const updatedItemsMap = {};
+    updatedItems.forEach((item) => {
+      updatedItemsMap[item.item_uuid] = item.quantity;
+    });
+
+    // Update cart items with new quantities
+    const updatedCartItems = cartItems.map((item) => {
+      if (updatedItemsMap[item.item_uuid] !== undefined) {
+        const newQuantity = updatedItemsMap[item.item_uuid];
+        const itemTotal = parseFloat(item.price) * newQuantity;
+        newCount += newQuantity;
+        newTotal += itemTotal;
+        return { ...item, quantity: newQuantity };
+      } else {
+        newCount += item.quantity;
+        newTotal += parseFloat(item.price) * item.quantity;
+        return item;
+      }
+    });
+
+    // Optimistic update
+    setCartItems(updatedCartItems);
+    setCartCount(newCount);
+    setCartTotal(newTotal.toFixed(2));
+
+    try {
+      const response = await batchUpdateCartItemsService(updatedItems);
+      if (!response.success) {
+        // Revert optimistic update
+        setCartItems(originalItems);
+        setCartCount(originalCount);
+        setCartTotal(originalTotal);
+        setError(response.message || "Failed to update cart items");
+      } else {
+        // Refresh cart to get server state
+        await fetchCart();
+      }
+    } catch (error) {
+      // Revert optimistic update
+      setCartItems(originalItems);
+      setCartCount(originalCount);
+      setCartTotal(originalTotal);
+      setError("Failed to update cart items. Please try again.");
+    } finally {
+      // Remove all items from pending state
+      updatedItems.forEach((item) => removePendingItem(item.item_uuid));
+    }
+  };
+
   const value = {
     cartItems,
     cartCount,
@@ -270,6 +338,7 @@ export function CartProvider({ children }) {
     updateItem,
     removeItem,
     clearCart,
+    batchUpdateItems,
     clearError: () => setError(null),
   };
 
