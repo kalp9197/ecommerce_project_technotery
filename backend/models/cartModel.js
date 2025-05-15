@@ -121,7 +121,7 @@ const updateCartTotals = async (cartUuid, connection = null) => {
     // Calculate sum of items and total price using current product prices
     const [totals] = await queryFn(
       `SELECT
-        COUNT(*) AS total_items,
+        COALESCE(SUM(ci.quantity), 0) AS total_items,
         COALESCE(SUM(ci.quantity * p.price), 0) AS total_price
        FROM
          cart_items ci

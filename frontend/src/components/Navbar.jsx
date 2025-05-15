@@ -38,7 +38,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
-  const { cartCount, cartTotal } = useCart();
+  const { cartCount, cartItemCount, cartTotal } = useCart();
   const { wishlistCount } = useWishlist();
   const navigate = useNavigate();
 
@@ -69,10 +69,10 @@ export default function Navbar() {
                 <Link to="/cart">
                   <ShoppingCart className="h-5 w-5 mr-1" />
                   <span>Cart</span>
-                  {cartCount > 0 && (
+                  {cartItemCount > 0 && (
                     <div className="flex flex-col items-center absolute -top-3 -right-3">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-medium">
-                        {cartCount}
+                        {cartItemCount}
                       </span>
                     </div>
                   )}
@@ -146,9 +146,9 @@ export default function Navbar() {
                 <Link to="/cart">
                   <ShoppingCart className="h-5 w-5" />
                   <span className="sr-only">Cart</span>
-                  {cartCount > 0 && (
+                  {cartItemCount > 0 && (
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 font-semibold">
-                      {cartCount}
+                      {cartItemCount}
                     </Badge>
                   )}
                 </Link>
@@ -205,7 +205,7 @@ export default function Navbar() {
                       >
                         <Link to="/cart">
                           <ShoppingCart className="mr-2 h-4 w-4" />
-                          Cart {cartCount > 0 && `(${cartCount})`}
+                          Cart {cartItemCount > 0 && `(${cartItemCount})`}
                         </Link>
                       </Button>
                     </SheetClose>

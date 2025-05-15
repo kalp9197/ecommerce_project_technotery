@@ -21,6 +21,7 @@ const Cart = () => {
   const {
     cartItems,
     cartCount,
+    cartItemCount,
     cartTotal,
     loading,
     error: contextError,
@@ -206,7 +207,8 @@ const Cart = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Your Shopping Cart</h1>
         <div className="text-sm text-muted-foreground">
-          {cartCount} {cartCount === 1 ? "item" : "items"}
+          {cartItemCount} {cartItemCount === 1 ? "product" : "products"} (
+          {cartCount} total items)
         </div>
       </div>
 

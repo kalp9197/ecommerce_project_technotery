@@ -13,7 +13,8 @@ const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
-  const [cartCount, setCartCount] = useState(0);
+  const [cartCount, setCartCount] = useState(0); // Total quantity of all items
+  const [cartItemCount, setCartItemCount] = useState(0); // Number of distinct products
   const [cartTotal, setCartTotal] = useState("0.00");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -42,6 +43,7 @@ export function CartProvider({ children }) {
     if (!isAuthenticated) {
       setCartItems([]);
       setCartCount(0);
+      setCartItemCount(0);
       setCartTotal("0.00");
       return;
     }
@@ -51,12 +53,15 @@ export function CartProvider({ children }) {
     try {
       const response = await getCart();
       if (response.success && response.data) {
-        setCartItems(response.data.items || []);
+        const items = response.data.items || [];
+        setCartItems(items);
         setCartCount(response.data.total_items || 0);
+        setCartItemCount(items.length); // Number of distinct products
         setCartTotal(response.data.total_price || "0.00");
       } else {
         setCartItems([]);
         setCartCount(0);
+        setCartItemCount(0);
         setCartTotal("0.00");
         if (response.message) {
           setError(response.message);
@@ -66,6 +71,7 @@ export function CartProvider({ children }) {
       console.error("Error fetching cart in context:", error);
       setCartItems([]);
       setCartCount(0);
+      setCartItemCount(0);
       setCartTotal("0.00");
       setError("Failed to load cart. Please try again.");
     } finally {
@@ -98,6 +104,7 @@ export function CartProvider({ children }) {
 
     setCartItems((prev) => [...prev, optimisticItem]);
     setCartCount((prev) => prev + quantity);
+    setCartItemCount((prev) => prev + 1); // Adding a new distinct product
     setCartTotal((prev) =>
       (
         parseFloat(prev) +
@@ -113,6 +120,7 @@ export function CartProvider({ children }) {
         // Revert optimistic update
         setCartItems((prev) => prev.filter((item) => item.id !== tempId));
         setCartCount((prev) => prev - quantity);
+        setCartItemCount((prev) => prev - 1); // Remove the distinct product
         setCartTotal((prev) =>
           (
             parseFloat(prev) -
@@ -125,6 +133,7 @@ export function CartProvider({ children }) {
       // Revert optimistic update
       setCartItems((prev) => prev.filter((item) => item.id !== tempId));
       setCartCount((prev) => prev - quantity);
+      setCartItemCount((prev) => prev - 1); // Remove the distinct product
       setCartTotal((prev) =>
         (
           parseFloat(prev) -
@@ -206,6 +215,7 @@ export function CartProvider({ children }) {
     // Optimistic update
     setCartItems((prev) => prev.filter((item) => item.item_uuid !== itemUuid));
     setCartCount((prev) => prev - item.quantity);
+    setCartItemCount((prev) => prev - 1); // Remove one distinct product
     setCartTotal((prev) => (parseFloat(prev) - itemTotal).toFixed(2));
 
     try {
@@ -214,6 +224,7 @@ export function CartProvider({ children }) {
         // Revert optimistic update
         setCartItems((prev) => [...prev, item]);
         setCartCount((prev) => prev + item.quantity);
+        setCartItemCount((prev) => prev + 1); // Add back the distinct product
         setCartTotal((prev) => (parseFloat(prev) + itemTotal).toFixed(2));
         setError(response.message || "Failed to remove item");
       }
@@ -221,6 +232,7 @@ export function CartProvider({ children }) {
       // Revert optimistic update
       setCartItems((prev) => [...prev, item]);
       setCartCount((prev) => prev + item.quantity);
+      setCartItemCount((prev) => prev + 1); // Add back the distinct product
       setCartTotal((prev) => (parseFloat(prev) + itemTotal).toFixed(2));
       setError("Failed to remove item. Please try again.");
     } finally {
@@ -234,11 +246,13 @@ export function CartProvider({ children }) {
 
     const previousItems = [...cartItems];
     const previousCount = cartCount;
+    const previousItemCount = cartItemCount;
     const previousTotal = cartTotal;
 
     // Optimistic update
     setCartItems([]);
     setCartCount(0);
+    setCartItemCount(0);
     setCartTotal("0.00");
 
     try {
@@ -247,6 +261,7 @@ export function CartProvider({ children }) {
         // Revert optimistic update
         setCartItems(previousItems);
         setCartCount(previousCount);
+        setCartItemCount(previousItemCount);
         setCartTotal(previousTotal);
         setError(response.message || "Failed to clear cart");
       }
@@ -254,6 +269,7 @@ export function CartProvider({ children }) {
       // Revert optimistic update
       setCartItems(previousItems);
       setCartCount(previousCount);
+      setCartItemCount(previousItemCount);
       setCartTotal(previousTotal);
       setError("Failed to clear cart. Please try again.");
     }
@@ -270,6 +286,7 @@ export function CartProvider({ children }) {
     // Store original state for potential rollback
     const originalItems = [...cartItems];
     const originalCount = cartCount;
+    const originalItemCount = cartItemCount;
     const originalTotal = cartTotal;
 
     // Calculate new quantities and totals
@@ -300,6 +317,7 @@ export function CartProvider({ children }) {
     // Optimistic update
     setCartItems(updatedCartItems);
     setCartCount(newCount);
+    setCartItemCount(updatedCartItems.length); // Number of distinct products
     setCartTotal(newTotal.toFixed(2));
 
     try {
@@ -308,6 +326,7 @@ export function CartProvider({ children }) {
         // Revert optimistic update
         setCartItems(originalItems);
         setCartCount(originalCount);
+        setCartItemCount(originalItemCount);
         setCartTotal(originalTotal);
         setError(response.message || "Failed to update cart items");
       } else {
@@ -318,6 +337,7 @@ export function CartProvider({ children }) {
       // Revert optimistic update
       setCartItems(originalItems);
       setCartCount(originalCount);
+      setCartItemCount(originalItemCount);
       setCartTotal(originalTotal);
       setError("Failed to update cart items. Please try again.");
     } finally {
@@ -329,6 +349,7 @@ export function CartProvider({ children }) {
   const value = {
     cartItems,
     cartCount,
+    cartItemCount,
     cartTotal,
     loading,
     error,
