@@ -1,11 +1,33 @@
 import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
+import { redis, CACHE_TTL, CACHE_KEYS, getVersionedKey, invalidateAllCaches } from "../config/index.js";
+
+// Manually refresh cache - can be called from API to force refresh
+export const refreshProductCache = async () => {
+  try {
+    await invalidateAllCaches();
+    return { success: true, message: "Product cache refreshed successfully" };
+  } catch (error) {
+    return { success: false, message: `Failed to refresh cache: ${error.message}` };
+  }
+};
 
 // Get paginated list of active products
 export const getAllProducts = async (limit, offset) => {
   try {
     limit = Number(limit);
     offset = Number(offset);
+    let fromCache = false;
+
+    // Check cache for first page with 8 products
+    if (limit === 8 && offset === 0) {
+      const cacheKey = await getVersionedKey(CACHE_KEYS.PRODUCTS_PAGE_1);
+      const cachedProducts = await redis.get(cacheKey);
+      if (cachedProducts) {
+        fromCache = true;
+        return { products: cachedProducts, fromCache };
+      }
+    }
 
     const products = await dbService.query(
       `SELECT
@@ -36,7 +58,13 @@ export const getAllProducts = async (limit, offset) => {
       is_featured: !!product.is_featured,
     }));
 
-    return { products: formattedProducts };
+    // Cache first page results (8 products)
+    if (limit === 8 && offset === 0) {
+      const cacheKey = await getVersionedKey(CACHE_KEYS.PRODUCTS_PAGE_1);
+      await redis.set(cacheKey, formattedProducts, { ex: CACHE_TTL });
+    }
+
+    return { products: formattedProducts, fromCache };
   } catch (error) {
     throw new Error(`Error fetching products: ${error.message}`);
   }
@@ -208,6 +236,9 @@ export const createProduct = async (productData, userId) => {
       throw new Error("Failed to create product");
     }
 
+    // Invalidate all caches to ensure fresh data
+    await invalidateAllCaches();
+
     return uuid;
   } catch (error) {
     throw new Error(`Error creating product: ${error.message}`);
@@ -250,42 +281,21 @@ export const updateProductByUuid = async (uuid, body) => {
       `UPDATE
           products
         SET
-          updated_at = NOW(),
           p_cat_id = COALESCE(?, p_cat_id),
           name = COALESCE(?, name),
           description = COALESCE(?, description),
           price = COALESCE(?, price),
-          is_featured = COALESCE(?, is_featured)
+          is_featured = COALESCE(?, is_featured),
+          updated_at = NOW()
         WHERE
           uuid = ? AND is_active = 1`,
       [p_cat_id, name, description, price, isFeaturedValue, uuid]
     );
 
-    if (result.affectedRows === 0) {
-      const exists = await dbService.query(
-        `SELECT
-            id
-          FROM
-            products
-          WHERE
-            uuid = ?`,
-        [uuid]
-      );
+    // Invalidate all caches to ensure fresh data
+    await invalidateAllCaches();
 
-      if (!exists?.length) {
-        throw new Error("Product not found");
-      } else {
-        throw new Error(
-          "No changes made to the product or product is inactive"
-        );
-      }
-    }
-
-    const updatedProduct = await getProductByUuid(uuid);
-    return {
-      affectedRows: result.affectedRows,
-      data: updatedProduct,
-    };
+    return result;
   } catch (error) {
     throw new Error(`Error updating product: ${error.message}`);
   }
@@ -294,20 +304,37 @@ export const updateProductByUuid = async (uuid, body) => {
 // Soft-delete product (set inactive)
 export const deleteProductByUuid = async (uuid) => {
   try {
-    const result = await dbService.query(
-      `UPDATE
-          products p
-        SET
-          p.is_active = 0
+    // Check if product has active images
+    const productImages = await dbService.query(
+      `SELECT
+          COUNT(*) as image_count
+        FROM
+          product_images pi
+        JOIN
+          products p ON pi.p_id = p.id
         WHERE
-          p.uuid = ?
-          AND p.is_active = 1`,
+          p.uuid = ? AND pi.is_active = 1`,
       [uuid]
     );
 
-    if (!result || result.affectedRows === 0) {
-      throw new Error("Product not found or already inactive");
+    if (productImages[0].image_count > 0) {
+      throw new Error("Product has active images. Please delete them first.");
     }
+
+    // Set product as inactive
+    const result = await dbService.query(
+      `UPDATE 
+          products
+        SET
+          is_active = 0,
+          updated_at = NOW()
+        WHERE
+          uuid = ? AND is_active = 1`,
+      [uuid]
+    );
+
+    // Invalidate all caches to ensure fresh data
+    await invalidateAllCaches();
 
     return result;
   } catch (error) {

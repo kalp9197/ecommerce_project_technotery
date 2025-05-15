@@ -55,6 +55,13 @@ router.delete(
   productController.removeProductByUUID
 );
 
+// Cache management route - admin only
+router.post(
+  "/refresh-cache",
+  isAdmin,
+  productController.refreshCache
+);
+
 // Product image routes
 router.get(
   "/images/:productUuid",

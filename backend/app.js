@@ -17,6 +17,10 @@ import {
   wishlistRoutes,
 } from "./routes/index.js";
 
+// Import middlewares
+import { processCacheInvalidationEvents, refreshProductCache } from './middlewares/cacheInvalidation.js';
+import ProductService from './services/product.service.js';
+
 // Setup dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +43,14 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // DB connection and rate limiting
 dbService.testConnection();
 app.use(rateLimiter);
+
+// Initialize services and attach to app locals
+const productService = new ProductService();
+app.locals.productService = productService;
+
+// Add cache invalidation middleware to process events on each request
+app.use(processCacheInvalidationEvents);
+app.use(refreshProductCache);
 
 // API routes
 app.use("/api/users", userRoutes);

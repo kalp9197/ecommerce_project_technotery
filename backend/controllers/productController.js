@@ -1,6 +1,30 @@
 import { HTTP_STATUS } from "../constants/index.js";
 import * as productModel from "../models/productModel.js";
 
+// Refresh product cache - can be called when direct DB changes are made
+export const refreshCache = async (req, res) => {
+  try {
+    const result = await productModel.refreshProductCache();
+    
+    if (!result.success) {
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: result.message || "Failed to refresh cache",
+      });
+    }
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: "Product cache refreshed successfully",
+    });
+  } catch (error) {
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message || "An error occurred while refreshing cache",
+    });
+  }
+};
+
 // Get paginated product list
 export const getProducts = async (req, res) => {
   try {
@@ -27,8 +51,9 @@ export const getProducts = async (req, res) => {
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Products fetched successfully",
+      message: `Products fetched successfully from ${result.fromCache ? 'cache' : 'database'}`,
       data: result.products,
+      source: result.fromCache ? 'cache' : 'database'
     });
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
