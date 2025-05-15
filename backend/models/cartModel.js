@@ -79,8 +79,8 @@ export const getCartItems = async (userId) => {
 
     const items = await dbService.query(
       `SELECT
-         ci.id, ci.uuid as item_uuid, ci.quantity, ci.price, ci.is_active,
-         p.uuid AS product_uuid, p.name, p.price AS current_price,
+         ci.id, ci.uuid as item_uuid, ci.quantity, ci.is_active,
+         p.uuid AS product_uuid, p.name, p.price,
          pc.name AS category_name,
          pi.image_path AS image
        FROM
@@ -102,7 +102,6 @@ export const getCartItems = async (userId) => {
       items: items.map((item) => ({
         ...item,
         price: +item.price || 0,
-        current_price: +item.current_price || 0,
       })),
       total_items: cart.total_items,
       total_price: parseFloat(cart.total_price).toFixed(2),
@@ -119,15 +118,17 @@ const updateCartTotals = async (cartUuid, connection = null) => {
       ? dbService.queryWithConnection.bind(null, connection)
       : dbService.query;
 
-    // Calculate sum of items and total price
+    // Calculate sum of items and total price using current product prices
     const [totals] = await queryFn(
       `SELECT
         COUNT(*) AS total_items,
-        COALESCE(SUM(quantity * price), 0) AS total_price
+        COALESCE(SUM(ci.quantity * p.price), 0) AS total_price
        FROM
          cart_items ci
        JOIN
          cart c ON ci.cart_id = c.id
+       JOIN
+         products p ON ci.product_id = p.id
        WHERE
          c.uuid = ? AND ci.is_active = 1`,
       [cartUuid]
@@ -315,16 +316,17 @@ export const updateCartItem = async (userId, itemUuid, quantity) => {
       );
     }
 
-    // Update cart item quantity
+    // Update cart item quantity and price to match current product price
     await dbService.queryWithConnection(
       connection,
       `UPDATE
           cart_items
         SET
-          quantity = ?
+          quantity = ?,
+          price = ?
         WHERE
           uuid = ?`,
-      [quantity, item.uuid]
+      [quantity, item.price, item.uuid]
     );
 
     // Update product inventory if quantity changed
@@ -545,5 +547,62 @@ export const completeOrder = async (userId) => {
       await dbService.rollback(connection);
     }
     throw new Error(`Error completing order: ${error.message}`);
+  }
+};
+
+// Update cart item prices when product price changes
+export const updateCartItemPrices = async (productId, newPrice) => {
+  let connection;
+  try {
+    // Start transaction for atomicity
+    connection = await dbService.beginTransaction();
+
+    // Find all active cart items for this product
+    const cartItems = await dbService.queryWithConnection(
+      connection,
+      `SELECT
+         ci.id, ci.uuid, ci.cart_id, ci.quantity, c.uuid as cart_uuid
+       FROM
+         cart_items ci
+       JOIN
+         cart c ON ci.cart_id = c.id
+       WHERE
+         ci.product_id = ? AND ci.is_active = 1 AND c.is_active = 1
+       FOR UPDATE`,
+      [productId]
+    );
+
+    if (!cartItems.length) {
+      // No active cart items for this product, nothing to update
+      await dbService.commit(connection);
+      return { updated: 0 };
+    }
+
+    // Update all cart items with the new price
+    await dbService.queryWithConnection(
+      connection,
+      `UPDATE
+         cart_items
+       SET
+         price = ?
+       WHERE
+         product_id = ? AND is_active = 1`,
+      [newPrice, productId]
+    );
+
+    // Update cart totals for all affected carts
+    const cartUuids = [...new Set(cartItems.map((item) => item.cart_uuid))];
+    for (const cartUuid of cartUuids) {
+      await updateCartTotals(cartUuid, connection);
+    }
+
+    await dbService.commit(connection);
+    return { updated: cartItems.length };
+  } catch (error) {
+    // Rollback on any error
+    if (connection) {
+      await dbService.rollback(connection);
+    }
+    throw new Error(`Error updating cart item prices: ${error.message}`);
   }
 };
