@@ -304,7 +304,16 @@ export const updateProductByUuid = async (uuid, body, userId) => {
           updated_at = NOW()
         WHERE
           uuid = ? AND is_active = 1`,
-      [p_cat_id, name, sku, description, price, isFeaturedValue, userId, uuid]
+      [
+        p_cat_id,
+        name,
+        sku || null,
+        description,
+        price,
+        isFeaturedValue,
+        userId,
+        uuid,
+      ]
     );
 
     // Invalidate all caches to ensure fresh data
@@ -397,6 +406,77 @@ export const bulkCreateProducts = async (productsData, userId) => {
     return createdProductUuids;
   } catch (error) {
     throw new Error(`Error creating products: ${error.message}`);
+  }
+};
+
+// Get products by category UUID
+export const getProductsByCategory = async (categoryUuid, limit, offset) => {
+  try {
+    limit = Number(limit);
+    offset = Number(offset);
+
+    // First, verify the category exists and is active
+    const categoryResult = await dbService.query(`
+      SELECT
+        id
+      FROM
+        product_categories
+      WHERE
+        uuid = '${categoryUuid}' AND is_active = 1
+    `);
+
+    if (!categoryResult?.length || !categoryResult[0].id) {
+      throw new Error("Invalid or inactive product category");
+    }
+
+    const categoryId = categoryResult[0].id;
+
+    // Get products for this category
+    const products = await dbService.query(`
+      SELECT
+        p.*,
+        pc.name as category_name,
+        pc.uuid as category_uuid,
+        (SELECT pi.image_path
+          FROM product_images pi
+          WHERE pi.p_id = p.id AND pi.is_featured = 1 AND pi.is_active = 1
+          LIMIT 1) as featured_image
+      FROM
+        products p
+      JOIN
+        product_categories pc ON p.p_cat_id = pc.id
+      WHERE
+        p.is_active = 1 AND pc.is_active = 1 AND p.p_cat_id = ${categoryId}
+      ORDER BY
+        p.is_featured DESC,
+        p.id ASC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `);
+
+    // Get total count for pagination
+    const countResult = await dbService.query(`
+      SELECT
+        COUNT(*) as total
+      FROM
+        products p
+      WHERE
+        p.is_active = 1 AND p.p_cat_id = ${categoryId}
+    `);
+
+    const total = countResult[0]?.total || 0;
+
+    // Convert is_featured from 0/1 to boolean
+    const formattedProducts = products.map((product) => ({
+      ...product,
+      is_featured: !!product.is_featured,
+    }));
+
+    return {
+      products: formattedProducts,
+    };
+  } catch (error) {
+    throw new Error(`Error fetching products by category: ${error.message}`);
   }
 };
 

@@ -217,6 +217,51 @@ export const removeProductByUUID = async (req, res) => {
   }
 };
 
+// Get products by category
+export const getProductsByCategory = async (req, res) => {
+  try {
+    const { uuid } = req.params;
+    let { page = 1, limit = 10 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid page or limit value",
+      });
+    }
+
+    const offset = (page - 1) * limit;
+    const result = await productModel.getProductsByCategory(
+      uuid,
+      limit,
+      offset
+    );
+
+    if (!result.products?.length) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        success: false,
+        message: "No products found in this category",
+      });
+    }
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: "Products fetched successfully",
+      data: result.products,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message:
+        error.message ||
+        "An error occurred while fetching products by category",
+    });
+  }
+};
+
 // Get recommended products for a specific product
 export const getRecommendedProducts = async (req, res) => {
   try {

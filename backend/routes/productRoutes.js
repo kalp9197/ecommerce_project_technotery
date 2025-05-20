@@ -28,6 +28,14 @@ router.get(
   validation.validate(validation.productUuidParam),
   productController.getRecommendedProducts
 );
+router.get(
+  "/category/:uuid",
+  validation.validate([
+    ...validation.categoryUuidParamForProducts,
+    ...validation.paginationSchema,
+  ]),
+  productController.getProductsByCategory
+);
 
 // Require authentication for all routes below
 router.use(authenticate);

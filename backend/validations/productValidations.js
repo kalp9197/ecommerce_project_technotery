@@ -103,7 +103,9 @@ export const imageUpdateSchema = [
     .isBoolean()
     .withMessage("is_active must be a boolean value"),
 
-  body("image_path")
-    .isString()
-    .withMessage("Image path must be a string"),
+  body("image_path").isString().withMessage("Image path must be a string"),
+];
+
+export const categoryUuidParamForProducts = [
+  param("uuid").isUUID(4).withMessage("Category UUID must be a valid UUID v4"),
 ];
