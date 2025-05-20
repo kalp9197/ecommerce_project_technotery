@@ -44,7 +44,7 @@ router.put(
   isAdmin,
   validation.validate([
     ...validation.productUuidParam,
-    ...validation.productSchema.map((val) => val.optional()),
+    ...validation.productSchema,
   ]),
   productController.updateProductByUUID
 );
@@ -56,11 +56,7 @@ router.delete(
 );
 
 // Cache management route - admin only
-router.post(
-  "/refresh-cache",
-  isAdmin,
-  productController.refreshCache
-);
+router.post("/refresh-cache", isAdmin, productController.refreshCache);
 
 // Product image routes
 router.get(
