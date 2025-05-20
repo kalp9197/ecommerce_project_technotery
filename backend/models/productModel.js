@@ -101,7 +101,7 @@ export const searchProducts = async (params) => {
 
     // Build dynamic WHERE clause based on search parameters
     if (search.trim()) {
-      where += ` AND (p.name LIKE '%${search.trim()}%' )`;
+      where += ` AND (p.name LIKE '%${search.trim()}%' OR p.sku LIKE '%${search.trim()}%')`;
     }
     if (!isNaN(minPrice) && minPrice !== "") {
       where += ` AND p.price >= ${Number(minPrice)}`;
@@ -157,6 +157,7 @@ export const getProductByUuid = async (uuid) => {
           p.id AS product_id,
           p.uuid,
           p.name,
+          p.sku,
           p.description,
           p.price,
           p.is_featured,
@@ -182,6 +183,7 @@ export const getProductByUuid = async (uuid) => {
       id: row.product_id,
       uuid: row.uuid,
       name: row.name,
+      sku: row.sku,
       description: row.description,
       price: row.price,
       is_featured: !!row.is_featured,
@@ -198,6 +200,7 @@ export const createProduct = async (productData, userId) => {
     const {
       p_cat_uuid,
       name,
+      sku,
       description,
       price,
       quantity = 0,
@@ -225,13 +228,14 @@ export const createProduct = async (productData, userId) => {
     // Insert new product
     const result = await dbService.query(
       `INSERT INTO
-          products (uuid, p_cat_id, name, description, price, quantity, is_featured, is_active, created_by, updated_by)
+          products (uuid, p_cat_id, name, sku, description, price, quantity, is_featured, is_active, created_by, updated_by)
         VALUES
-          (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
       [
         uuid,
         p_cat_id,
         name,
+        sku || null,
         description || "",
         price,
         quantity,
@@ -257,7 +261,7 @@ export const createProduct = async (productData, userId) => {
 // Update existing product data
 export const updateProductByUuid = async (uuid, body, userId) => {
   try {
-    const { p_cat_uuid, name, description, price, is_featured } = body;
+    const { p_cat_uuid, name, sku, description, price, is_featured } = body;
 
     let p_cat_id = null;
     // Get category ID from UUID if provided
@@ -292,6 +296,7 @@ export const updateProductByUuid = async (uuid, body, userId) => {
         SET
           p_cat_id = COALESCE(?, p_cat_id),
           name = COALESCE(?, name),
+          sku = COALESCE(?, sku),
           description = COALESCE(?, description),
           price = COALESCE(?, price),
           is_featured = COALESCE(?, is_featured),
@@ -299,7 +304,7 @@ export const updateProductByUuid = async (uuid, body, userId) => {
           updated_at = NOW()
         WHERE
           uuid = ? AND is_active = 1`,
-      [p_cat_id, name, description, price, isFeaturedValue, userId, uuid]
+      [p_cat_id, name, sku, description, price, isFeaturedValue, userId, uuid]
     );
 
     // Invalidate all caches to ensure fresh data
@@ -483,6 +488,7 @@ export const ensureProductsTable = async () => {
       uuid        VARCHAR(36) NOT NULL UNIQUE,
       p_cat_id    INT         NOT NULL,
       name        VARCHAR(100) NOT NULL,
+      sku         VARCHAR(50)  UNIQUE,
       description VARCHAR(255),
       price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       quantity    INT           NOT NULL DEFAULT 0,
@@ -505,6 +511,19 @@ export const ensureProductsTable = async () => {
         ALTER TABLE products
         ADD COLUMN is_featured BOOLEAN NOT NULL DEFAULT FALSE
         AFTER quantity
+      `);
+    }
+
+    // Check if sku column exists, if not add it
+    const skuColumn = await dbService.query(`
+      SHOW COLUMNS FROM products LIKE 'sku'
+    `);
+
+    if (skuColumn.length === 0) {
+      await dbService.query(`
+        ALTER TABLE products
+        ADD COLUMN sku VARCHAR(50) UNIQUE
+        AFTER name
       `);
     }
   } catch (error) {

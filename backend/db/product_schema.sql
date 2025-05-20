@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS products (
   uuid        VARCHAR(36) NOT NULL UNIQUE,
   p_cat_id    INT         NOT NULL,
   name        VARCHAR(100) NOT NULL,
+  sku         VARCHAR(50)  UNIQUE,
   description VARCHAR(255),
   price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   quantity    INT           NOT NULL DEFAULT 0,

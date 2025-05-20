@@ -72,23 +72,25 @@ export const saveProductWithImages = async (data, images = [], conn = null) => {
           products
         SET
           quantity = ?,
+          sku = COALESCE(?, sku),
           updated_by = COALESCE(?, updated_by),
           updated_at = NOW()
         WHERE
           id = ?`,
-      [qty, data.userId, id]
+      [qty, data.sku, data.userId, id]
     );
   } else {
     // Create new product record
     const result = await run(
       `INSERT INTO
-          products (uuid, p_cat_id, name, description, price, quantity, is_active, created_by, updated_by)
+          products (uuid, p_cat_id, name, sku, description, price, quantity, is_active, created_by, updated_by)
         VALUES
-          (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
       [
         uuid,
         category.id,
         data.name,
+        data.sku,
         data.description || "",
         data.price,
         data.quantity || 0,
@@ -137,6 +139,7 @@ export const saveProductWithImages = async (data, images = [], conn = null) => {
     id,
     uuid,
     name: data.name,
+    sku: product.sku || data.sku || "",
     description: data.description || "",
     price: data.price,
     quantity: product.quantity,

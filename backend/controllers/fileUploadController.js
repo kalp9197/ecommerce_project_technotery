@@ -153,6 +153,7 @@ export const uploadFiles = async (req, res) => {
                   description: product.description || "",
                   price: parseFloat(product.price || 0),
                   quantity: parseInt(product.quantity || 0, 10),
+                  sku: product.sku || "",
                   userId: req.user?.id, // Add user ID for tracking who uploaded
                 },
                 images: productImages,
