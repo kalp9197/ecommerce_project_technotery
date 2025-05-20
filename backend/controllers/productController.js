@@ -5,7 +5,7 @@ import * as productModel from "../models/productModel.js";
 export const refreshCache = async (req, res) => {
   try {
     const result = await productModel.refreshProductCache();
-    
+
     if (!result.success) {
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
@@ -51,9 +51,11 @@ export const getProducts = async (req, res) => {
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: `Products fetched successfully from ${result.fromCache ? 'cache' : 'database'}`,
+      message: `Products fetched successfully from ${
+        result.fromCache ? "cache" : "database"
+      }`,
       data: result.products,
-      source: result.fromCache ? 'cache' : 'database'
+      source: result.fromCache ? "cache" : "database",
     });
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -151,7 +153,8 @@ export const updateProductByUUID = async (req, res) => {
   try {
     const updatedProduct = await productModel.updateProductByUuid(
       req.params.uuid,
-      req.body
+      req.body,
+      req.user?.id
     );
 
     if (!updatedProduct || updatedProduct.affectedRows === 0) {
@@ -184,7 +187,8 @@ export const updateProductByUUID = async (req, res) => {
 export const removeProductByUUID = async (req, res) => {
   try {
     const deletedProduct = await productModel.deleteProductByUuid(
-      req.params.uuid
+      req.params.uuid,
+      req.user?.id
     );
 
     if (!deletedProduct || deletedProduct.affectedRows === 0) {

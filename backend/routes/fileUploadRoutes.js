@@ -2,6 +2,8 @@ import express from "express";
 import { uploadFiles } from "../controllers/fileUploadController.js";
 import fileUpload from "express-fileupload";
 import * as validation from "../validations/index.js";
+import { authenticate } from "../middlewares/auth.js";
+import { isAdmin } from "../middlewares/adminAuth.js";
 
 const router = express.Router();
 
@@ -17,8 +19,11 @@ router.use(
   })
 );
 
+// Require authentication and admin role for file uploads
 router.post(
   "/upload",
+  authenticate,
+  isAdmin,
   validation.validate(validation.fileUploadSchema),
   uploadFiles
 );

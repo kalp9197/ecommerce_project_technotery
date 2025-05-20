@@ -1,6 +1,12 @@
 import { dbService } from "../services/index.js";
 import { v4 as uuidv4 } from "uuid";
-import { redis, CACHE_TTL, CACHE_KEYS, getVersionedKey, invalidateAllCaches } from "../config/index.js";
+import {
+  redis,
+  CACHE_TTL,
+  CACHE_KEYS,
+  getVersionedKey,
+  invalidateAllCaches,
+} from "../config/index.js";
 
 // Manually refresh cache - can be called from API to force refresh
 export const refreshProductCache = async () => {
@@ -8,7 +14,10 @@ export const refreshProductCache = async () => {
     await invalidateAllCaches();
     return { success: true, message: "Product cache refreshed successfully" };
   } catch (error) {
-    return { success: false, message: `Failed to refresh cache: ${error.message}` };
+    return {
+      success: false,
+      message: `Failed to refresh cache: ${error.message}`,
+    };
   }
 };
 
@@ -246,7 +255,7 @@ export const createProduct = async (productData, userId) => {
 };
 
 // Update existing product data
-export const updateProductByUuid = async (uuid, body) => {
+export const updateProductByUuid = async (uuid, body, userId) => {
   try {
     const { p_cat_uuid, name, description, price, is_featured } = body;
 
@@ -286,10 +295,11 @@ export const updateProductByUuid = async (uuid, body) => {
           description = COALESCE(?, description),
           price = COALESCE(?, price),
           is_featured = COALESCE(?, is_featured),
+          updated_by = ?,
           updated_at = NOW()
         WHERE
           uuid = ? AND is_active = 1`,
-      [p_cat_id, name, description, price, isFeaturedValue, uuid]
+      [p_cat_id, name, description, price, isFeaturedValue, userId, uuid]
     );
 
     // Invalidate all caches to ensure fresh data
@@ -302,7 +312,7 @@ export const updateProductByUuid = async (uuid, body) => {
 };
 
 // Soft-delete product (set inactive)
-export const deleteProductByUuid = async (uuid) => {
+export const deleteProductByUuid = async (uuid, userId) => {
   try {
     // Check if product has active images
     const productImages = await dbService.query(
@@ -323,14 +333,15 @@ export const deleteProductByUuid = async (uuid) => {
 
     // Set product as inactive
     const result = await dbService.query(
-      `UPDATE 
+      `UPDATE
           products
         SET
           is_active = 0,
+          updated_by = ?,
           updated_at = NOW()
         WHERE
           uuid = ? AND is_active = 1`,
-      [uuid]
+      [userId, uuid]
     );
 
     // Invalidate all caches to ensure fresh data

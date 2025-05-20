@@ -16,25 +16,43 @@ if (!fs.existsSync(uploadsDir)) {
 
 export const uploadFiles = async (req, res) => {
   try {
+    // Check if req.files exists
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: "No files were uploaded",
+      });
+    }
+
+    let csvFile = null;
+    let zipFile = null;
+
+    // Try to find CSV and ZIP files in the request
     if (!req.files.csv || !req.files.zip) {
       const fileKeys = Object.keys(req.files);
-      let csvFile = null;
-      let zipFile = null;
 
       for (const key of fileKeys) {
         if (Array.isArray(req.files[key])) {
           for (const file of req.files[key]) {
-            if (file.name.toLowerCase().endsWith(".csv")) {
+            if (file && file.name && file.name.toLowerCase().endsWith(".csv")) {
               csvFile = file;
-            } else if (file.name.toLowerCase().endsWith(".zip")) {
+            } else if (
+              file &&
+              file.name &&
+              file.name.toLowerCase().endsWith(".zip")
+            ) {
               zipFile = file;
             }
           }
         } else {
           const file = req.files[key];
-          if (file.name.toLowerCase().endsWith(".csv")) {
+          if (file && file.name && file.name.toLowerCase().endsWith(".csv")) {
             csvFile = file;
-          } else if (file.name.toLowerCase().endsWith(".zip")) {
+          } else if (
+            file &&
+            file.name &&
+            file.name.toLowerCase().endsWith(".zip")
+          ) {
             zipFile = file;
           }
         }
@@ -44,10 +62,35 @@ export const uploadFiles = async (req, res) => {
         req.files.csv = csvFile;
         req.files.zip = zipFile;
       }
+    } else {
+      csvFile = req.files.csv;
+      zipFile = req.files.zip;
     }
 
-    const csvFile = req.files.csv;
-    const zipFile = req.files.zip;
+    // Validate that both files exist
+    if (!csvFile || !zipFile) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: "Both CSV and ZIP files are required",
+        debug: {
+          filesReceived: Object.keys(req.files),
+          csvFound: !!csvFile,
+          zipFound: !!zipFile,
+        },
+      });
+    }
+
+    // Validate that both files have names
+    if (!csvFile.name || !zipFile.name) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: "File objects must have valid names",
+        debug: {
+          csvHasName: !!csvFile.name,
+          zipHasName: !!zipFile.name,
+        },
+      });
+    }
 
     const timestamp = Date.now();
     const csvPath = path.join(uploadsDir, `${timestamp}_${csvFile.name}`);
@@ -110,6 +153,7 @@ export const uploadFiles = async (req, res) => {
                   description: product.description || "",
                   price: parseFloat(product.price || 0),
                   quantity: parseInt(product.quantity || 0, 10),
+                  userId: req.user?.id, // Add user ID for tracking who uploaded
                 },
                 images: productImages,
               });
@@ -142,10 +186,12 @@ export const uploadFiles = async (req, res) => {
       products: savedProducts,
     });
   } catch (error) {
+    console.error("File upload error:", error);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Internal server error",
       error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
