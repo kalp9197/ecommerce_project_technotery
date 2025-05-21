@@ -1,5 +1,6 @@
 import * as cartModel from "../models/cartModel.js";
 import { HTTP_STATUS } from "../constants/index.js";
+import { trackEvent } from "../controllers/userAnalyticsController.js";
 
 // Retrieve user's cart contents
 export const getUserCart = async (req, res) => {
@@ -27,6 +28,11 @@ export const addItemToCart = async (req, res) => {
     const { product_uuid, quantity = 1 } = req.body;
 
     await cartModel.addToCart(userId, product_uuid, quantity);
+
+    await trackEvent(userId, "add_to_cart", {
+      productUuid: product_uuid,
+      quantity,
+    });
 
     res.status(HTTP_STATUS.CREATED).json({
       success: true,
@@ -83,9 +89,25 @@ export const updateCartItem = async (req, res) => {
 export const deactivateCartItem = async (req, res) => {
   try {
     const userId = req.user.id;
-    const productUuid = req.params.uuid;
+    const cartItemUuid = req.params.uuid;
 
-    await cartModel.deactivateCartItem(userId, productUuid);
+    const cart = await cartModel.getCartItems(userId);
+    const cartItem = cart.items.find((item) => item.item_uuid === cartItemUuid);
+
+    const productInfo = cartItem
+      ? {
+          productUuid: cartItem.product_uuid,
+          quantity: cartItem.quantity
+        }
+      : null;
+
+    await cartModel.deactivateCartItem(userId, cartItemUuid);
+    if (productInfo) {
+      await trackEvent(userId, "remove_from_cart", {
+        productUuid: productInfo.productUuid,
+        quantity: productInfo.quantity
+      });
+    }
 
     res.status(HTTP_STATUS.OK).json({
       success: true,

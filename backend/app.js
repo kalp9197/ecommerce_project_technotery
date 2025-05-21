@@ -15,11 +15,15 @@ import {
   fileUploadRoutes,
   emailTestRoutes,
   wishlistRoutes,
+  userAnalyticsRoutes,
 } from "./routes/index.js";
 
 // Import middlewares
-import { processCacheInvalidationEvents, refreshProductCache } from './middlewares/cacheInvalidation.js';
-import ProductService from './services/product.service.js';
+import {
+  processCacheInvalidationEvents,
+  refreshProductCache,
+} from "./middlewares/cacheInvalidation.js";
+import ProductService from "./services/product.service.js";
 
 // Setup dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -62,6 +66,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/files", fileUploadRoutes);
 app.use("/api/email-test", emailTestRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/analytics", userAnalyticsRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {

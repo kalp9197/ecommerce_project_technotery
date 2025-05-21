@@ -10,3 +10,4 @@ export * from "./reviewValidations.js";
 export * from "./fileUploadValidations.js";
 export * from "./emailValidations.js";
 export * from "./wishlistValidations.js";
+export * from "./userAnalyticsValidations.js";

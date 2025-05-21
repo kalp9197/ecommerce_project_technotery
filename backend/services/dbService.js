@@ -43,6 +43,10 @@ export const initializeTables = async () => {
       "../models/wishlistModel.js"
     );
 
+    const { ensureUserAnalyticsTable } = await import(
+      "../models/userAnalyticsModel.js"
+    );
+
     // Create tables in the correct order (respecting foreign key constraints)
     await ensureUsersTable();
     await ensureUserTokensTable();
@@ -54,6 +58,7 @@ export const initializeTables = async () => {
     await ensureProductReviewsTable();
     await ensureWishlistTable();
     await ensureWishlistItemsTable();
+    await ensureUserAnalyticsTable();
 
     console.log("All database tables initialized successfully");
     return true;

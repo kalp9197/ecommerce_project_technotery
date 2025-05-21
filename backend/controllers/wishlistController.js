@@ -1,5 +1,6 @@
 import * as wishlistModel from "../models/wishlistModel.js";
 import { HTTP_STATUS } from "../constants/index.js";
+import { trackEvent } from "../controllers/userAnalyticsController.js";
 
 // Get user's wishlist
 export const getUserWishlist = async (req, res) => {
@@ -28,6 +29,10 @@ export const addToWishlist = async (req, res) => {
 
     const result = await wishlistModel.addToWishlist(userId, product_uuid);
 
+    await trackEvent(userId, "add_to_wishlist", {
+      productUuid: product_uuid,
+    });
+
     res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: "Product added to wishlist successfully",
@@ -40,14 +45,14 @@ export const addToWishlist = async (req, res) => {
         message: error.message,
       });
     }
-    
+
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: error.message,
       });
     }
-    
+
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "Internal server error",
@@ -61,7 +66,21 @@ export const removeFromWishlist = async (req, res) => {
     const userId = req.user.id;
     const { uuid } = req.params;
 
+    const wishlist = await wishlistModel.getWishlistItems(userId);
+    const wishlistItem = wishlist.items.find((item) => item.item_uuid === uuid);
+
+    const productInfo = wishlistItem
+      ? {
+          productUuid: wishlistItem.product_uuid
+        }
+      : null;
+
     await wishlistModel.removeFromWishlist(userId, uuid);
+    if (productInfo) {
+      await trackEvent(userId, "remove_from_wishlist", {
+        productUuid: productInfo.productUuid
+      });
+    }
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
@@ -74,7 +93,7 @@ export const removeFromWishlist = async (req, res) => {
         message: error.message,
       });
     }
-    
+
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "Internal server error",
@@ -100,7 +119,7 @@ export const clearWishlist = async (req, res) => {
         message: error.message,
       });
     }
-    
+
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "Internal server error",
@@ -114,7 +133,10 @@ export const checkProductInWishlist = async (req, res) => {
     const userId = req.user.id;
     const { product_uuid } = req.params;
 
-    const isInWishlist = await wishlistModel.isProductInWishlist(userId, product_uuid);
+    const isInWishlist = await wishlistModel.isProductInWishlist(
+      userId,
+      product_uuid
+    );
 
     res.status(HTTP_STATUS.OK).json({
       success: true,

@@ -7,3 +7,4 @@ export * as productModel from "./productModel.js";
 export * as productReviewModel from "./productReviewModel.js";
 export * as userModel from "./userModel.js";
 export * as wishlistModel from "./wishlistModel.js";
+export * as userAnalyticsModel from "./userAnalyticsModel.js";
