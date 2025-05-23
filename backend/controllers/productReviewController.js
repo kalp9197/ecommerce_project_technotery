@@ -85,14 +85,10 @@ export const createReview = async (req, res) => {
     );
 
     if (!reviewUuid) {
+      // Could not create review for an unknown reason
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: `An error occurred while creating the review : ${error.message}`,
-      });
-    } else if (error.message.includes("already reviewed")) {
-      return res.status(HTTP_STATUS.CONFLICT).json({
-        success: false,
-        message: `An error occurred while creating the review : ${error.message}`,
+        message: "An error occurred while creating the review.",
       });
     }
 
@@ -105,20 +101,20 @@ export const createReview = async (req, res) => {
     if (error.message.includes("already reviewed")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
-        message: `An error occurred while creating the review : ${error.message}`,
+        message: `An error occurred while creating the review: ${error.message}`,
       });
     }
 
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: `An error occurred while creating the review : ${error.message}`,
+        message: `An error occurred while creating the review: ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `An error occurred while creating the review : ${error.message}`,
+      message: `An error occurred while creating the review: ${error.message}`,
     });
   }
 };

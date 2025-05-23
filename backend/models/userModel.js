@@ -26,6 +26,27 @@ export const ensureUsersTable = async () => {
   }
 };
 
+// Initialize temp_users table if not exists
+export const ensureTempUsersTable = async () => {
+  try {
+    await dbService.query(`
+    CREATE TABLE IF NOT EXISTS temp_users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      uuid VARCHAR(36) NOT NULL UNIQUE,
+      name VARCHAR(100) NOT NULL,
+      email VARCHAR(100) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      verification_token VARCHAR(255) NOT NULL,
+      is_verified BOOLEAN DEFAULT FALSE,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`);
+  } catch (error) {
+    throw new Error(`Error creating temp_users table: ${error.message}`);
+  }
+};
+
 // Initialize user_tokens table if not exists
 export const ensureUserTokensTable = async () => {
   try {
@@ -113,85 +134,48 @@ export const getUserByEmail = async (body) => {
   }
 };
 
-// Create email verification token
-export const generateVerificationToken = async (userId) => {
-  try {
-    // Generate cryptographically secure random token
-    const token = crypto.randomBytes(32).toString("hex");
-    const expires = new Date();
-    expires.setHours(expires.getHours() + 24);
-    const tokenUuid = uuidv4();
-
-    // Invalidate any existing verification tokens for this user
-    await dbService.query(
-      `UPDATE
-          user_tokens
-        SET
-          is_expired = 1
-        WHERE
-          user_id = ? AND verification_token IS NOT NULL`,
-      [userId]
-    );
-
-    const result = await dbService.query(
-      `INSERT INTO
-          user_tokens (uuid, user_id, expires_at, is_expired, verification_token, verification_token_expires)
-        VALUES
-          (?, ?, ?, 0, ?, ?)`,
-      [tokenUuid, userId, expires, token, expires]
-    );
-
-    if (!result?.affectedRows)
-      throw new Error("Verification token creation failed");
-
-    return token;
-  } catch (error) {
-    throw new Error(`Token generation failed: ${error.message}`);
-  }
-};
-
 // Confirm user email with token
 export const verifyEmail = async (token) => {
   try {
-    // Verify token is valid, not expired, and belongs to an active user
-    const tokenData = await dbService.query(
-      `SELECT
-          ut.user_id,
-          u.uuid
-        FROM
-          user_tokens ut
-        JOIN
-          users u ON ut.user_id = u.id
-        WHERE
-          ut.verification_token = ? AND ut.verification_token_expires > NOW() AND ut.is_expired = 0`,
+    const [tempUser] = await dbService.query(
+      `SELECT * FROM temp_users WHERE verification_token = ? AND is_verified = 0 AND expires_at > NOW()`,
       [token]
     );
 
-    if (!tokenData?.length) throw new Error("Invalid or expired token");
+    if (!tempUser) throw new Error("Invalid or expired verification token.");
 
-    // Mark user email as verified
-    await dbService.query(
-      `UPDATE
-          users
-        SET
-          email_verified = 1
-        WHERE
-          id = ?`,
-      [tokenData[0].user_id]
-    );
+    // Start transaction
+    const connection = await dbService.beginTransaction();
+    let userUuid;
+    try {
+      // Insert into users table
+      const createUserResult = await dbService.queryWithConnection(
+        connection,
+        `INSERT INTO users (uuid, name, email, password, is_active, is_admin, email_verified) VALUES (?, ?, ?, ?, 1, 0, 1)`,
+        [tempUser.uuid, tempUser.name, tempUser.email, tempUser.password]
+      );
 
-    // Invalidate the used token
-    await dbService.query(
-      `UPDATE
-          user_tokens
-        SET
-          is_expired = 1
-        WHERE
-          user_id = ? AND verification_token IS NOT NULL`,
-      [tokenData[0].user_id]
-    );
+      if (!createUserResult?.affectedRows) {
+        throw new Error("Failed to create user during verification");
+      }
+      userUuid = tempUser.uuid;
 
-    return tokenData[0].uuid;
+      // Mark temp_user as verified
+      await dbService.queryWithConnection(
+        connection,
+        `UPDATE temp_users SET is_verified = 1 WHERE id = ?`,
+        [tempUser.id]
+      );
+
+      await dbService.commit(connection);
+    } catch (transactionError) {
+      await dbService.rollback(connection);
+      throw new Error(
+        `Verification process failed: ${transactionError.message}`
+      );
+    }
+
+    return userUuid;
   } catch (error) {
     throw new Error(`Verification failed: ${error.message}`);
   }
@@ -200,49 +184,51 @@ export const verifyEmail = async (token) => {
 // Register new user account
 export const createUser = async (body) => {
   try {
-    const { name, email, password, is_admin } = body;
+    const { name, email, password } = body;
+
+    // Check if email already exists in users table (verified user)
+    const [existingVerifiedUser] = await dbService.query(
+      `SELECT id FROM users WHERE email = ? AND email_verified = 1`,
+      [email]
+    );
+    if (existingVerifiedUser) {
+      throw new Error("User with this email already exists and is verified.");
+    }
+
+    // If email exists in temp_users and is not verified, delete it to allow re-registration
+    await dbService.query(
+      `DELETE FROM temp_users WHERE email = ? AND is_verified = 0`,
+      [email]
+    );
+
     const uuid = uuidv4();
-    // Securely hash password with salt
     const hashedPassword = await bcrypt.hash(
       password,
       await bcrypt.genSalt(10)
     );
-    const adminStatus = is_admin === 1 || is_admin === true ? 1 : 0;
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
 
     const result = await dbService.query(
-      `INSERT INTO
-          users (uuid, name, email, password, is_active, is_admin, email_verified)
-        VALUES
-          (?, ?, ?, ?, 1, ?, 0)`,
-      [uuid, name, email, hashedPassword, adminStatus]
+      `INSERT INTO temp_users (uuid, name, email, password, verification_token, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [uuid, name, email, hashedPassword, verificationToken, expiresAt]
     );
 
     if (!result?.affectedRows) {
-      throw new Error("Failed to create user");
+      throw new Error("Failed to create temporary user entry.");
     }
 
-    // Create verification token for email confirmation
-    const userData = await dbService.query(
-      `SELECT
-          id
-        FROM
-          users
-        WHERE
-          uuid = ?`,
-      [uuid]
-    );
-    if (userData?.length) {
-      await generateVerificationToken(userData[0].id);
-    }
-
-    return uuid;
+    return { uuid, name, email, verification_token: verificationToken };
   } catch (error) {
     // Check for email uniqueness constraint violation
     if (
       error.message.includes("Duplicate entry") &&
       error.message.includes("email")
     ) {
-      throw new Error("Email already in use");
+      throw new Error("Email already in use for a temporary registration.");
     }
     throw new Error(`Error creating user: ${error.message}`);
   }
@@ -545,29 +531,42 @@ export const refreshToken = async (tokenId) => {
 // Resend verification email to user
 export const resendVerificationEmail = async (email) => {
   try {
-    const users = await dbService.query(
-      `SELECT
-          id,
-          uuid,
-          name,
-          email_verified
-        FROM
-          users
-        WHERE
-          email = ? AND is_active = 1`,
+    // Check if user is already verified in the main users table
+    const [verifiedUser] = await dbService.query(
+      `SELECT id, name, email_verified FROM users WHERE email = ? AND is_active = 1`,
       [email]
     );
 
-    if (!users?.length) throw new Error("User not found");
-    if (users[0].email_verified === 1) {
+    if (verifiedUser && verifiedUser.email_verified) {
       throw new Error("Email is already verified");
     }
 
-    const token = await generateVerificationToken(users[0].id);
+    // Check temp_users for an unverified registration
+    const [tempUser] = await dbService.query(
+      `SELECT id, uuid, name FROM temp_users WHERE email = ? AND is_verified = 0`,
+      [email]
+    );
+
+    if (!tempUser) {
+      throw new Error(
+        "No pending registration found for this email, or registration expired. Please register again."
+      );
+    }
+
+    // Generate new token and expiry for temp_user
+    const newVerificationToken = crypto.randomBytes(32).toString("hex");
+    const newExpiresAt = new Date();
+    newExpiresAt.setHours(newExpiresAt.getHours() + 24);
+
+    await dbService.query(
+      `UPDATE temp_users SET verification_token = ?, expires_at = ? WHERE id = ?`,
+      [newVerificationToken, newExpiresAt, tempUser.id]
+    );
+
     return {
-      userUuid: users[0].uuid,
-      name: users[0].name,
-      token,
+      userUuid: tempUser.uuid, // or tempUser.uuid
+      name: tempUser.name,
+      token: newVerificationToken,
     };
   } catch (error) {
     throw new Error(`Failed to resend: ${error.message}`);

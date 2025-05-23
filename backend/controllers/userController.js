@@ -15,10 +15,10 @@ export const register = async (req, res) => {
       data: { email: result.user.email, email_verified: false },
     });
   } catch (error) {
-    if (error.message.includes("already exists")) {
+    if (error.message.includes("already exists") || error.message.includes("Verification pending")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
-        message: "User with this email already exists",
+        message: error.message,
       });
     }
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -35,7 +35,7 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "An error occurred while logging in",
+        message: "Invalid email or password.",
       });
     }
 
@@ -46,7 +46,7 @@ export const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message: "An error occurred while logging in",
+        message: "Invalid email or password.",
       });
     }
 
@@ -63,7 +63,7 @@ export const login = async (req, res) => {
     if (!tokenData) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message: "An error occurred while logging in",
+        message: "Failed to generate token.",
       });
     }
 
@@ -76,7 +76,7 @@ export const login = async (req, res) => {
       user: {
         email: user.email,
         is_admin: user.is_admin === 1,
-        email_verified: true,
+        email_verified: user.email_verified === 1,
       },
     });
   } catch (error) {
@@ -149,7 +149,13 @@ export const refreshToken = async (req, res) => {
     if (token) {
       try {
         decodedToken = jwt.decode(token);
-      } catch (e) {}
+      } catch (error) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: `Invalid token : ${error.message}`,
+          requiresLogin: true,
+        });
+      }
 
       if (!tokenId) {
         tokenInfo = await dbService.query(

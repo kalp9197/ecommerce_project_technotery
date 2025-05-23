@@ -94,7 +94,7 @@ export const addProductImageByProductUuid = async (productUuid, imageData) => {
 
     // Process base64 image if provided
     if (image_path && image_path.startsWith("data:image/")) {
-      const matches = image_path.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      const matches = image_path.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
 
       if (matches && matches.length === 3) {
         // Extract image data and type
@@ -183,7 +183,7 @@ export const updateProductImageByUuid = async (uuid, imageData) => {
 
     // Process new image if provided in base64 format
     if (image_path && image_path.startsWith("data:image/")) {
-      const matches = image_path.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      const matches = image_path.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
 
       if (matches && matches.length === 3) {
         // Extract image data and type

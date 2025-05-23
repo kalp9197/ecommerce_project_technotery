@@ -1,5 +1,10 @@
-import { pool } from '../config/db.config.js';
-import { redis, CACHE_KEYS, getVersionedKey, CACHE_TTL } from '../config/redis.js';
+import { pool } from "../config/db.config.js";
+import {
+  redis,
+  CACHE_KEYS,
+  getVersionedKey,
+  CACHE_TTL,
+} from "../config/redis.js";
 
 // Service for handling product-related operations
 class ProductService {
@@ -17,16 +22,16 @@ class ProductService {
          LIMIT ? OFFSET ?`,
         [limit, offset]
       );
-      
+
       // Fetch images for these products
       await this.attachProductImages(products);
-  
+
       return products;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
-  
+
   // Get featured products from database
   async getFeaturedProductsFromDb(limit = 4) {
     try {
@@ -41,23 +46,23 @@ class ProductService {
          LIMIT ?`,
         [limit]
       );
-      
+
       // Fetch images for these products
       await this.attachProductImages(products);
-  
+
       return products;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
-  
+
   // Helper method to attach product images
   async attachProductImages(products) {
     if (products && products.length > 0) {
       try {
         // Get all product IDs
-        const productIds = products.map(p => p.id);
-        
+        const productIds = products.map((p) => p.id);
+
         // Only run the query if we have product IDs
         if (productIds.length > 0) {
           // Try to fetch images
@@ -68,31 +73,31 @@ class ProductService {
              AND is_active = true`,
             [productIds]
           );
-          
+
           // Group images by product_id
           const productImages = {};
           if (imageResults && imageResults.length > 0) {
-            imageResults.forEach(img => {
+            imageResults.forEach((img) => {
               if (!productImages[img.product_id]) {
                 productImages[img.product_id] = [];
               }
               productImages[img.product_id].push(img.image_url);
             });
-            
+
             // Add images to products
-            products.forEach(product => {
+            products.forEach((product) => {
               product.images = productImages[product.id] || [];
             });
           } else {
             // If no images found, set empty arrays
-            products.forEach(product => {
+            products.forEach((product) => {
               product.images = [];
             });
           }
         }
-      } catch (error) {
+      } catch {
         // If there's an error with images, set empty arrays
-        products.forEach(product => {
+        products.forEach((product) => {
           product.images = [];
         });
       }
@@ -104,56 +109,56 @@ class ProductService {
     try {
       // Get the versioned cache key
       const versionedKey = await getVersionedKey(CACHE_KEYS.PRODUCTS_PAGE_1);
-      
+
       // Try to get from cache first
       const cachedData = await redis.get(versionedKey);
-      
+
       if (cachedData) {
         return JSON.parse(cachedData);
       }
-      
+
       // If not in cache, get from database and cache it
       const productData = await this.getAllProductsFromDb(limit, offset);
-      
+
       if (productData) {
         // Store in cache
         await redis.set(versionedKey, JSON.stringify(productData), {
-          ex: CACHE_TTL
+          ex: CACHE_TTL,
         });
       }
-      
+
       return productData;
-    } catch (error) {
+    } catch {
       // On error, fallback to direct DB query
       return this.getAllProductsFromDb(limit, offset);
     }
   }
-  
+
   // Get featured products, either from cache or database
   async getFeaturedProducts(limit = 4) {
     try {
       // Get the versioned cache key
       const versionedKey = await getVersionedKey(CACHE_KEYS.FEATURED_PRODUCTS);
-      
+
       // Try to get from cache first
       const cachedData = await redis.get(versionedKey);
-      
+
       if (cachedData) {
         return JSON.parse(cachedData);
       }
-      
+
       // If not in cache, get from database and cache it
       const productData = await this.getFeaturedProductsFromDb(limit);
-      
+
       if (productData) {
         // Store in cache
         await redis.set(versionedKey, JSON.stringify(productData), {
-          ex: CACHE_TTL
+          ex: CACHE_TTL,
         });
       }
-      
+
       return productData;
-    } catch (error) {
+    } catch {
       // On error, fallback to direct DB query
       return this.getFeaturedProductsFromDb(limit);
     }
@@ -164,61 +169,61 @@ class ProductService {
     try {
       // Get the versioned cache key
       const versionedKey = await getVersionedKey(CACHE_KEYS.PRODUCTS_PAGE_1);
-      
+
       // Check if cache exists
       const cacheExists = await redis.exists(versionedKey);
-      
+
       // If cache was invalidated, fetch fresh data and update
       if (!cacheExists) {
         // Get fresh product data (first page)
         const limit = 8;
         const offset = 0;
-        
+
         const productData = await this.getAllProductsFromDb(limit, offset);
         if (productData) {
           // Store the fresh data in cache
           await redis.set(versionedKey, JSON.stringify(productData), {
-            ex: CACHE_TTL
+            ex: CACHE_TTL,
           });
           return true;
         }
       }
-      
+
       return false;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
-  
+
   // Refresh the featured products cache
   async refreshFeaturedProductsCache() {
     try {
       // Get the versioned cache key
       const versionedKey = await getVersionedKey(CACHE_KEYS.FEATURED_PRODUCTS);
-      
+
       // Check if cache exists
       const cacheExists = await redis.exists(versionedKey);
-      
+
       // If cache was invalidated, fetch fresh data and update
       if (!cacheExists) {
         // Get fresh featured products data
         const limit = 4;
-        
+
         const productData = await this.getFeaturedProductsFromDb(limit);
         if (productData) {
           // Store the fresh data in cache
           await redis.set(versionedKey, JSON.stringify(productData), {
-            ex: CACHE_TTL
+            ex: CACHE_TTL,
           });
           return true;
         }
       }
-      
+
       return false;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
 }
 
-export default ProductService; 
+export default ProductService;

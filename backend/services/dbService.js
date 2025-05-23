@@ -17,9 +17,8 @@ export const initializeDatabase = async () => {
 export const initializeTables = async () => {
   try {
     // Import all model initialization functions
-    const { ensureUsersTable, ensureUserTokensTable } = await import(
-      "../models/userModel.js"
-    );
+    const { ensureUsersTable, ensureUserTokensTable, ensureTempUsersTable } =
+      await import("../models/userModel.js");
 
     const { ensureProductCategoriesTable } = await import(
       "../models/productCategoryModel.js"
@@ -49,6 +48,7 @@ export const initializeTables = async () => {
 
     // Create tables in the correct order (respecting foreign key constraints)
     await ensureUsersTable();
+    await ensureTempUsersTable();
     await ensureUserTokensTable();
     await ensureProductCategoriesTable();
     await ensureProductsTable();
@@ -145,7 +145,7 @@ export const updateExpiredTokens = async () => {
       [now]
     );
     return result?.affectedRows || 0;
-  } catch (error) {
+  } catch {
     return 0;
   }
 };

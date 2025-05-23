@@ -22,7 +22,7 @@ export const getCacheVersion = async () => {
       await redis.set(CACHE_VERSION_KEY, version);
     }
     return version;
-  } catch (error) {
+  } catch {
     // Return timestamp as fallback if Redis is unreachable
     return Date.now().toString();
   }
@@ -34,7 +34,7 @@ export const invalidateAllCaches = async () => {
     const newVersion = Date.now().toString();
     await redis.set(CACHE_VERSION_KEY, newVersion);
     return newVersion;
-  } catch (error) {
+  } catch {
     return null;
   }
 };

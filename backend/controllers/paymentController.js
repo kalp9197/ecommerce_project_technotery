@@ -47,8 +47,7 @@ export const handleWebhook = async (req, res) => {
     );
 
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      // Order processing code would go here
+      // Order processing code goes here
     }
 
     res.status(HTTP_STATUS.OK).json({ received: true });

@@ -454,18 +454,6 @@ export const getProductsByCategory = async (categoryUuid, limit, offset) => {
       OFFSET ${offset}
     `);
 
-    // Get total count for pagination
-    const countResult = await dbService.query(`
-      SELECT
-        COUNT(*) as total
-      FROM
-        products p
-      WHERE
-        p.is_active = 1 AND p.p_cat_id = ${categoryId}
-    `);
-
-    const total = countResult[0]?.total || 0;
-
     // Convert is_featured from 0/1 to boolean
     const formattedProducts = products.map((product) => ({
       ...product,

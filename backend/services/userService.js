@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import { appConfig } from "../config/app.config.js";
-import { query } from "./dbService.js";
 import * as userModel from "../models/userModel.js";
 import { sendEmail, getVerificationEmailTemplate } from "./emailService.js";
 
@@ -39,34 +38,28 @@ export const sendVerificationEmail = async (user, token) => {
 
 export const registerUser = async (userData) => {
   try {
-    const existingUser = await userModel.getUserByEmail(userData);
-    if (existingUser) {
-      throw new Error("User with this email already exists");
+    // createUser in userModel now handles checks for existing verified users
+    // and manages unverified temp_users entries.
+    const tempUserData = await userModel.createUser(userData);
+    if (!tempUserData || !tempUserData.uuid || !tempUserData.verification_token) {
+      throw new Error("User registration failed to return necessary data.");
     }
 
-    const userUuid = await userModel.createUser(userData);
-    if (!userUuid) {
-      throw new Error("User registration failed");
-    }
-
-    const newUser = await userModel.getUserByUuid(userUuid);
-    const tokenData = await query(
-      "SELECT ut.verification_token FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE u.uuid = ? AND ut.verification_token IS NOT NULL AND ut.is_expired = 0",
-      [userUuid]
+    // Send verification email using data from temp_users creation
+    await sendVerificationEmail(
+      { name: tempUserData.name, email: tempUserData.email },
+      tempUserData.verification_token
     );
-
-    if (tokenData?.length && tokenData[0].verification_token) {
-      await sendVerificationEmail(newUser, tokenData[0].verification_token);
-    }
 
     return {
       success: true,
-      user: {
-        email: newUser.email,
-        email_verified: false,
+      user: { // Return info about the temporary user
+        email: tempUserData.email,
+        email_verified: false, // By definition, this user is not yet verified
       },
     };
   } catch (error) {
+    // More specific error handling can be done here if needed, or let it propagate
     throw new Error(`Registration failed: ${error.message}`);
   }
 };

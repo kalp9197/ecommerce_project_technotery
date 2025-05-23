@@ -80,7 +80,7 @@ app.all("*", (req, res) => {
 app.use((err, _req, res, _next) => {
   res.status(err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     success: false,
-    message: err.message || "Internal server error",
+    message: `Internal server error: ${err.message}`,
   });
 });
 

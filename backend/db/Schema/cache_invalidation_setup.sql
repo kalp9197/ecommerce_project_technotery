@@ -1,6 +1,3 @@
--- SQL script to set up cache invalidation mechanism
-
--- Select the database (customize to match your database name)
 USE `ecommerce_db`;
 
 -- Create cache_invalidation_events table if it doesn't exist
@@ -9,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `cache_invalidation_events` (
   `event_type` VARCHAR(50) NOT NULL,
   `event_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `processed` BOOLEAN DEFAULT FALSE,
-  INDEX `idx_processed` (`processed`) -- Add index for faster querying
+  INDEX `idx_processed` (`processed`) 
 );
 
 -- Drop existing triggers if they exist
