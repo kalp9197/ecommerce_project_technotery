@@ -1,8 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createCheckoutSession } from "@/utils/paymentService";
 import { useCart } from "@/utils/cartContext";
 import { AlertCircle } from "lucide-react";
+import PropTypes from "prop-types";
 
 const StripeCheckoutButton = ({ className }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +19,7 @@ const StripeCheckoutButton = ({ className }) => {
       if (!response.success) {
         setError(response.message || "Checkout failed. Please try again.");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred during checkout. Please try again.");
     } finally {
       setIsLoading(false);
@@ -43,6 +44,10 @@ const StripeCheckoutButton = ({ className }) => {
       )}
     </div>
   );
+};
+
+StripeCheckoutButton.propTypes = {
+  className: PropTypes.string,
 };
 
 export default StripeCheckoutButton;

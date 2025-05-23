@@ -8,7 +8,6 @@ import {
   Trash2,
   ArrowLeft,
   Heart,
-  ShoppingBag,
   ShoppingCart,
   Loader2,
 } from "lucide-react";
@@ -21,7 +20,6 @@ const Wishlist = () => {
     wishlistItems,
     wishlistCount,
     loading,
-    error: wishlistError,
     clearWishlist,
     refreshWishlist,
   } = useWishlist();
@@ -82,7 +80,7 @@ const Wishlist = () => {
           <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Your wishlist is empty</h2>
           <p className="text-gray-500 mb-6">
-            Looks like you haven't added any products to your wishlist yet.
+            Looks like you haven&apos;t added any products to your wishlist yet.
           </p>
           <Button asChild>
             <Link to="/">Start Shopping</Link>

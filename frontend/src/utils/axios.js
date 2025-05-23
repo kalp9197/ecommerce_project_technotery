@@ -52,7 +52,6 @@ api.interceptors.response.use(
 
     // Check if the response indicates we need to login again
     if (error.response.data && error.response.data.requiresLogin) {
-      console.log("[API] Token expired and requires login");
       localStorage.removeItem("token");
       localStorage.removeItem("tokenExpiry");
       localStorage.removeItem("refreshCycles");

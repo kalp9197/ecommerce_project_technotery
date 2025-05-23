@@ -85,7 +85,6 @@ export const getAuthHeader = () => {
       // If token is expired, don't use it
       // The axios interceptor will handle refresh automatically
       if (now >= expiryTime) {
-        console.log("[API] Token expired in getAuthHeader");
         return {};
       }
     }

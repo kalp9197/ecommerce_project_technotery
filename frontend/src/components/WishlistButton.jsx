@@ -5,6 +5,7 @@ import { useWishlist } from "@/utils/wishlistContext";
 import { useAuth } from "@/utils/authContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import PropTypes from "prop-types";
 
 const WishlistButton = ({
   productUuid,
@@ -81,6 +82,16 @@ const WishlistButton = ({
       )}
     </Button>
   );
+};
+
+WishlistButton.propTypes = {
+  productUuid: PropTypes.string.isRequired,
+  itemUuid: PropTypes.string,
+  productDetails: PropTypes.object,
+  variant: PropTypes.string,
+  size: PropTypes.string,
+  showText: PropTypes.bool,
+  className: PropTypes.string,
 };
 
 export default WishlistButton;

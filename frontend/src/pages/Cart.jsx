@@ -24,7 +24,7 @@ const Cart = () => {
     cartItemCount,
     cartTotal,
     loading,
-    error: contextError,
+    error,
     isItemPending,
     updateItem,
     removeItem,
@@ -48,7 +48,9 @@ const Cart = () => {
   // Clear any errors when component unmounts
   useEffect(() => {
     return () => {
-      clearError();
+      if (typeof clearError === 'function') {
+        clearError();
+      }
     };
   }, [clearError]);
 
@@ -92,24 +94,23 @@ const Cart = () => {
     const quantity = parseInt(value);
     if (isNaN(quantity) || quantity < 1) return;
 
-    setEditedQuantities((prev) => ({
-      ...prev,
-      [itemUuid]: quantity,
-    }));
-
-    // Check if any quantity is different from original
-    const originalQuantity =
-      cartItems.find((item) => item.item_uuid === itemUuid)?.quantity || 0;
-    if (quantity !== originalQuantity) {
-      setHasChanges(true);
-    } else {
-      // Check if there are any other changes
-      const anyChanges = cartItems.some((item) => {
-        const editedQty = prev[item.item_uuid] || item.quantity;
-        return editedQty !== item.quantity;
-      });
-      setHasChanges(anyChanges);
-    }
+    setEditedQuantities((prev) => {
+      const updated = { ...prev, [itemUuid]: quantity };
+      // Check if any quantity is different from original
+      const originalQuantity =
+        cartItems.find((item) => item.item_uuid === itemUuid)?.quantity || 0;
+      if (quantity !== originalQuantity) {
+        setHasChanges(true);
+      } else {
+        // Check if there are any other changes
+        const anyChanges = cartItems.some((item) => {
+          const editedQty = updated[item.item_uuid] || item.quantity;
+          return editedQty !== item.quantity;
+        });
+        setHasChanges(anyChanges);
+      }
+      return updated;
+    });
   };
 
   // Save all edited quantities
@@ -151,14 +152,16 @@ const Cart = () => {
     );
   }
 
-  if (contextError) {
+  if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-          <p>Error: {contextError}</p>
+          <p>Error: {error}</p>
           <Button
             onClick={() => {
-              clearError();
+              if (typeof clearError === 'function') {
+                clearError();
+              }
               window.location.reload();
             }}
             className="mt-2"
@@ -185,7 +188,7 @@ const Cart = () => {
           <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
           <p className="text-gray-500 mb-6">
-            Looks like you haven't added any products to your cart yet.
+            Looks like you haven&apos;t added any products to your cart yet.
           </p>
           <Button asChild>
             <Link to="/">Start Shopping</Link>

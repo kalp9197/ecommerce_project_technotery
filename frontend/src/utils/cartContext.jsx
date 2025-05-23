@@ -8,6 +8,7 @@ import {
   batchUpdateCartItems as batchUpdateCartItemsService,
 } from "./cartService";
 import { useAuth } from "./authContext";
+import PropTypes from "prop-types";
 
 const CartContext = createContext(null);
 
@@ -17,7 +18,7 @@ export function CartProvider({ children }) {
   const [cartItemCount, setCartItemCount] = useState(0); // Number of distinct products
   const [cartTotal, setCartTotal] = useState("0.00");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null); // Add error state
   const [pendingItems, setPendingItems] = useState(new Set());
   const { isAuthenticated } = useAuth();
 
@@ -45,11 +46,12 @@ export function CartProvider({ children }) {
       setCartCount(0);
       setCartItemCount(0);
       setCartTotal("0.00");
+      setError(null); // Clear error on auth change
       return;
     }
 
     setLoading(true);
-    setError(null);
+    setError(null); // Clear error before fetching
     try {
       const response = await getCart();
       if (response.success && response.data) {
@@ -63,9 +65,7 @@ export function CartProvider({ children }) {
         setCartCount(0);
         setCartItemCount(0);
         setCartTotal("0.00");
-        if (response.message) {
-          setError(response.message);
-        }
+        setError(response.message || "Failed to fetch cart data."); // Set error
       }
     } catch (error) {
       console.error("Error fetching cart in context:", error);
@@ -73,7 +73,7 @@ export function CartProvider({ children }) {
       setCartCount(0);
       setCartItemCount(0);
       setCartTotal("0.00");
-      setError("Failed to load cart. Please try again.");
+      setError(error.message || "An unexpected error occurred while fetching cart."); // Set error
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ export function CartProvider({ children }) {
     if (!isAuthenticated) return;
 
     addPendingItem(productId);
-    setError(null);
+    setError(null); // Clear error before action
 
     // Optimistic update
     const tempId = Date.now();
@@ -127,9 +127,9 @@ export function CartProvider({ children }) {
             (parseFloat(productDetails.price) || 0) * quantity
           ).toFixed(2)
         );
-        setError(response.message || "Failed to add item to cart");
+        setError(response.message || "Failed to add item to cart."); // Set error
       }
-    } catch {
+    } catch (err) { // Changed from general catch to catch(err)
       // Revert optimistic update
       setCartItems((prev) => prev.filter((item) => item.id !== tempId));
       setCartCount((prev) => prev - quantity);
@@ -140,7 +140,7 @@ export function CartProvider({ children }) {
           (parseFloat(productDetails.price) || 0) * quantity
         ).toFixed(2)
       );
-      setError("Failed to add item to cart. Please try again.");
+      setError(err.message || "An unexpected error occurred while adding item."); // Set error
     } finally {
       removePendingItem(productId);
     }
@@ -151,7 +151,7 @@ export function CartProvider({ children }) {
     if (!isAuthenticated || newQuantity < 1) return;
 
     addPendingItem(itemUuid);
-    setError(null);
+    setError(null); // Clear error before action
 
     const item = cartItems.find((item) => item.item_uuid === itemUuid);
     if (!item) return;
@@ -181,9 +181,9 @@ export function CartProvider({ children }) {
         );
         setCartCount((prev) => prev - quantityDiff);
         setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));
-        setError(response.message || "Failed to update item quantity");
+        setError(response.message || "Failed to update item in cart."); // Set error
       }
-    } catch {
+    } catch (err) { // Changed from general catch to catch(err)
       // Revert optimistic update
       setCartItems((prev) =>
         prev.map((item) =>
@@ -194,7 +194,7 @@ export function CartProvider({ children }) {
       );
       setCartCount((prev) => prev - quantityDiff);
       setCartTotal((prev) => (parseFloat(prev) - priceDiff).toFixed(2));
-      setError("Failed to update item quantity. Please try again.");
+      setError(err.message || "An unexpected error occurred while updating item."); // Set error
     } finally {
       removePendingItem(itemUuid);
     }
@@ -205,7 +205,7 @@ export function CartProvider({ children }) {
     if (!isAuthenticated) return;
 
     addPendingItem(itemUuid);
-    setError(null);
+    setError(null); // Clear error before action
 
     const item = cartItems.find((item) => item.item_uuid === itemUuid);
     if (!item) return;
@@ -226,15 +226,15 @@ export function CartProvider({ children }) {
         setCartCount((prev) => prev + item.quantity);
         setCartItemCount((prev) => prev + 1); // Add back the distinct product
         setCartTotal((prev) => (parseFloat(prev) + itemTotal).toFixed(2));
-        setError(response.message || "Failed to remove item");
+        setError(response.message || "Failed to remove item from cart."); // Set error
       }
-    } catch {
+    } catch (err) { // Changed from general catch to catch(err)
       // Revert optimistic update
       setCartItems((prev) => [...prev, item]);
       setCartCount((prev) => prev + item.quantity);
       setCartItemCount((prev) => prev + 1); // Add back the distinct product
       setCartTotal((prev) => (parseFloat(prev) + itemTotal).toFixed(2));
-      setError("Failed to remove item. Please try again.");
+      setError(err.message || "An unexpected error occurred while removing item."); // Set error
     } finally {
       removePendingItem(itemUuid);
     }
@@ -243,6 +243,7 @@ export function CartProvider({ children }) {
   // Clear cart
   const clearCart = async () => {
     if (!isAuthenticated) return;
+    setError(null); // Clear error before action
 
     const previousItems = [...cartItems];
     const previousCount = cartCount;
@@ -263,25 +264,25 @@ export function CartProvider({ children }) {
         setCartCount(previousCount);
         setCartItemCount(previousItemCount);
         setCartTotal(previousTotal);
-        setError(response.message || "Failed to clear cart");
+        setError(response.message || "Failed to clear cart."); // Set error
       }
-    } catch {
+    } catch (err) { // Changed from general catch to catch(err)
       // Revert optimistic update
       setCartItems(previousItems);
       setCartCount(previousCount);
       setCartItemCount(previousItemCount);
       setCartTotal(previousTotal);
-      setError("Failed to clear cart. Please try again.");
+      setError(err.message || "An unexpected error occurred while clearing cart."); // Set error
     }
   };
 
   // Batch update cart items
   const batchUpdateItems = async (updatedItems) => {
     if (!isAuthenticated || !updatedItems.length) return;
+    setError(null); // Clear error before action
 
     // Mark all items as pending
     updatedItems.forEach((item) => addPendingItem(item.item_uuid));
-    setError(null);
 
     // Store original state for potential rollback
     const originalItems = [...cartItems];
@@ -328,22 +329,27 @@ export function CartProvider({ children }) {
         setCartCount(originalCount);
         setCartItemCount(originalItemCount);
         setCartTotal(originalTotal);
-        setError(response.message || "Failed to update cart items");
+        setError(response.message || "Failed to update items in cart."); // Set error
       } else {
         // Refresh cart to get server state
         await fetchCart();
       }
-    } catch (error) {
+    } catch (err) { // Changed from general catch to catch(err)
       // Revert optimistic update
       setCartItems(originalItems);
       setCartCount(originalCount);
       setCartItemCount(originalItemCount);
       setCartTotal(originalTotal);
-      setError("Failed to update cart items. Please try again.");
+      setError(err.message || "An unexpected error occurred while updating items."); // Set error
     } finally {
       // Remove all items from pending state
       updatedItems.forEach((item) => removePendingItem(item.item_uuid));
     }
+  };
+
+  // Function to clear error state
+  const clearError = () => {
+    setError(null);
   };
 
   const value = {
@@ -352,7 +358,8 @@ export function CartProvider({ children }) {
     cartItemCount,
     cartTotal,
     loading,
-    error,
+    error, // Add error state to context
+    clearError, // Add clearError function to context
     isItemPending,
     refreshCart: fetchCart,
     addItem,
@@ -360,11 +367,14 @@ export function CartProvider({ children }) {
     removeItem,
     clearCart,
     batchUpdateItems,
-    clearError: () => setError(null),
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
+
+CartProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export const useCart = () => {
   const context = useContext(CartContext);

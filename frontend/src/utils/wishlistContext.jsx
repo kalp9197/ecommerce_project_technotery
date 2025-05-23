@@ -4,9 +4,9 @@ import {
   addToWishlist as addToWishlistService,
   removeFromWishlist as removeFromWishlistService,
   clearWishlist as clearWishlistService,
-  isProductInWishlist as checkProductInWishlistService,
 } from "./wishlistService";
 import { useAuth } from "./authContext";
+import PropTypes from "prop-types";
 
 const WishlistContext = createContext(null);
 
@@ -222,4 +222,8 @@ export const useWishlist = () => {
     throw new Error("useWishlist must be used within a WishlistProvider");
   }
   return context;
+};
+
+WishlistProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };

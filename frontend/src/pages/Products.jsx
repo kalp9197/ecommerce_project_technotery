@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { getProducts, getCategories } from "@/utils/productService";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -13,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
-import { useWishlist } from "@/utils/wishlistContext";
 import WishlistButton from "@/components/WishlistButton";
 import {
   ShoppingCart,
@@ -21,7 +21,6 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  Heart,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -41,7 +40,6 @@ const Products = () => {
   const { isAuthenticated } = useAuth();
   const { addItem, isItemPending, clearCart, refreshCart, cartItems } =
     useCart();
-  const { isInWishlist, isItemPending: isWishlistItemPending } = useWishlist();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [hasHandledPayment, setHasHandledPayment] = useState(false);
@@ -177,7 +175,6 @@ const Products = () => {
         category_name: product.category_name,
       });
 
-      // Success message removed as requested
     } catch (error) {
       // Check if the error is related to out-of-stock products
       const errorMessage = error.message || "";

@@ -9,10 +9,10 @@ import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Wishlist from "./pages/Wishlist";
 import Navbar from "@/components/Navbar";
-import TokenTest from "@/components/TokenTest";
 import { useAuth } from "@/utils/authContext";
 import { CartProvider } from "@/utils/cartContext";
 import { WishlistProvider } from "@/utils/wishlistContext";
+import PropTypes from "prop-types";
 
 import { PageTransition } from "./components/PageTransition";
 
@@ -41,6 +41,10 @@ const ProtectedRoute = ({ children }) => {
   }
 
   return children;
+};
+
+ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export default function App() {
@@ -118,16 +122,6 @@ export default function App() {
                 />
 
                 {/* Token test route */}
-                <Route
-                  path="/token-test"
-                  element={
-                    <ProtectedRoute>
-                      <PageTransition>
-                        <TokenTest />
-                      </PageTransition>
-                    </ProtectedRoute>
-                  }
-                />
               </Routes>
             </AnimatePresence>
           </main>

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "./axios";
+import PropTypes from "prop-types";
 
 // Create the auth context
 const AuthContext = createContext(null);
@@ -48,12 +49,10 @@ export function AuthProvider({ children }) {
   // Function to refresh token
   const refreshToken = async () => {
     if (!token) {
-      console.log("[AUTH] No token to refresh");
       return { success: false };
     }
 
     try {
-      console.log("[AUTH] Refreshing token");
       const response = await api.post("/users/refresh-token", { token });
 
       if (response.data.success && response.data.token) {
@@ -76,24 +75,16 @@ export function AuthProvider({ children }) {
         setRefreshCycles(newRefreshCycles);
         setAuthHeader(newToken);
 
-        console.log("[AUTH] Token refreshed successfully");
         return { success: true, token: newToken };
       } else {
-        console.log("[AUTH] Token refresh failed");
         clearAuth();
         return { success: false };
       }
-    } catch (error) {
-      console.log("[AUTH] Token refresh error:", error.message);
-
-      // Check if the error indicates we need to login again
-      if (error.response?.data?.requiresLogin) {
-        console.log("[AUTH] Login required, clearing auth");
-        clearAuth();
-        navigate("/login");
-      }
-
-      return { success: false, error: error.message };
+    } catch {
+      // Just clear auth and navigate to login if needed, but 'error' is not available here anymore
+      clearAuth();
+      navigate("/login");
+      return { success: false };
     }
   };
 
@@ -103,7 +94,6 @@ export function AuthProvider({ children }) {
     const validateToken = async () => {
       if (!token) {
         if (isAuthenticated) {
-          console.log("[AUTH] No token but user is authenticated, logging out");
           clearAuth();
         }
         return false;
@@ -120,11 +110,8 @@ export function AuthProvider({ children }) {
 
           // If token is expired, try to refresh it
           if (now >= expiryTime) {
-            console.log("[AUTH] Token expired, attempting refresh");
-
             // Check if we have refresh cycles left
             if (refreshCycles <= 1) {
-              console.log("[AUTH] No refresh cycles left, logging out");
               clearAuth();
               return false;
             }
@@ -135,8 +122,7 @@ export function AuthProvider({ children }) {
         }
 
         return true;
-      } catch (error) {
-        console.log("[AUTH] Token validation failed:", error.message);
+      } catch {
         clearAuth();
         return false;
       }
@@ -165,7 +151,6 @@ export function AuthProvider({ children }) {
         const headerSet = setAuthHeader(token);
 
         if (!headerSet) {
-          console.log("[AUTH] Failed to set auth header");
           clearAuth();
           setLoading(false);
           return;
@@ -179,13 +164,8 @@ export function AuthProvider({ children }) {
 
             // If token is expired, try to refresh it
             if (now >= expiryTime) {
-              console.log(
-                "[AUTH] Token expired during init, attempting refresh"
-              );
-
               // Check if we have refresh cycles left
               if (refreshCycles <= 1) {
-                console.log("[AUTH] No refresh cycles left, logging out");
                 clearAuth();
                 setLoading(false);
                 return;
@@ -207,12 +187,10 @@ export function AuthProvider({ children }) {
             id: "demo-user-id",
             email: "demo@example.com",
           });
-        } catch (error) {
-          console.log("[AUTH] Token validation failed:", error.message);
+        } catch {
           clearAuth();
         }
       } else {
-        console.log("[AUTH] No token found");
         clearAuth();
       }
       setLoading(false);
@@ -224,10 +202,7 @@ export function AuthProvider({ children }) {
   // Login function
   const login = async (credentials) => {
     try {
-      console.log("[AUTH] Attempting login with:", credentials.email);
-
       const response = await api.post("/users/login", credentials);
-      console.log("[AUTH] Login successful");
 
       // Get token and related data from response
       const {
@@ -237,7 +212,6 @@ export function AuthProvider({ children }) {
       } = response.data;
 
       if (!newToken) {
-        console.log("[AUTH] No token received");
         return {
           success: false,
           error: "Authentication failed. Please try again.",
@@ -269,8 +243,7 @@ export function AuthProvider({ children }) {
       });
 
       return { success: true, data: response.data };
-    } catch (error) {
-      console.log("[AUTH] Login error:", error.message);
+    } catch {
       return {
         success: false,
         error: "Login failed. Please check your credentials and try again.",
@@ -281,12 +254,9 @@ export function AuthProvider({ children }) {
   // Register function
   const register = async (userData) => {
     try {
-      console.log("[AUTH] Attempting registration");
       const response = await api.post("/users/register", userData);
-      console.log("[AUTH] Registration successful");
       return { success: true, data: response.data };
-    } catch (error) {
-      console.log("[AUTH] Registration error:", error.message);
+    } catch {
       return {
         success: false,
         error: "Registration failed. Please try again.",
@@ -296,7 +266,6 @@ export function AuthProvider({ children }) {
 
   // Logout function
   const logout = () => {
-    console.log("[AUTH] Logging out");
     clearAuth();
   };
 
@@ -317,6 +286,10 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 // Custom hook to use auth context
 export const useAuth = () => {

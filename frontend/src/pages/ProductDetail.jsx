@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/utils/authContext";
 import { useCart } from "@/utils/cartContext";
-import { useWishlist } from "@/utils/wishlistContext";
 import WishlistButton from "@/components/WishlistButton";
 import { ShoppingCart, CheckCircle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
@@ -18,7 +17,6 @@ const ProductDetail = () => {
   const [cartMessage, setCartMessage] = useState(null);
   const { isAuthenticated } = useAuth();
   const { addItem, isItemPending, cartItems } = useCart();
-  const {} = useWishlist();
   const [isInCart, setIsInCart] = useState(false);
   const navigate = useNavigate();
 
@@ -85,7 +83,6 @@ const ProductDetail = () => {
       // Set isInCart to true after successfully adding to cart
       setIsInCart(true);
 
-      // Success message removed as requested
     } catch (error) {
       // Check if the error is related to out-of-stock products
       const errorMessage = error.message || "";

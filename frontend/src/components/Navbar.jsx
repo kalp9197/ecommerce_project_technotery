@@ -5,14 +5,10 @@ import {
   User,
   Menu,
   LogOut,
-  Settings,
-  X,
-  Home,
   ShoppingBag,
   Package,
   ChevronDown,
   Heart,
-  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/utils/authContext";
@@ -24,7 +20,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Sheet,
@@ -111,13 +106,6 @@ export default function Navbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/token-test">
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      <span>Token Test</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     <span>Logout</span>
@@ -220,20 +208,6 @@ export default function Navbar() {
                         <Link to="/wishlist">
                           <Heart className="mr-2 h-4 w-4" />
                           Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
-                        </Link>
-                      </Button>
-                    </SheetClose>
-
-                    <SheetClose asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="justify-start"
-                      >
-                        <Link to="/token-test">
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Token Test
                         </Link>
                       </Button>
                     </SheetClose>

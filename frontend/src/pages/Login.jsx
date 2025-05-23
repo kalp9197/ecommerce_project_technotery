@@ -152,7 +152,7 @@ export default function Login() {
         </CardContent>
         <CardFooter className="flex justify-center flex-col space-y-4">
           <div className="text-sm text-muted-foreground text-center">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               to="/register"
               className="text-primary underline-offset-2 hover:underline"

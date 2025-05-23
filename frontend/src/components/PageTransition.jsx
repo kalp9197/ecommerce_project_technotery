@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import PropTypes from "prop-types";
 
 // Simple page transition component
 export function PageTransition({ children }) {
@@ -14,3 +15,7 @@ export function PageTransition({ children }) {
     </motion.div>
   );
 }
+
+PageTransition.propTypes = {
+  children: PropTypes.node.isRequired,
+};
