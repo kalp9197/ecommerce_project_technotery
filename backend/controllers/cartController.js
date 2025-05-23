@@ -16,7 +16,7 @@ export const getUserCart = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while fetching cart items : ${error.message}`,
     });
   }
 };
@@ -42,12 +42,12 @@ export const addItemToCart = async (req, res) => {
     if (error.message.includes("Insufficient stock")) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while adding item to cart : ${error.message}`,
       });
     }
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while adding item to cart : ${error.message}`,
     });
   }
 };
@@ -70,17 +70,17 @@ export const updateCartItem = async (req, res) => {
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Resource not found",
+        message: `An error occurred while updating cart item : ${error.message}`,
       });
     } else if (error.message.includes("Insufficient stock")) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while updating cart item : ${error.message}`,
       });
     }
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while updating cart item : ${error.message}`,
     });
   }
 };
@@ -97,7 +97,7 @@ export const deactivateCartItem = async (req, res) => {
     const productInfo = cartItem
       ? {
           productUuid: cartItem.product_uuid,
-          quantity: cartItem.quantity
+          quantity: cartItem.quantity,
         }
       : null;
 
@@ -105,7 +105,7 @@ export const deactivateCartItem = async (req, res) => {
     if (productInfo) {
       await trackEvent(userId, "remove_from_cart", {
         productUuid: productInfo.productUuid,
-        quantity: productInfo.quantity
+        quantity: productInfo.quantity,
       });
     }
 
@@ -119,9 +119,7 @@ export const deactivateCartItem = async (req, res) => {
       : HTTP_STATUS.INTERNAL_SERVER_ERROR;
     res.status(code).json({
       success: false,
-      message: error.message.includes("not found")
-        ? "Resource not found"
-        : "Internal server error",
+      message: `An error occurred while deleting cart item : ${error.message}`,
     });
   }
 };
@@ -144,7 +142,7 @@ export const deactivateAllCartItems = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while clearing cart : ${error.message}`,
     });
   }
 };
@@ -159,7 +157,7 @@ export const batchUpdateCartItems = async (req, res) => {
     if (!result) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Internal server error",
+        message: "Invalid input data",
       });
     }
 
@@ -174,7 +172,7 @@ export const batchUpdateCartItems = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while updating cart items : ${error.message}`,
     });
   }
 };
@@ -201,7 +199,7 @@ export const completeOrder = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while completing order : ${error.message}`,
     });
   }
 };

@@ -187,12 +187,9 @@ export const uploadFiles = async (req, res) => {
       products: savedProducts,
     });
   } catch (error) {
-    console.error("File upload error:", error);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Internal server error",
-      error: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      message: `An error occurred while uploading files : ${error.message}`,
     });
   }
 };

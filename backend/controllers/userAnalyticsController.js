@@ -6,7 +6,7 @@ export const trackEvent = async (userId, eventType, data) => {
   try {
     return await userAnalyticsModel.trackEvent(userId, eventType, data);
   } catch (error) {
-    console.error(`Error tracking user event: ${error.message}`);
+    console.error(`An error occurred while tracking user event : ${error.message}`);
     return false;
   }
 };
@@ -50,7 +50,7 @@ export const getUserAnalytics = async (req, res) => {
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Error retrieving user analytics: ${error.message}`,
+      message: `An error occurred while retrieving user analytics : ${error.message}`,
     });
   }
 };

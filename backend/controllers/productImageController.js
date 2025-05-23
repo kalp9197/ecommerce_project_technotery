@@ -10,7 +10,7 @@ export const getProductImagesByUuid = async (req, res) => {
     if (!product) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Product not found",
+        message: "An error occurred while fetching product images",
       });
     }
 
@@ -24,7 +24,7 @@ export const getProductImagesByUuid = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Failed to get product images: ${error.message}`,
+      message: `An error occurred while fetching product images : ${error.message}`,
     });
   }
 };
@@ -37,7 +37,7 @@ export const addProductImage = async (req, res) => {
     if (!product) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Product not found or inactive",
+        message: "An error occurred while adding product image",
       });
     }
 
@@ -55,7 +55,7 @@ export const addProductImage = async (req, res) => {
   } catch (error) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
-      message: error.message,
+      message: `An error occurred while adding product image : ${error.message}`,
     });
   }
 };
@@ -69,7 +69,7 @@ export const updateProductImageByUuid = async (req, res) => {
     if (!image) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Image not found",
+        message: "An error occurred while updating product image",
       });
     }
 
@@ -86,7 +86,7 @@ export const updateProductImageByUuid = async (req, res) => {
     if (!updatedImage || updatedImage.affectedRows === 0) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Failed to update image",
+        message: "An error occurred while updating product image",
       });
     }
 
@@ -97,7 +97,7 @@ export const updateProductImageByUuid = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Failed to update product image: ${error.message}`,
+      message: `An error occurred while updating product image : ${error.message}`,
     });
   }
 };
@@ -110,7 +110,7 @@ export const deleteProductImageByUuid = async (req, res) => {
     if (!image) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Image not found",
+        message: "An error occurred while deleting product image",
       });
     }
 
@@ -118,7 +118,7 @@ export const deleteProductImageByUuid = async (req, res) => {
     if (!deletedImage || deletedImage.affectedRows === 0) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Failed to delete image",
+        message: "An error occurred while deleting product image",
       });
     }
 
@@ -129,7 +129,7 @@ export const deleteProductImageByUuid = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Failed to delete product image: ${error.message}`,
+      message: `An error occurred while deleting product image : ${error.message}`,
     });
   }
 };

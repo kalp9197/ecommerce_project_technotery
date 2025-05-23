@@ -29,7 +29,7 @@ export const getAllCategories = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Failed to get categories: ${error.message}`,
+      message: `An error occurred while fetching categories : ${error.message}`,
     });
   }
 };
@@ -53,7 +53,7 @@ export const getCategoryByUuid = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Failed to get category: ${error.message}`,
+      message: `An error occurred while fetching category : ${error.message}`,
     });
   }
 };
@@ -68,7 +68,7 @@ export const createCategory = async (req, res) => {
     if (!categoryUuid) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Failed to create category",
+        message: "An error occurred while creating category",
       });
     }
 
@@ -86,7 +86,7 @@ export const createCategory = async (req, res) => {
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Failed to create category: ${error.message}`,
+      message: `An error occurred while creating category : ${error.message}`,
     });
   }
 };
@@ -114,7 +114,7 @@ export const updateCategoryByUuid = async (req, res) => {
     if (!updatedCategories?.length) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Failed to update category",
+        message: "An error occurred while updating category",
       });
     }
 
@@ -125,7 +125,7 @@ export const updateCategoryByUuid = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Failed to update category: ${error.message}`,
+      message: `An error occurred while updating category : ${error.message}`,
     });
   }
 };
@@ -146,7 +146,7 @@ export const deleteCategoryByUuid = async (req, res) => {
     if (!result) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Failed to delete category",
+        message: "An error occurred while deleting category",
       });
     }
 
@@ -164,7 +164,7 @@ export const deleteCategoryByUuid = async (req, res) => {
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Failed to delete category: ${error.message}`,
+      message: `An error occurred while deleting category : ${error.message}`,
     });
   }
 };

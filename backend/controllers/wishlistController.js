@@ -16,7 +16,7 @@ export const getUserWishlist = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while fetching wishlist : ${error.message}`,
     });
   }
 };
@@ -42,20 +42,20 @@ export const addToWishlist = async (req, res) => {
     if (error.message.includes("already in wishlist")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while adding to wishlist : ${error.message}`,
       });
     }
 
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while adding to wishlist : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while adding to wishlist : ${error.message}`,
     });
   }
 };
@@ -90,13 +90,13 @@ export const removeFromWishlist = async (req, res) => {
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while removing from wishlist : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while removing from wishlist : ${error.message}`,
     });
   }
 };
@@ -116,13 +116,13 @@ export const clearWishlist = async (req, res) => {
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while clearing wishlist : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while clearing wishlist : ${error.message}`,
     });
   }
 };
@@ -145,7 +145,7 @@ export const checkProductInWishlist = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while checking product in wishlist : ${error.message}`,
     });
   }
 };

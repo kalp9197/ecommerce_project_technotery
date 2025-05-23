@@ -11,7 +11,7 @@ export const getReviewsByProductUuid = async (req, res) => {
     if (!reviews?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "No reviews found for this product",
+        message: "An error occurred while fetching reviews",
       });
     }
 
@@ -34,7 +34,7 @@ export const getReviewsByProductUuid = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while fetching reviews",
+      message: `An error occurred while fetching reviews : ${error.message}`,
     });
   }
 };
@@ -48,7 +48,7 @@ export const getReviewByUuid = async (req, res) => {
     if (!review) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Review not found",
+        message: "An error occurred while fetching the review",
       });
     }
 
@@ -61,7 +61,7 @@ export const getReviewByUuid = async (req, res) => {
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while fetching the review : ${error.message}`,
       });
     }
 
@@ -87,7 +87,12 @@ export const createReview = async (req, res) => {
     if (!reviewUuid) {
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: "An error occurred while creating the review",
+        message: `An error occurred while creating the review : ${error.message}`,
+      });
+    } else if (error.message.includes("already reviewed")) {
+      return res.status(HTTP_STATUS.CONFLICT).json({
+        success: false,
+        message: `An error occurred while creating the review : ${error.message}`,
       });
     }
 
@@ -100,20 +105,20 @@ export const createReview = async (req, res) => {
     if (error.message.includes("already reviewed")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while creating the review : ${error.message}`,
       });
     }
 
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while creating the review : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while creating the review",
+      message: `An error occurred while creating the review : ${error.message}`,
     });
   }
 };
@@ -137,13 +142,13 @@ export const updateReview = async (req, res) => {
     ) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while updating the review : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while updating the review",
+      message: `An error occurred while updating the review : ${error.message}`,
     });
   }
 };
@@ -163,20 +168,20 @@ export const deleteReview = async (req, res) => {
     if (error.message.includes("not found")) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while deleting the review : ${error.message}`,
       });
     }
 
     if (error.message.includes("don't have permission")) {
       return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while deleting the review : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while deleting the review",
+      message: `An error occurred while deleting the review : ${error.message}`,
     });
   }
 };

@@ -23,7 +23,7 @@ export const register = async (req, res) => {
     }
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Internal server error: ${error.message}`,
+      message: `An error occurred while registering user : ${error.message}`,
     });
   }
 };
@@ -35,7 +35,7 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "User not found",
+        message: "An error occurred while logging in",
       });
     }
 
@@ -46,7 +46,7 @@ export const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message: "Invalid password",
+        message: "An error occurred while logging in",
       });
     }
 
@@ -63,7 +63,7 @@ export const login = async (req, res) => {
     if (!tokenData) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message: "Token generation failed",
+        message: "An error occurred while logging in",
       });
     }
 
@@ -82,7 +82,7 @@ export const login = async (req, res) => {
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Login failed: ${error.message}`,
+      message: `An error occurred while logging in : ${error.message}`,
     });
   }
 };
@@ -95,7 +95,7 @@ export const activateDeactivate = async (req, res) => {
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "User not found",
+        message: "An error occurred while activating/deactivating user",
       });
     }
 
@@ -104,7 +104,7 @@ export const activateDeactivate = async (req, res) => {
     if (!result) {
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: "Failed to update user status",
+        message: "An error occurred while activating/deactivating user",
       });
     }
 
@@ -120,7 +120,7 @@ export const activateDeactivate = async (req, res) => {
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `Status update failed: ${error.message}`,
+      message: `An error occurred while activating/deactivating user : ${error.message}`,
     });
   }
 };
@@ -139,7 +139,7 @@ export const refreshToken = async (req, res) => {
     if (!tokenId && !token) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Token identifier or token is required",
+        message: "An error occurred while refreshing token",
       });
     }
 
@@ -176,7 +176,7 @@ export const refreshToken = async (req, res) => {
     if (!tokenInfo?.length) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message: "Token has expired. Please login again.",
+        message: "An error occurred while refreshing token",
         requiresLogin: true,
       });
     }
@@ -190,7 +190,7 @@ export const refreshToken = async (req, res) => {
       );
       return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
-        message: "Maximum token refresh limit reached. Please login again.",
+        message: "An error occurred while refreshing token",
         refreshCycles: 0,
         is_expired: 1,
         requiresLogin: true,
@@ -224,7 +224,7 @@ export const refreshToken = async (req, res) => {
     }
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
       success: false,
-      message: `Invalid or expired token: ${error.message}`,
+      message: `An error occurred while refreshing token : ${error.message}`,
     });
   }
 };
@@ -235,7 +235,7 @@ export const verifyEmail = async (req, res) => {
     if (!token) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Verification token is required",
+        message: "An error occurred while verifying email",
       });
     }
 
@@ -249,7 +249,7 @@ export const verifyEmail = async (req, res) => {
   } catch (error) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
-      message: error.message || "Email verification failed",
+      message: `An error occurred while verifying email : ${error.message}`,
     });
   }
 };
@@ -260,7 +260,7 @@ export const resendVerificationEmail = async (req, res) => {
     if (!email) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Email is required",
+        message: "An error occurred while resending verification email",
       });
     }
 
@@ -272,7 +272,7 @@ export const resendVerificationEmail = async (req, res) => {
   } catch (error) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
-      message: error.message || "Failed to send email",
+      message: `An error occurred while resending verification email : ${error.message}`,
     });
   }
 };
@@ -286,7 +286,7 @@ export const getAllUsers = async (req, res) => {
     if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Invalid page or limit value",
+        message: "An error occurred while fetching users",
       });
     }
 
@@ -299,7 +299,7 @@ export const getAllUsers = async (req, res) => {
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "Internal server error",
+      message: `An error occurred while fetching users : ${error.message}`,
     });
   }
 };

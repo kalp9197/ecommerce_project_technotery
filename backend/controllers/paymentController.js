@@ -25,8 +25,7 @@ export const createCheckoutSession = async (req, res) => {
   } catch (err) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: err.message || "Payment processing failed",
-      type: err.type || "unknown_error",
+      message: `An error occurred while processing payment : ${err.message}`,
     });
   }
 };
@@ -56,7 +55,7 @@ export const handleWebhook = async (req, res) => {
   } catch (err) {
     res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
-      message: err.message || "Invalid payment information",
+      message: `An error occurred while processing webhook : ${err.message}`,
     });
   }
 };

@@ -27,8 +27,7 @@ export const isAdmin = async (req, res, next) => {
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Internal server error",
-      error: error.message,
+      message: `An error occurred while checking admin privileges : ${error.message}`,
     });
   }
 };
@@ -59,8 +58,7 @@ export const isNotAdmin = async (req, res, next) => {
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Internal server error",
-      error: error.message,
+      message: `An error occurred while checking admin privileges : ${error.message}`,
     });
   }
 };

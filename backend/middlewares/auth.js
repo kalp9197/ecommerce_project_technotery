@@ -136,8 +136,7 @@ export const authenticate = async (req, res, next) => {
   } catch (error) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Authentication required",
-      error: error.message,
+      message: `An error occurred while authenticating : ${error.message}`,
       is_expired: 1,
     });
   }

@@ -9,7 +9,7 @@ export const refreshCache = async (req, res) => {
     if (!result.success) {
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: result.message || "Failed to refresh cache",
+        message: `An error occurred while refreshing cache : ${result.message}`,
       });
     }
 
@@ -20,7 +20,7 @@ export const refreshCache = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while refreshing cache",
+      message: `An error occurred while refreshing cache : ${error.message}`,
     });
   }
 };
@@ -35,7 +35,7 @@ export const getProducts = async (req, res) => {
     if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Invalid page or limit value",
+        message: "An error occurred while fetching products",
       });
     }
 
@@ -60,7 +60,7 @@ export const getProducts = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while fetching products",
+      message: `An error occurred while fetching products : ${error.message}`,
     });
   }
 };
@@ -73,7 +73,7 @@ export const searchProducts = async (req, res) => {
     if (!result.products?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "No products found matching your criteria",
+        message: "An error occurred while searching for products",
       });
     }
 
@@ -86,8 +86,7 @@ export const searchProducts = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message:
-        error.message || "An error occurred while searching for products",
+      message: `An error occurred while searching for products : ${error.message}`,
     });
   }
 };
@@ -100,7 +99,7 @@ export const getProductByUUID = async (req, res) => {
     if (!product) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Product not found",
+        message: "An error occurred while fetching the product",
       });
     }
 
@@ -108,7 +107,7 @@ export const getProductByUUID = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while fetching the product",
+      message: `An error occurred while fetching the product : ${error.message}`,
     });
   }
 };
@@ -124,7 +123,7 @@ export const addProduct = async (req, res) => {
     if (!productUuid) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Failed to create product",
+        message: "An error occurred while creating the product",
       });
     }
 
@@ -137,13 +136,13 @@ export const addProduct = async (req, res) => {
     if (error.message.includes("already exists")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while creating the product : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while creating the product",
+      message: `An error occurred while creating the product : ${error.message}`,
     });
   }
 };
@@ -160,7 +159,7 @@ export const updateProductByUUID = async (req, res) => {
     if (!updatedProduct || updatedProduct.affectedRows === 0) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Product not found or no changes made",
+        message: "An error occurred while updating the product",
       });
     }
 
@@ -172,13 +171,13 @@ export const updateProductByUUID = async (req, res) => {
     if (error.message.includes("already exists")) {
       return res.status(HTTP_STATUS.CONFLICT).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while updating the product : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while updating the product",
+      message: `An error occurred while updating the product : ${error.message}`,
     });
   }
 };
@@ -194,7 +193,7 @@ export const removeProductByUUID = async (req, res) => {
     if (!deletedProduct || deletedProduct.affectedRows === 0) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Product not found or already inactive",
+        message: "An error occurred while deleting the product",
       });
     }
 
@@ -206,13 +205,13 @@ export const removeProductByUUID = async (req, res) => {
     if (error.message.includes("active images")) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: error.message,
+        message: `An error occurred while deleting the product : ${error.message}`,
       });
     }
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: error.message || "An error occurred while deleting the product",
+      message: `An error occurred while deleting the product : ${error.message}`,
     });
   }
 };
@@ -228,7 +227,7 @@ export const getProductsByCategory = async (req, res) => {
     if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Invalid page or limit value",
+        message: "An error occurred while fetching products by category",
       });
     }
 
@@ -242,7 +241,7 @@ export const getProductsByCategory = async (req, res) => {
     if (!result.products?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "No products found in this category",
+        message: "An error occurred while fetching products by category",
       });
     }
 
@@ -255,9 +254,7 @@ export const getProductsByCategory = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message:
-        error.message ||
-        "An error occurred while fetching products by category",
+      message: `An error occurred while fetching products by category : ${error.message}`,
     });
   }
 };
@@ -276,7 +273,7 @@ export const getRecommendedProducts = async (req, res) => {
     if (!result.recommendedProducts?.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "No recommended products found",
+        message: "An error occurred while fetching recommended products",
       });
     }
 
@@ -288,9 +285,7 @@ export const getRecommendedProducts = async (req, res) => {
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message:
-        error.message ||
-        "An error occurred while fetching recommended products",
+      message: `An error occurred while fetching recommended products : ${error.message}`,
     });
   }
 };
