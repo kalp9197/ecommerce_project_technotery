@@ -22,7 +22,7 @@ import {
   processCacheInvalidationEvents,
   refreshProductCache,
 } from "./middlewares/cacheInvalidation.js";
-import ProductService from "./services/product.Service.js";
+import ProductService from "./services/productService.js";
 import { initializeGeminiClient } from "./services/geminiService.js";
 
 // Setup dirname for ES modules

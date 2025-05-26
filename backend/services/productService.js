@@ -4,7 +4,7 @@ import {
   CACHE_KEYS,
   getVersionedKey,
   CACHE_TTL,
-} from "../config/redis.js";
+} from "../config/redis.config.js";
 
 // Service for handling product-related operations
 class ProductService {

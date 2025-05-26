@@ -9,5 +9,5 @@ export {
   getCacheVersion,
   invalidateAllCaches,
   getVersionedKey,
-} from "./redis.js";
+} from "./redis.config.js";
 export { default as geminiConfig } from "./gemini.config.js";

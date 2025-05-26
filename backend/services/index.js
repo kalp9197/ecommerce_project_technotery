@@ -5,4 +5,4 @@ export * as emailService from "./emailService.js";
 export * as geminiService from "./geminiService.js";
 export * as paymentService from "./paymentService.js";
 export * as userService from "./userService.js";
-export { default as ProductService } from "./product.Service.js";
+export { default as ProductService } from "./productService.js";

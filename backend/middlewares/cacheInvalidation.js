@@ -1,5 +1,5 @@
 import { pool } from "../config/db.config.js";
-import { redis, CACHE_KEYS, getVersionedKey } from "../config/redis.js";
+import { redis, CACHE_KEYS, getVersionedKey } from "../config/redis.config.js";
 
 // Process cache invalidation events on each API request
 export const processCacheInvalidationEvents = async (req, res, next) => {

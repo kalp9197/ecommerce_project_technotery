@@ -1,5 +1,3 @@
-USE `ecommerce_db`;
-
 -- Create cache_invalidation_events table if it doesn't exist
 CREATE TABLE IF NOT EXISTS `cache_invalidation_events` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
