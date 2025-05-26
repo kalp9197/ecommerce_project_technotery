@@ -70,8 +70,15 @@ export const RATE_LIMIT_CONFIG = {
   MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX) || 100,
 };
 
+// Redis configuration
 export const REDIS_CONFIG = {
   URL: process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL || "",
   TOKEN: process.env.UPSTASH_REDIS_TOKEN || process.env.REDIS_TOKEN || "",
   TTL: parseInt(process.env.UPSTASH_REDIS_TTL || process.env.REDIS_TTL) || 300, // 5 minutes default
+};
+
+// Gemini configuration
+export const GEMINI_CONFIG = {
+  apiKey: process.env.GEMINI_API_KEY,
+  modelName: process.env.GEMINI_MODEL_NAME,
 };

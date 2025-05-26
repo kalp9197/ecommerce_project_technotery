@@ -16,19 +16,22 @@ import {
   emailTestRoutes,
   wishlistRoutes,
   userAnalyticsRoutes,
+  recommendationRoutes,
 } from "./routes/index.js";
-
-// Import middlewares
 import {
   processCacheInvalidationEvents,
   refreshProductCache,
 } from "./middlewares/cacheInvalidation.js";
-import ProductService from "./services/product.service.js";
+import ProductService from "./services/product.Service.js";
+import { initializeGeminiClient } from "./services/geminiService.js";
 
 // Setup dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+
+// Initialize Gemini Client (non-blocking, logs errors)
+initializeGeminiClient();
 
 // Configure CORS
 app.use(cors({ origin: appConfig.corsOrigin, credentials: true }));
@@ -67,6 +70,7 @@ app.use("/api/files", fileUploadRoutes);
 app.use("/api/email-test", emailTestRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/analytics", userAnalyticsRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {
@@ -80,7 +84,7 @@ app.all("*", (req, res) => {
 app.use((err, _req, res, _next) => {
   res.status(err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     success: false,
-    message: `Internal server error: ${err.message}`,
+    message: err.message,
   });
 });
 
